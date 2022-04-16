@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="chapter">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/code/code/chapter/19_paint.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/chapter/12_language.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/chapter/05_higher_order.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/chapter/16_game.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/chapter/17_canvas.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/chapter/06_object.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/chapter/04_data.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

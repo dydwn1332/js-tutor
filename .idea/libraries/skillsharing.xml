@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="skillsharing">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/code/skillsharing.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

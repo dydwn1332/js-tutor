@@ -1,0 +1,383 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>로봇</title>
+  <link rel=stylesheet href="js/node_modules/codemirror/lib/codemirror.css">
+  <script src="js/acorn_codemirror.js"></script>
+  <link rel=stylesheet href="css/ejs.css">
+  <script src="js/sandbox.js"></script>
+  <script src="js/ejs.js"></script><script>var chapNum = 7;var sandboxLoadFiles = ["code/chapter/07_robot.js","code/animatevillage.js"];</script></head>
+
+<article>
+<nav><a href="06_object.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="08_error.html" title="next chapter">▶</a></nav>
+
+<h1><span class=chap_num>7장</span>프로젝트: 로봇</h1>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_uJUZHUrdPa" href="#p_uJUZHUrdPa" tabindex="-1" role="presentation"></a>[...] 기계가 생각할 수 있는지 여부에 대한 질문은 [...] 잠수함이 수영할 수 있는지 여부에 대한 질문과 거의 관련이 있습니다.</p>
+
+<footer>Edsger Dijkstra, <cite>컴퓨팅 과학에 대한 위협</cite></footer>
+
+</blockquote><figure class="chapter framed"><img src="img/chapter_picture_7.jpg" alt="Picture of a package-delivery robot"></figure>
+
+<p><a class="p_ident" id="p_5AQpMxl1Fi" href="#p_5AQpMxl1Fi" tabindex="-1" role="presentation"></a>프로그래밍을 배우기 위해서는 이론도 필요하지만 실제 프로그램을 읽고 이해하는 것도 중요합니다.</p>
+
+<p><a class="p_ident" id="p_ncfl8fD8N8" href="#p_ncfl8fD8N8" tabindex="-1" role="presentation"></a>이 페이지에서는 가상 세계에서 작업을 수행하는 작은 프로그램인 자동 장치를 만드는 것입니다. 자동 장치는 소포를 픽업 및 드롭하는 우편 배달 로봇이 될 것입니다.</p>
+
+<h2><a class="h_ident" id="h_UmFK5fYed8" href="#h_UmFK5fYed8" tabindex="-1" role="presentation"></a>Meadowfield</h2>
+
+<p><a class="p_ident" id="p_rnkG5XLqCA" href="#p_rnkG5XLqCA" tabindex="-1" role="presentation"></a>Meadowfield 마을은 그리 크지 않습니다. 14개의 도로가 있는 11개의 장소로 구성되어 있습니다. 다음과 같은 도로 배열로 설명할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Zs4LZxNb9d" href="#c_Zs4LZxNb9d" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">roads</span> <span class="cm-operator">=</span> [
+  <span class="cm-string">&quot;Alice's House-Bob's House&quot;</span>,   <span class="cm-string">&quot;Alice's House-Cabin&quot;</span>,
+  <span class="cm-string">&quot;Alice's House-Post Office&quot;</span>,   <span class="cm-string">&quot;Bob's House-Town Hall&quot;</span>,
+  <span class="cm-string">&quot;Daria's House-Ernie's House&quot;</span>, <span class="cm-string">&quot;Daria's House-Town Hall&quot;</span>,
+  <span class="cm-string">&quot;Ernie's House-Grete's House&quot;</span>, <span class="cm-string">&quot;Grete's House-Farm&quot;</span>,
+  <span class="cm-string">&quot;Grete's House-Shop&quot;</span>,          <span class="cm-string">&quot;Marketplace-Farm&quot;</span>,
+  <span class="cm-string">&quot;Marketplace-Post Office&quot;</span>,     <span class="cm-string">&quot;Marketplace-Shop&quot;</span>,
+  <span class="cm-string">&quot;Marketplace-Town Hall&quot;</span>,       <span class="cm-string">&quot;Shop-Town Hall&quot;</span>
+];</pre><figure><img src="img/village2x.png" alt="The village of Meadowfield"></figure>
+
+<p><a class="p_ident" id="p_kUSGv0smF0" href="#p_kUSGv0smF0" tabindex="-1" role="presentation"></a>마을의 도로 네트워크는 그래프를 형성합니다. 그래프는 점(마을의 장소)과 그 사이에 선(도로)이 있는 집합입니다. 이 그래프는 로봇이 움직이는 세상이 될 것입니다.</p>
+
+<p><a class="p_ident" id="p_zOR53PiwWK" href="#p_zOR53PiwWK" tabindex="-1" role="presentation"></a>문자열 배열은 작업이 쉽지 않습니다. 관심을 갖는 것은 주어진 장소에서 도달할 수 있는 목적지입니다. 도로 목록을 각 장소에 대해 거기에서 도달할 수 있는 것을 알려주는 데이터 구조로 변환해 보겠습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_URtngTWego" href="#c_URtngTWego" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">buildGraph</span>(<span class="cm-def">edges</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">graph</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+  <span class="cm-keyword">function</span> <span class="cm-def">addEdge</span>(<span class="cm-def">from</span>, <span class="cm-def">to</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">graph</span>[<span class="cm-variable-2">from</span>] <span class="cm-operator">==</span> <span class="cm-atom">null</span>) {
+      <span class="cm-variable-2">graph</span>[<span class="cm-variable-2">from</span>] <span class="cm-operator">=</span> [<span class="cm-variable-2">to</span>];
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-variable-2">graph</span>[<span class="cm-variable-2">from</span>].<span class="cm-property">push</span>(<span class="cm-variable-2">to</span>);
+    }
+  }
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> [<span class="cm-def">from</span>, <span class="cm-def">to</span>] <span class="cm-keyword">of</span> <span class="cm-variable-2">edges</span>.<span class="cm-property">map</span>(<span class="cm-def">r</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">r</span>.<span class="cm-property">split</span>(<span class="cm-string">&quot;-&quot;</span>))) {
+    <span class="cm-variable-2">addEdge</span>(<span class="cm-variable-2">from</span>, <span class="cm-variable-2">to</span>);
+    <span class="cm-variable-2">addEdge</span>(<span class="cm-variable-2">to</span>, <span class="cm-variable-2">from</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">graph</span>;
+}
+
+<span class="cm-keyword">const</span> <span class="cm-def">roadGraph</span> <span class="cm-operator">=</span> <span class="cm-variable">buildGraph</span>(<span class="cm-variable">roads</span>);</pre>
+
+<p><a class="p_ident" id="p_zU4tmOhQOK" href="#p_zU4tmOhQOK" tabindex="-1" role="presentation"></a>간선 배열이 주어지면 <code>buildGraph</code>는 각 노드에 대해 연결된 노드 배열을 저장하는 맵 객체를 만듭니다.</p>
+
+<p><a class="p_ident" id="p_/eUhE55hg6" href="#p_/eUhE55hg6" tabindex="-1" role="presentation"></a><code>split</code> 메서드를 사용하여 형식이 <code>&quot;Start-End&quot;</code>인 도로 문자열에서 시작과 끝을 별도의 문자열로 포함하는 2-요소 배열로 이동합니다.</p>
+
+<h2><a class="h_ident" id="h_oekYfM5x02" href="#h_oekYfM5x02" tabindex="-1" role="presentation"></a>작업</h2>
+
+<p><a class="p_ident" id="p_MtO6TwqB5I" href="#p_MtO6TwqB5I" tabindex="-1" role="presentation"></a>로봇은 마을을 돌아 다닐 것입니다. 여러 장소에 소포가 있으며 각각 다른 장소로 주소가 지정됩니다. 로봇은 소포가 도착하면 픽업하여 목적지에 도착하면 배달합니다.</p>
+
+<p><a class="p_ident" id="p_jBwlptGwo9" href="#p_jBwlptGwo9" tabindex="-1" role="presentation"></a>자동 장치는 각 지점에서 다음으로 갈 곳을 결정해야 합니다. 모든 소포가 배달되면 작업이 완료된 것입니다.</p>
+
+<p><a class="p_ident" id="p_xZG2sIniIX" href="#p_xZG2sIniIX" tabindex="-1" role="presentation"></a>이 과정을 시뮬레이션 할 수 있으려면 이를 설명할 수 있는 가상 세계를 정의해야 합니다. 이 모델은 로봇이 어디에 있고 소포가 어디에 있는지 알려줍니다. 로봇이 어딘가로 이동하기로 결정하면 새로운 상황을 반영하도록 모델을 업데이트해야 합니다.</p>
+
+<p><a class="p_ident" id="p_XP2aQths2D" href="#p_XP2aQths2D" tabindex="-1" role="presentation"></a>객체 지향 프로그래밍의 관점에서 생각하고 있다면 첫 번째 충동은 로봇을 위한 클래스, 소포를 위한 클래스, 장소를 위한 클래스 등 세상의 다양한 요소에 대한 객체 정의를 시작하는 것일 수 있습니다. 그런 다음 해당 위치의 소포 더미와 같이 현재 상태를 설명하는 속성을 보유할 수 있으며 이는 세계를 업데이트할 때 변경할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_SIo98R3+uq" href="#p_SIo98R3+uq" tabindex="-1" role="presentation"></a>문제는 이러한 접근 방식이 잘못되었다는 것입니다.</p>
+
+<p><a class="p_ident" id="p_md/LJiyP4s" href="#p_md/LJiyP4s" tabindex="-1" role="presentation"></a>어떤 것이 객체처럼 들린다는 사실이 자동으로 그것이 프로그램의 객체여야 한다는 것을 의미하지는 않습니다. 애플리케이션의 모든 개념에 대해 반사적으로 클래스를 작성하면 각각 고유한 내부 변경 상태를 갖는 상호 연결된 객체 모음이 남게 되는 경향이 있습니다. 이러한 프로그램은 종종 이해하기 어려우므로 쉽게 중단됩니다.</p>
+
+<p><a class="p_ident" id="p_GAVnAUZ9xz" href="#p_GAVnAUZ9xz" tabindex="-1" role="presentation"></a>대신 마을의 상태를 정의하는 최소한의 값으로 압축해 보겠습니다. 로봇의 현재 위치와 배달되지 않은 소포 모음이 있으며 각각에는 현재 위치와 목적지 주소가 있습니다.</p>
+
+<p><a class="p_ident" id="p_/m1Ukpe9vV" href="#p_/m1Ukpe9vV" tabindex="-1" role="presentation"></a>그것에 있는 동안 로봇이 움직일 때 이 상태를 변경하지 않고 이동 후 상황에 대한 새로운 상태를 계산하도록 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_VcDNIi1lcV" href="#c_VcDNIi1lcV" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">VillageState</span> {
+  <span class="cm-property">constructor</span>(<span class="cm-def">place</span>, <span class="cm-def">parcels</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">place</span> <span class="cm-operator">=</span> <span class="cm-variable-2">place</span>;
+    <span class="cm-keyword">this</span>.<span class="cm-property">parcels</span> <span class="cm-operator">=</span> <span class="cm-variable-2">parcels</span>;
+  }
+
+  <span class="cm-property">move</span>(<span class="cm-def">destination</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable">roadGraph</span>[<span class="cm-keyword">this</span>.<span class="cm-property">place</span>].<span class="cm-property">includes</span>(<span class="cm-variable-2">destination</span>)) {
+      <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>;
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">let</span> <span class="cm-def">parcels</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">parcels</span>.<span class="cm-property">map</span>(<span class="cm-def">p</span> <span class="cm-operator">=&gt;</span> {
+        <span class="cm-keyword">if</span> (<span class="cm-variable-2">p</span>.<span class="cm-property">place</span> <span class="cm-operator">!=</span> <span class="cm-keyword">this</span>.<span class="cm-property">place</span>) <span class="cm-keyword">return</span> <span class="cm-variable-2">p</span>;
+        <span class="cm-keyword">return</span> {<span class="cm-property">place</span>: <span class="cm-variable-2">destination</span>, <span class="cm-property">address</span>: <span class="cm-variable-2">p</span>.<span class="cm-property">address</span>};
+      }).<span class="cm-property">filter</span>(<span class="cm-def">p</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">p</span>.<span class="cm-property">place</span> <span class="cm-operator">!=</span> <span class="cm-variable-2">p</span>.<span class="cm-property">address</span>);
+      <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">VillageState</span>(<span class="cm-variable-2">destination</span>, <span class="cm-variable-2">parcels</span>);
+    }
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_+1K4cYKxXh" href="#p_+1K4cYKxXh" tabindex="-1" role="presentation"></a><code>move</code> 메서드는 액션이 어디에서 일어나는 지를 나타냅니다. 먼저 현재 위치에서 목적지까지 가는 도로가 있는지 확인하고, 없으면 유효한 이동이 아니므로 이전 상태를 반환합니다.</p>
+
+<p><a class="p_ident" id="p_8hikodLOP1" href="#p_8hikodLOP1" tabindex="-1" role="presentation"></a>그런 다음 목적지를 로봇의 새 장소로 사용하여 새 상태를 만듭니다. 그러나 또한 새로운 소포 집합을 생성해야 합니다. 로봇이 운반하는 소포(즉, 로봇의 현재 위치에 있음)는 새 위치로 이동해야 합니다. 그리고 새로운 장소로 주소가 지정된 소포는 배달되어야 합니다. 즉, 배달되지 않은 소포 집합에서 제거해야 합니다. <code>map</code>에 대한 호출은 이동에 주의를 기울이고 <code>filter</code>에 대한 호출은 배달을 수행합니다.</p>
+
+<p><a class="p_ident" id="p_r1QwqYFKH8" href="#p_r1QwqYFKH8" tabindex="-1" role="presentation"></a>구획 객체는 이동할 때 변경되지 않고 재생성됩니다. <code>move</code> 메서드는 새로운 마을 상태를 제공하지만 이전 상태는 완전히 그대로 둡니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Z0crEkc0Bs" href="#c_Z0crEkc0Bs" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">first</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">VillageState</span>(
+  <span class="cm-string">&quot;Post Office&quot;</span>,
+  [{<span class="cm-property">place</span>: <span class="cm-string">&quot;Post Office&quot;</span>, <span class="cm-property">address</span>: <span class="cm-string">&quot;Alice's House&quot;</span>}]
+);
+<span class="cm-keyword">let</span> <span class="cm-def">next</span> <span class="cm-operator">=</span> <span class="cm-variable">first</span>.<span class="cm-property">move</span>(<span class="cm-string">&quot;Alice's House&quot;</span>);
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">next</span>.<span class="cm-property">place</span>);
+<span class="cm-comment">// → Alice's House</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">next</span>.<span class="cm-property">parcels</span>);
+<span class="cm-comment">// → []</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">first</span>.<span class="cm-property">place</span>);
+<span class="cm-comment">// → Post Office</span></pre>
+
+<p><a class="p_ident" id="p_tNPZKPr/w9" href="#p_tNPZKPr/w9" tabindex="-1" role="presentation"></a>이동하면 소포가 배달되고 이는 다음 상태에 반영됩니다. 그러나 초기 상태는 여전히 로봇이 우체국에 있고 소포가 배달되지 않는 상황을 설명합니다.</p>
+
+<h2><a class="h_ident" id="h_BgRu2ZQp4Z" href="#h_BgRu2ZQp4Z" tabindex="-1" role="presentation"></a>Persistent 데이터</h2>
+
+<p><a class="p_ident" id="p_0XMckw7hMq" href="#p_0XMckw7hMq" tabindex="-1" role="presentation"></a>변경되지 않는 데이터 구조를 <em>immutable</em> 또는 <em>persistent</em>라고 합니다. 그것들은 다른 시간에 다른 것을 포함하기보다는 그대로 있고 그대로 유지된다는 점에서 문자열과 숫자와 매우 유사하게 행동합니다.</p>
+
+<p><a class="p_ident" id="p_Vzwj9t5LXR" href="#p_Vzwj9t5LXR" tabindex="-1" role="presentation"></a>자바 스크립트에서 모든 것은 바로 변경될 수 있기 때문에 영구적으로 가정되는 값으로 작업하기 위해서는 몇 가지 규제가 필요합니다. 객체 변경 관련 <code>Object.freeze</code>라는 함수가 있기 때문에 그에 관한 속성 작성은 무시합니다. 조심하고 싶다면 이것을 사용하여 객체가 변경되지 않았는지 확인할 수 있습니다. Freezing은 컴퓨터가 약간의 추가 작업을 수행하는데 요구되며, 업데이트를 무시하는 것은 누군가가 잘못된 일을 하도록 하는 것만큼 혼동을 일으킬 가능성이 높습니다. 그래서 보통 사람들에게 주어진 물건을 엉망으로 만들어서는 안 된다고 말하고 그들이 그것을 기억하기를 바라는 것을 선호하게 됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_tzmey+74SE" href="#c_tzmey+74SE" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">object</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">freeze</span>({<span class="cm-property">value</span>: <span class="cm-number">5</span>});
+<span class="cm-variable">object</span>.<span class="cm-property">value</span> <span class="cm-operator">=</span> <span class="cm-number">10</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">object</span>.<span class="cm-property">value</span>);
+<span class="cm-comment">// → 5</span></pre>
+
+<p><a class="p_ident" id="p_HAywJetNsC" href="#p_HAywJetNsC" tabindex="-1" role="presentation"></a>왜 객체를 변경하지 않으려고 노력하는가?</p>
+
+<p><a class="p_ident" id="p_OeVgQQywMt" href="#p_OeVgQQywMt" tabindex="-1" role="presentation"></a>그 이유는 프로그램을 이해하는 데 도움이 되기 때문입니다. 이것은 다시 복잡성 관리에 관한 것입니다. 시스템의 객체가 고정되어 있고 안정적인 경우 객체에 대한 작업을 개별적으로 고려할 수 있습니다. 지정된 시작 상태에서 Alice의 집으로 이동하면 항상 동일한 새 상태가 생성됩니다. 객체가 시간이 지남에 따라 변경되면 이러한 종류의 추론에 완전히 새로운 차원의 복잡성이 추가됩니다.</p>
+
+<p><a class="p_ident" id="p_/7pvpOtS4H" href="#p_/7pvpOtS4H" tabindex="-1" role="presentation"></a>여기에서 구축하는 것과 같은 작은 시스템의 경우 약간의 추가 복잡성을 처리할 수 있습니다. 그러나 구축할 수 있는 시스템의 종류에 대한 가장 중요한 제한은 이해할 수 있는 정도입니다. 코드를 이해하기 쉽게 만드는 것은 무엇이든 더 야심찬 시스템을 구축하는 것을 가능하게 합니다.</p>
+
+<p><a class="p_ident" id="p_rFxLbiWTcZ" href="#p_rFxLbiWTcZ" tabindex="-1" role="presentation"></a>불행히도 영구 데이터 구조를 기반으로 구축된 시스템을 이해하는 것이 더 쉽지만, 특히 프로그래밍 언어가 도움이 되지 않을 때 시스템을 설계하는 것은 조금 더 어려울 수 있습니다. 여기에서 영구 데이터 구조를 사용할 기회를 찾을 것이지만 변경 가능한 데이터 구조도 사용할 것입니다.</p>
+
+<h2><a class="h_ident" id="h_jjSUPDU+nv" href="#h_jjSUPDU+nv" tabindex="-1" role="presentation"></a>시뮬레이션</h2>
+
+<p><a class="p_ident" id="p_P+FbwSex0d" href="#p_P+FbwSex0d" tabindex="-1" role="presentation"></a>배송 로봇은 세상을 바라보며 이동하고자 하는 방향을 결정합니다. 이처럼 로봇은 <code>VillageState</code> 객체를 취해 물건을 받아 가까운 장소의 이름을 반환하는 함수라 할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_d4Z1LYlBJq" href="#p_d4Z1LYlBJq" tabindex="-1" role="presentation"></a>로봇이 무언가를 기억할 수 있기를 원하기 때문에 로봇이 계획을 세우고 실행할 수 있기를 원하기 때문에 로봇에게 메모리를 전달하고 새로운 메모리를 반환하도록 합니다. 따라서 로봇이 반환하는 것은 이동하려는 방향과 다음에 호출될 때 반환될 메모리 값을 모두 포함하는 객체입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_PAmfnoCtiQ" href="#c_PAmfnoCtiQ" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">runRobot</span>(<span class="cm-def">state</span>, <span class="cm-def">robot</span>, <span class="cm-def">memory</span>) {
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">turn</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>;; <span class="cm-variable-2">turn</span><span class="cm-operator">++</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">state</span>.<span class="cm-property">parcels</span>.<span class="cm-property">length</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>) {
+      <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`Done in ${</span><span class="cm-variable-2">turn</span><span class="cm-string-2">}</span> <span class="cm-string-2">turns`</span>);
+      <span class="cm-keyword">break</span>;
+    }
+    <span class="cm-keyword">let</span> <span class="cm-def">action</span> <span class="cm-operator">=</span> <span class="cm-variable-2">robot</span>(<span class="cm-variable-2">state</span>, <span class="cm-variable-2">memory</span>);
+    <span class="cm-variable-2">state</span> <span class="cm-operator">=</span> <span class="cm-variable-2">state</span>.<span class="cm-property">move</span>(<span class="cm-variable-2">action</span>.<span class="cm-property">direction</span>);
+    <span class="cm-variable-2">memory</span> <span class="cm-operator">=</span> <span class="cm-variable-2">action</span>.<span class="cm-property">memory</span>;
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`Moved to ${</span><span class="cm-variable-2">action</span>.<span class="cm-property">direction</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_J4CsIfXFJR" href="#p_J4CsIfXFJR" tabindex="-1" role="presentation"></a>로봇이 주어진 상태를 해결하기 위해 무엇을 해야 하는지 생각해 보십시오. 그것은 소포가 있는 모든 위치를 방문하여 모든 소포를 픽업하고 소포가 주소가 지정된 모든 위치를 방문하여 배달해야 하지만 소포를 픽업한 후에만 가능합니다.</p>
+
+<p><a class="p_ident" id="p_g8y41m0ZTO" href="#p_g8y41m0ZTO" tabindex="-1" role="presentation"></a>작동할 수 있는 가장 멍청한 전략은 무엇입니까? 로봇은 매 턴마다 무작위 방향으로 걸을 수 있습니다. 즉, 결국에는 모든 소포에 부딪치게 되고 어느 시점에는 배달되어야 하는 장소에 도달할 가능성이 매우 큽니다.</p>
+
+<p><a class="p_ident" id="p_6Z1OgF/YEs" href="#p_6Z1OgF/YEs" tabindex="-1" role="presentation"></a>다음과 같을 것입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_eldzpwzhOB" href="#c_eldzpwzhOB" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">randomPick</span>(<span class="cm-def">array</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">choice</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">floor</span>(<span class="cm-variable">Math</span>.<span class="cm-property">random</span>() <span class="cm-operator">*</span> <span class="cm-variable-2">array</span>.<span class="cm-property">length</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">array</span>[<span class="cm-variable-2">choice</span>];
+}
+
+<span class="cm-keyword">function</span> <span class="cm-def">randomRobot</span>(<span class="cm-def">state</span>) {
+  <span class="cm-keyword">return</span> {<span class="cm-property">direction</span>: <span class="cm-variable">randomPick</span>(<span class="cm-variable">roadGraph</span>[<span class="cm-variable-2">state</span>.<span class="cm-property">place</span>])};
+}</pre>
+
+<p><a class="p_ident" id="p_2Q7kJZqP+x" href="#p_2Q7kJZqP+x" tabindex="-1" role="presentation"></a><code>Math.random()</code>은 0과 1 사이의 숫자를 반환하지만 항상 1 미만입니다. 이러한 숫자에 배열의 길이를 곱한 다음 <code>Math.floor</code>를 적용하면 배열에 대한 임의의 인덱스가 제공됩니다.</p>
+
+<p><a class="p_ident" id="p_sb9lL4ZUdF" href="#p_sb9lL4ZUdF" tabindex="-1" role="presentation"></a>이 로봇은 아무것도 기억할 필요가 없기 때문에 두 번째 인수를 무시하고(JavaScript 함수는 나쁜 영향 없이 추가 인수로 호출할 수 있음) 반환된 객체의 <code>memory</code> 속성을 생략합니다.</p>
+
+<p><a class="p_ident" id="p_Q8hya8VsaG" href="#p_Q8hya8VsaG" tabindex="-1" role="presentation"></a>이 정교한 로봇을 작동시키려면 먼저 일부 소포로 새 상태를 만드는 방법이 필요합니다. 정적 메서드(여기서는 생성자에 속성을 직접 추가하여 작성)는 해당 기능을 배치하기에 좋은 위치입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_oz9CFlpcci" href="#c_oz9CFlpcci" tabindex="-1" role="presentation"></a><span class="cm-variable">VillageState</span>.<span class="cm-property">random</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">parcelCount</span> <span class="cm-operator">=</span> <span class="cm-number">5</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">parcels</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">parcelCount</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>) {
+    <span class="cm-keyword">let</span> <span class="cm-def">address</span> <span class="cm-operator">=</span> <span class="cm-variable">randomPick</span>(<span class="cm-variable">Object</span>.<span class="cm-property">keys</span>(<span class="cm-variable">roadGraph</span>));
+    <span class="cm-keyword">let</span> <span class="cm-def">place</span>;
+    <span class="cm-keyword">do</span> {
+      <span class="cm-variable-2">place</span> <span class="cm-operator">=</span> <span class="cm-variable">randomPick</span>(<span class="cm-variable">Object</span>.<span class="cm-property">keys</span>(<span class="cm-variable">roadGraph</span>));
+    } <span class="cm-keyword">while</span> (<span class="cm-variable-2">place</span> <span class="cm-operator">==</span> <span class="cm-variable-2">address</span>);
+    <span class="cm-variable-2">parcels</span>.<span class="cm-property">push</span>({<span class="cm-property">place</span>, <span class="cm-property">address</span>});
+  }
+  <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">VillageState</span>(<span class="cm-string">&quot;Post Office&quot;</span>, <span class="cm-variable-2">parcels</span>);
+};</pre>
+
+<p><a class="p_ident" id="p_0gS69ySVJ4" href="#p_0gS69ySVJ4" tabindex="-1" role="presentation"></a>주소가 지정된 동일한 장소에서 발송되는 소포를 원하지 않습니다. 이러한 이유로 <code>do</code> 루프는 주소와 동일한 위치를 얻을 때 계속 새로운 위치를 선택합니다.</p>
+
+<p><a class="p_ident" id="p_eqF9VU0qYO" href="#p_eqF9VU0qYO" tabindex="-1" role="presentation"></a>가상 세계를 시작하기로 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_1SZDRlmBkn" href="#c_1SZDRlmBkn" tabindex="-1" role="presentation"></a><span class="cm-variable">runRobot</span>(<span class="cm-variable">VillageState</span>.<span class="cm-property">random</span>(), <span class="cm-variable">randomRobot</span>);
+<span class="cm-comment">// → Moved to Marketplace</span>
+<span class="cm-comment">// → Moved to Town Hall</span>
+<span class="cm-comment">// → …</span>
+<span class="cm-comment">// → Done in 63 turns</span></pre>
+
+<p><a class="p_ident" id="p_BFu/OgG6OM" href="#p_BFu/OgG6OM" tabindex="-1" role="presentation"></a>로봇은 미리 계획을 잘 세우지 않기 때문에 소포를 배달하는 데 많은 회전이 필요합니다.</p>
+
+<p><a class="p_ident" id="p_2yLwjyXxuR" href="#p_2yLwjyXxuR" tabindex="-1" role="presentation"></a>시뮬레이션을 보다 즐겁게 보기 위해 이 페이지의 <a href="https://eloquentjavascript.net/code/#7">프로그래밍 환경</a>에서 이용 가능한 <code>runRobotAnimation</code> 함수를 사용할 수 있습니다. 이렇게 하면 시뮬레이션이 실행되지만 텍스트를 출력하는 대신 마을 지도 주위를 움직이는 로봇이 표시됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_jWQlJ73x2Z" href="#c_jWQlJ73x2Z" tabindex="-1" role="presentation"></a><span class="cm-variable">runRobotAnimation</span>(<span class="cm-variable">VillageState</span>.<span class="cm-property">random</span>(), <span class="cm-variable">randomRobot</span>);</pre>
+
+<p><a class="p_ident" id="p_ID6/NPeNSk" href="#p_ID6/NPeNSk" tabindex="-1" role="presentation"></a><code>runRobotAnimation</code>이 구현되는 방식은 지금으로서는 미스터리로 남겠지만 웹 브라우저에서 JavaScript 통합에 대해 설명하는 본 강좌의 <a href="14_dom.html">뒷 부분</a>을 읽고 나면 어떻게 작동하는지 짐작할 수 있을 것입니다.</p>
+
+<h2><a class="h_ident" id="h_Lj40iImbWq" href="#h_Lj40iImbWq" tabindex="-1" role="presentation"></a>우편 트럭의 경로</h2>
+
+<p><a class="p_ident" id="p_0ChAwB4vGA" href="#p_0ChAwB4vGA" tabindex="-1" role="presentation"></a>무작위 로봇보다 훨씬 더 잘할 수 있어야 합니다. 실제 메일 배달이 작동하는 방식에서 힌트를 얻으면 쉽게 개선할 수 있습니다. 마을의 모든 장소를 통과하는 경로를 찾으면 로봇은 해당 경로를 두 번 실행할 수 있으며 그 지점에서 완료가 보장됩니다. 다음은 그러한 경로 중 하나입니다(우체국에서 시작).</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_smZcG/wBFx" href="#c_smZcG/wBFx" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">mailRoute</span> <span class="cm-operator">=</span> [
+  <span class="cm-string">&quot;Alice's House&quot;</span>, <span class="cm-string">&quot;Cabin&quot;</span>, <span class="cm-string">&quot;Alice's House&quot;</span>, <span class="cm-string">&quot;Bob's House&quot;</span>,
+  <span class="cm-string">&quot;Town Hall&quot;</span>, <span class="cm-string">&quot;Daria's House&quot;</span>, <span class="cm-string">&quot;Ernie's House&quot;</span>,
+  <span class="cm-string">&quot;Grete's House&quot;</span>, <span class="cm-string">&quot;Shop&quot;</span>, <span class="cm-string">&quot;Grete's House&quot;</span>, <span class="cm-string">&quot;Farm&quot;</span>,
+  <span class="cm-string">&quot;Marketplace&quot;</span>, <span class="cm-string">&quot;Post Office&quot;</span>
+];</pre>
+
+<p><a class="p_ident" id="p_yjFG5x6/qC" href="#p_yjFG5x6/qC" tabindex="-1" role="presentation"></a>경로 추적 로봇을 구현하려면 로봇 메모리를 사용해야 합니다. 로봇은 메모리에 경로의 나머지 부분을 유지하고 매 턴마다 첫 번째 요소를 삭제합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_FlV5rBgCYM" href="#c_FlV5rBgCYM" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">routeRobot</span>(<span class="cm-def">state</span>, <span class="cm-def">memory</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">memory</span>.<span class="cm-property">length</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>) {
+    <span class="cm-variable-2">memory</span> <span class="cm-operator">=</span> <span class="cm-variable">mailRoute</span>;
+  }
+  <span class="cm-keyword">return</span> {<span class="cm-property">direction</span>: <span class="cm-variable-2">memory</span>[<span class="cm-number">0</span>], <span class="cm-property">memory</span>: <span class="cm-variable-2">memory</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>)};
+}</pre>
+
+<p><a class="p_ident" id="p_RfLBkheDsk" href="#p_RfLBkheDsk" tabindex="-1" role="presentation"></a>이 로봇은 이미 훨씬 빠릅니다. 최대 26턴(13단계 경로의 두 배)이 소요되지만 일반적으로 더 적습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_EkwtJVsUrQ" href="#c_EkwtJVsUrQ" tabindex="-1" role="presentation"></a><span class="cm-variable">runRobotAnimation</span>(<span class="cm-variable">VillageState</span>.<span class="cm-property">random</span>(), <span class="cm-variable">routeRobot</span>, []);</pre>
+
+<h2><a class="h_ident" id="h_oTHZwtVfKc" href="#h_oTHZwtVfKc" tabindex="-1" role="presentation"></a>경로 찾기</h2>
+
+<p><a class="p_ident" id="p_zm+XpdJWqT" href="#p_zm+XpdJWqT" tabindex="-1" role="presentation"></a>고정 경로 지능형 행동을 맹목적으로 따르지 않을 것입니다. 로봇은 수행해야 하는 실제 작업에 따라 동작을 조정하면 더 효율적으로 작업할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_I3lgtVYHps" href="#p_I3lgtVYHps" tabindex="-1" role="presentation"></a>그렇게 하려면 주어진 소포를 향해 또는 소포를 배달해야 하는 위치로 의도적으로 이동할 수 있어야 합니다. 목표가 한 번 이상 이동하는 것이더라도 일종의 경로 찾기 기능이 필요합니다.</p>
+
+<p><a class="p_ident" id="p_mZLFbUuvec" href="#p_mZLFbUuvec" tabindex="-1" role="presentation"></a>그래프를 통해 경로를 찾는 문제는 일반적인 <em>search problem</em>입니다. 주어진 솔루션(경로)이 유효한 솔루션인지 여부는 알 수 있지만 2 + 2에 대해 수행할 수 있는 방식으로 솔루션을 직접 계산할 수는 없습니다. 대신 작동하는 솔루션을 찾을 때까지 잠재적인 솔루션을 계속 만들어야 합니다.</p>
+
+<p><a class="p_ident" id="p_RL7DngqE+u" href="#p_RL7DngqE+u" tabindex="-1" role="presentation"></a>그래프를 통해 가능한 경로의 수는 무한합니다. 그러나 <em>A</em>에서 <em>B</em>로 가는 경로를 검색할 때 <em>A</em>에서 시작하는 경로에만 관심이 있습니다. 또한 같은 장소를 두 번 방문하는 경로에 대해 신경 쓰지 않습니다. 따라서 경로 찾기에서 고려해야 하는 경로의 수가 줄어듭니다.</p>
+
+<p><a class="p_ident" id="p_6AAxzrcDxc" href="#p_6AAxzrcDxc" tabindex="-1" role="presentation"></a>사실 최단거리에 관심이 많습니다. 따라서 긴 경로를 보기 전에 짧은 경로를 먼저 살펴보고자 합니다. 좋은 접근 방식은 시작 지점에서 경로를 "확장"하여 경로가 목표에 도달할 때까지 아직 방문하지 않은 모든 도달 가능한 장소를 탐색하는 것입니다. 그렇게 하면 잠재적으로 흥미로운 경로만 탐색하고 목표까지의 최단 경로(또는 최단 경로가 둘 이상인 경우 최단 경로 중 하나)를 찾습니다.</p>
+
+<p id="findRoute"><a class="p_ident" id="p_cQEEfIe4SC" href="#p_cQEEfIe4SC" tabindex="-1" role="presentation"></a>다음은 이 작업을 수행하는 함수입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_qT/+IETEgM" href="#c_qT/+IETEgM" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">findRoute</span>(<span class="cm-def">graph</span>, <span class="cm-def">from</span>, <span class="cm-def">to</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">work</span> <span class="cm-operator">=</span> [{<span class="cm-property">at</span>: <span class="cm-variable-2">from</span>, <span class="cm-property">route</span>: []}];
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">work</span>.<span class="cm-property">length</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>) {
+    <span class="cm-keyword">let</span> {<span class="cm-def">at</span>, <span class="cm-def">route</span>} <span class="cm-operator">=</span> <span class="cm-variable-2">work</span>[<span class="cm-variable-2">i</span>];
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">place</span> <span class="cm-keyword">of</span> <span class="cm-variable-2">graph</span>[<span class="cm-variable-2">at</span>]) {
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">place</span> <span class="cm-operator">==</span> <span class="cm-variable-2">to</span>) <span class="cm-keyword">return</span> <span class="cm-variable-2">route</span>.<span class="cm-property">concat</span>(<span class="cm-variable-2">place</span>);
+      <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">work</span>.<span class="cm-property">some</span>(<span class="cm-def">w</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">w</span>.<span class="cm-property">at</span> <span class="cm-operator">==</span> <span class="cm-variable-2">place</span>)) {
+        <span class="cm-variable-2">work</span>.<span class="cm-property">push</span>({<span class="cm-property">at</span>: <span class="cm-variable-2">place</span>, <span class="cm-property">route</span>: <span class="cm-variable-2">route</span>.<span class="cm-property">concat</span>(<span class="cm-variable-2">place</span>)});
+      }
+    }
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_IIOF6RnmzN" href="#p_IIOF6RnmzN" tabindex="-1" role="presentation"></a>탐색은 올바른 순서로 수행되어야 합니다. 먼저 도달한 장소를 먼저 탐색해야 합니다. 아직 탐험하지 않은 다른 짧은 경로가 있더라도 그곳에서 도달한 장소도 즉시 탐색된다는 것을 의미하기 때문에 도달하자마자 장소를 즉시 탐색할 수는 없습니다.</p>
+
+<p><a class="p_ident" id="p_n9z76d0Ph0" href="#p_n9z76d0Ph0" tabindex="-1" role="presentation"></a>따라서 함수는 작업 리스트를 유지합니다. 이것은 거기에 데려다 준 경로와 함께 다음에 탐험해야 할 장소의 배열입니다. 시작 위치와 빈 경로로 시작합니다.</p>
+
+<p><a class="p_ident" id="p_bijwRAV0uR" href="#p_bijwRAV0uR" tabindex="-1" role="presentation"></a>그런 다음 리스트에서 다음 항목을 선택하고 탐색하여 검색이 작동합니다. 즉, 해당 장소에서 가는 모든 도로를 살펴봅니다. 그 중 하나가 목표인 경우 완료된 경로를 반환할 수 있습니다. 그렇지 않고 이전에 이 장소를 본 적이 없다면 새 항목이 목록에 추가됩니다. 예전에 봤다면 짧은 길을 먼저 봤기 때문에 그 곳으로 가는 더 긴 길을 찾았거나 기존 길과 정확히 같은 길을 찾았으니 굳이 탐색할 필요가 없습니다.</p>
+
+<p><a class="p_ident" id="p_vMO6D/7FJS" href="#p_vMO6D/7FJS" tabindex="-1" role="presentation"></a>이것을 시작 위치에서 크롤링하는 알려진 경로의 웹으로 시각적으로 상상할 수 있습니다. 첫 번째 스레드가 목표 위치에 도달하자마자 해당 스레드는 다시 시작 위치로 추적되어 경로를 제공합니다.</p>
+
+<p><a class="p_ident" id="p_SIkZT2qVfg" href="#p_SIkZT2qVfg" tabindex="-1" role="presentation"></a>코드는 그래프가 연결되어 있다는 것을 알고 있기 때문에 작업 리스트에 더 이상 작업 항목이 없는 상황을 처리하지 않습니다. 즉, 다른 모든 위치에서 모든 위치에 도달할 수 있습니다. 항상 두 지점 사이의 경로를 찾을 수 있으며 검색은 실패할 수 없습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_RJgvG9cgxq" href="#c_RJgvG9cgxq" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">goalOrientedRobot</span>({<span class="cm-def">place</span>, <span class="cm-def">parcels</span>}, <span class="cm-def">route</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">route</span>.<span class="cm-property">length</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>) {
+    <span class="cm-keyword">let</span> <span class="cm-def">parcel</span> <span class="cm-operator">=</span> <span class="cm-variable-2">parcels</span>[<span class="cm-number">0</span>];
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">parcel</span>.<span class="cm-property">place</span> <span class="cm-operator">!=</span> <span class="cm-variable-2">place</span>) {
+      <span class="cm-variable-2">route</span> <span class="cm-operator">=</span> <span class="cm-variable">findRoute</span>(<span class="cm-variable">roadGraph</span>, <span class="cm-variable-2">place</span>, <span class="cm-variable-2">parcel</span>.<span class="cm-property">place</span>);
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-variable-2">route</span> <span class="cm-operator">=</span> <span class="cm-variable">findRoute</span>(<span class="cm-variable">roadGraph</span>, <span class="cm-variable-2">place</span>, <span class="cm-variable-2">parcel</span>.<span class="cm-property">address</span>);
+    }
+  }
+  <span class="cm-keyword">return</span> {<span class="cm-property">direction</span>: <span class="cm-variable-2">route</span>[<span class="cm-number">0</span>], <span class="cm-property">memory</span>: <span class="cm-variable-2">route</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>)};
+}</pre>
+
+<p><a class="p_ident" id="p_sH38lI2ayD" href="#p_sH38lI2ayD" tabindex="-1" role="presentation"></a>이 로봇은 경로 추적 로봇과 마찬가지로 메모리 값을 이동 방향 리스트로 사용합니다. 그 리스트가 비어 있을 때마다 다음에 무엇을 해야 하는지 알아내야 합니다. 세트에서 배달되지 않은 첫 번째 소포를 가져오고 해당 소포가 아직 픽업되지 않은 경우 해당 소포를 향한 경로를 플로팅합니다. 소포 를 픽업한 경우에도 여전히 배송해야 하므로 로봇은 대신 배송 주소로 경로를 생성합니다.</p>
+
+<p><a class="p_ident" id="p_AA5uJa4YUg" href="#p_AA5uJa4YUg" tabindex="-1" role="presentation"></a>행하는 방식을 살펴보기로 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_yYuNlgXLX9" href="#c_yYuNlgXLX9" tabindex="-1" role="presentation"></a><span class="cm-variable">runRobotAnimation</span>(<span class="cm-variable">VillageState</span>.<span class="cm-property">random</span>(),
+                  <span class="cm-variable">goalOrientedRobot</span>, []);</pre>
+
+<p><a class="p_ident" id="p_iSOwvxhYMe" href="#p_iSOwvxhYMe" tabindex="-1" role="presentation"></a>이 로봇은 일반적으로 약 16턴 동안 5개의 소포를 배달하는 작업을 완료합니다. 그것은 <code>routeRobot</code>보다 약간 낫지만 여전히 최적은 아닙니다.</p>
+
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="#h_TcUD2vzyMe" tabindex="-1" role="presentation"></a>연습 문제</h2>
+
+<h3><a class="i_ident" id="i_JrK0ADjuHH" href="#i_JrK0ADjuHH" tabindex="-1" role="presentation"></a>로봇 측정</h3>
+
+<p><a class="p_ident" id="p_3o3bz0G4V0" href="#p_3o3bz0G4V0" tabindex="-1" role="presentation"></a>몇 가지 시나리오를 풀게 하는 것만으로는 로봇을 객관적으로 비교하기 어렵습니다. 한 로봇은 우연히 더 쉬운 작업이나 자신이 잘하는 종류의 작업을 얻었지만 다른 로봇은 그렇지 않았을 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_n9CHE7/Lua" href="#p_n9CHE7/Lua" tabindex="-1" role="presentation"></a>두 개의 로봇(및 시작 메모리)을 사용하는 함수 <code>compareRobots</code>를 작성하십시오. 100개의 작업을 생성하고 각 로봇이 이러한 각 작업을 해결하도록 해야 합니다. 완료되면 각 로봇이 작업당 수행한 평균 단계 수를 출력해야 합니다.</p>
+
+<p><a class="p_ident" id="p_O3TPJDzE3I" href="#p_O3TPJDzE3I" tabindex="-1" role="presentation"></a>공정성을 위해 로봇마다 다른 작업을 생성하는 대신 두 로봇에 각 작업을 할당해야 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Pif/U+hwqO" href="#c_Pif/U+hwqO" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">compareRobots</span>(<span class="cm-def">robot1</span>, <span class="cm-def">memory1</span>, <span class="cm-def">robot2</span>, <span class="cm-def">memory2</span>) {
+  <span class="cm-comment">// 여기에 코드 작성</span>
+}
+
+<span class="cm-variable">compareRobots</span>(<span class="cm-variable">routeRobot</span>, [], <span class="cm-variable">goalOrientedRobot</span>, []);</pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_nI/WAc+Vc2" href="#p_nI/WAc+Vc2" tabindex="-1" role="presentation"></a>콘솔에 이벤트를 로깅하는 대신에 로봇이 작업 완료에 이르는 단계 수를 반환하는 <code>runRobot</code> 함수의 변형된 형태를 작성합니다.</p>
+
+<p><a class="p_ident" id="p_49cSkm+1VL" href="#p_49cSkm+1VL" tabindex="-1" role="presentation"></a>이때 루프에서 측정 함수는 새로운 상태를 생성하고 각 로봇이 취한 단계를 헤아립니다. 충분한 측정이 진행되면 각 로봇에 관한 평균을 출력하기 위해 <code>console.log</code>를 사용할 수 있습니다(측정 횟수로 나눈 전체 단계 수)</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_VbBsQJ1lp6" href="#i_VbBsQJ1lp6" tabindex="-1" role="presentation"></a>로봇 효율성</h3>
+
+<p><a class="p_ident" id="p_MjKPE+EDdI" href="#p_MjKPE+EDdI" tabindex="-1" role="presentation"></a>배달 작업을 <code>goalOrientedRobot</code>보다 더 빨리 완료하는 로봇을 작성할 수 있습니까? 로봇의 행동을 관찰했을 때 어리석은 일을 하는 것은 무엇입니까? 어떻게 개선할 수 있습니까?</p>
+
+<p><a class="p_ident" id="p_qgKBJqRg+r" href="#p_qgKBJqRg+r" tabindex="-1" role="presentation"></a><code>compareRobots</code> 함수를 사용하여 로봇을 개선했는지 확인할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_kgk5f055Ej" href="#c_kgk5f055Ej" tabindex="-1" role="presentation"></a><span class="cm-comment">// 여기에 코드 작성</span>
+
+<span class="cm-variable">runRobotAnimation</span>(<span class="cm-variable">VillageState</span>.<span class="cm-property">random</span>(), <span class="cm-variable">yourRobot</span>, <span class="cm-variable">memory</span>);</pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_2jYz1tpdHQ" href="#p_2jYz1tpdHQ" tabindex="-1" role="presentation"></a><code>goalOrientedRobot</code>의 주요 한계는 한번에 하나의 소포만을 고려한다는 것입니다. 그것은 보고 있는 소포가 지도의 반대편에 있기 때문에 자주 마을을 가로질러 앞뒤로 걸을 것입니다.</p>
+
+<p><a class="p_ident" id="p_+dCvWOpolq" href="#p_+dCvWOpolq" tabindex="-1" role="presentation"></a>한 가지 가능한 솔루션은 모든 패키지에 대한 경로를 계산한 다음 가장 짧은 경로를 사용하는 것입니다. 최단 경로가 여러 개인 경우 패키지를 배달하는 대신 패키지를 데리러 가는 경로를 선호하면 더 나은 결과를 얻을 수 있습니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_s+ntyh5xrm" href="#i_s+ntyh5xrm" tabindex="-1" role="presentation"></a>Persistent 그룹</h3>
+
+<p><a class="p_ident" id="p_2U3yafqdvH" href="#p_2U3yafqdvH" tabindex="-1" role="presentation"></a>표준 JavaScript 환경에서 제공되는 대부분의 데이터 구조는 영구 사용에 적합하지 않습니다. 배열에는 이전 배열을 손상시키지 않고 새 배열을 쉽게 만들 수 있는 <code>slice</code> 및 <code>concat</code> 메서드가 있습니다. 그러나 예를 들어 <code>Set</code>에는 항목이 추가되거나 제거된 새 세트를 만드는 방법이 없습니다.</p>
+
+<p><a class="p_ident" id="p_GJFOUv4fQp" href="#p_GJFOUv4fQp" tabindex="-1" role="presentation"></a>값 집합을 저장하는 <a href="06_object.html#groups">앞 장</a>의 <code>Group</code> 클래스와 유사한 새로운 클래스 <code>PGroup</code>을 작성할 수 있습니다. <code>Group</code>과 유사하게 <code>add</code>, <code>delete</code> 및 <code>has</code> 메서드를 갖습니다.</p>
+
+<p><a class="p_ident" id="p_CkpHJcowhH" href="#p_CkpHJcowhH" tabindex="-1" role="presentation"></a>그렇지만, 그것이 갖는 <code>add</code> 메서드는 지정된 추가 멤버를 갖는 새로운 <code>PGroup</code> 인스턴스를 반환하고 이전 인스턴스는 변경하지 않고 그대로 두어야 합니다. 유사하게 <code>delete</code>는 지정된 멤버가 없는 새로운 인스턴스를 생성합니다.</p>
+
+<p><a class="p_ident" id="p_BF2ns3kTIW" href="#p_BF2ns3kTIW" tabindex="-1" role="presentation"></a>클래스는 문자열뿐만 아니라 모든 유형의 값에 대해 작동해야 합니다. 많은 양의 값과 함께 사용할 때 효율적일 필요는 없습니다.</p>
+
+<p><a class="p_ident" id="p_WVaFt53GdV" href="#p_WVaFt53GdV" tabindex="-1" role="presentation"></a>생성자는 클래스 인터페이스의 일부가 아니어야 합니다(물론 내부적으로 사용하고 싶을 것입니다). 대신 시작 값으로 사용할 수 있는 빈 인스턴스 <code>PGroup.empty</code>가 있습니다.</p>
+
+<p><a class="p_ident" id="p_pV/91/QIt2" href="#p_pV/91/QIt2" tabindex="-1" role="presentation"></a>매번 비어 있는 새 맵을 생성하는 함수가 아닌 하나의 <code>PGroup.empty</code>값만 필요한 이유는 무엇입니까?</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_KN+ky/iMYB" href="#c_KN+ky/iMYB" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">PGroup</span> {
+  <span class="cm-comment">// 여기에 코드 작성</span>
+}
+
+<span class="cm-keyword">let</span> <span class="cm-def">a</span> <span class="cm-operator">=</span> <span class="cm-variable">PGroup</span>.<span class="cm-property">empty</span>.<span class="cm-property">add</span>(<span class="cm-string">&quot;a&quot;</span>);
+<span class="cm-keyword">let</span> <span class="cm-def">ab</span> <span class="cm-operator">=</span> <span class="cm-variable">a</span>.<span class="cm-property">add</span>(<span class="cm-string">&quot;b&quot;</span>);
+<span class="cm-keyword">let</span> <span class="cm-def">b</span> <span class="cm-operator">=</span> <span class="cm-variable">ab</span>.<span class="cm-property">delete</span>(<span class="cm-string">&quot;a&quot;</span>);
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">b</span>.<span class="cm-property">has</span>(<span class="cm-string">&quot;b&quot;</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">a</span>.<span class="cm-property">has</span>(<span class="cm-string">&quot;b&quot;</span>));
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">b</span>.<span class="cm-property">has</span>(<span class="cm-string">&quot;a&quot;</span>));
+<span class="cm-comment">// → false</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_wJCTKfvlWG" href="#p_wJCTKfvlWG" tabindex="-1" role="presentation"></a>배열을 복사하기 쉽기 때문에 구성원 값 집합을 나타내는 가장 편리한 방법은 여전히 배열로 사용하는 것입니다.</p>
+
+<p><a class="p_ident" id="p_q2TqU7jyKB" href="#p_q2TqU7jyKB" tabindex="-1" role="presentation"></a>값이 그룹에 추가되면 값이 추가된 원본 배열의 복사본으로 새 그룹을 만들 수 있습니다(예: <code>concat</code>를 사용). 값이 삭제되면 배열에서 필터링합니다.</p>
+
+<p><a class="p_ident" id="p_EbZVh5gTfE" href="#p_EbZVh5gTfE" tabindex="-1" role="presentation"></a>클래스의 생성자는 이러한 배열을 인수로 사용하여 인스턴스의 (유일한) 속성으로 저장할 수 있습니다. 이 배열은 업데이트되지 않습니다.</p>
+
+<p><a class="p_ident" id="p_oamLkQ+NjT" href="#p_oamLkQ+NjT" tabindex="-1" role="presentation"></a>메서드가 아닌 생성자에 속성(<code>empty</code>)을 추가하려면 클래스 정의 후 생성자에 일반 속성으로 추가해야 합니다.</p>
+
+<p><a class="p_ident" id="p_no2z35iuBs" href="#p_no2z35iuBs" tabindex="-1" role="presentation"></a>모든 빈 그룹이 동일하고 클래스의 인스턴스가 변경되지 않기 때문에 하나의 <code>empty</code> 인스턴스만 필요합니다. 하나의 빈 그룹에 영향을 주지 않고 여러 다른 그룹을 만들 수 있습니다.</p>
+
+</div></div><nav><a href="06_object.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="08_error.html" title="next chapter">▶</a></nav>
+</article>

@@ -1,0 +1,255 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>값, 타입 및 연산자</title>
+  <link rel=stylesheet href="js/node_modules/codemirror/lib/codemirror.css">
+  <script src="js/acorn_codemirror.js"></script>
+  <link rel=stylesheet href="css/ejs.css">
+  <script src="js/sandbox.js"></script>
+  <script src="js/ejs.js"></script><script>var chapNum = 1;</script></head>
+
+<article>
+<nav><a href="00_intro.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="02_program_structure.html" title="next chapter">▶</a></nav>
+
+<h1><span class=chap_num>1장</span>값, 타입 및 연산자</h1>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_93S4YBaGUf" href="#p_93S4YBaGUf" tabindex="-1" role="presentation"></a>기계 표면 아래에서 프로그램이 이동합니다. 노력하지 않으면 팽창하고 수축합니다. 아주 조화롭게 전자는 흩어지고 재편성됩니다. 모니터의 형태는 물 위의 잔물결일 뿐입니다. 본질은 보이지 않게 아래에 머문다.</p>
+
+<footer>Master Yuan-Ma, <cite>The Book of Programming</cite></footer>
+
+</blockquote><figure class="chapter framed"><img src="img/chapter_picture_1.jpg" alt="Picture of a sea of bits"></figure>
+
+<p><a class="p_ident" id="p_sgNSYKwqbo" href="#p_sgNSYKwqbo" tabindex="-1" role="presentation"></a>컴퓨터의 세계에는 데이터만 있습니다. 데이터를 읽고, 데이터를 수정하고, 새 데이터를 생성할 수 있지만 데이터가 아닌 것은 언급할 수 없습니다. 이 모든 데이터는 긴 비트열로 저장되므로 기본적으로 비슷합니다.</p>
+
+<p><a class="p_ident" id="p_W1gJpe5a7/" href="#p_W1gJpe5a7/" tabindex="-1" role="presentation"></a><em>Bits</em>는 일반적으로 0과 1로 설명되는 두 가지 값입니다. 컴퓨터 내부에서는 높거나 낮은 전하, 강하거나 약한 신호, CD 표면의 반짝이거나 둔한 점과 같은 형태를 취합니다. 이산 정보의 모든 조각은 0과 1의 수열로 축소되어 비트로 표시될 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_PDoqiRoGSa" href="#p_PDoqiRoGSa" tabindex="-1" role="presentation"></a>예를 들어 숫자 13을 비트로 표현할 수 있습니다. 십진수와 같은 방식으로 작동하지만 10가지 다른 자릿수 대신 두 가지만 있고 각 자릿수의 가중치는 오른쪽에서 왼쪽으로 2배 증가합니다. 다음은 숫자 13을 구성하는 비트이며 그 아래에 숫자의 가중치가 표시됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="null" ><a class="c_ident" id="c_+fMMNc3yUt" href="#c_+fMMNc3yUt" tabindex="-1" role="presentation"></a>   0   0   0   0   1   1   0   1
+ 128  64  32  16   8   4   2   1</pre>
+
+<p><a class="p_ident" id="p_0u8qQ2tfMI" href="#p_0u8qQ2tfMI" tabindex="-1" role="presentation"></a>이진수 00001101입니다. 0이 아닌 숫자는 8, 4, 1을 나타내며 더하면 13이 됩니다.</p>
+
+<h2><a class="h_ident" id="h_sVZPaxUSy/" href="#h_sVZPaxUSy/" tabindex="-1" role="presentation"></a>값(Values)</h2>
+
+<p><a class="p_ident" id="p_ySnc2wG5kf" href="#p_ySnc2wG5kf" tabindex="-1" role="presentation"></a>비트들의 바다를 상상해 보십시오. 일반적인 최신 컴퓨터의 휘발성 데이터 저장소(작업 메모리)에는 300억 비트 이상이 있습니다. 비휘발성 저장소(하드 디스크 또는 이와 동등한 것)는 몇 배나 더 많습니다.</p>
+
+<p><a class="p_ident" id="p_JRdY+sw4TV" href="#p_JRdY+sw4TV" tabindex="-1" role="presentation"></a>손실 없이 이러한 비트 값들로 작업하려면 정보 조각들을 나타내는 덩어리로 비트를 분리해야 합니다. JavaScript 환경에서는 이러한 덩어리들을 <em>values</em>라 합니다. 모든 값은 비트로 구성되지만 서로 다른 역할을 합니다. 모든 값에는 역할을 결정하는 타입이 있습니다. 일부 값은 숫자, 일부 값은 텍스트, 일부 값은 함수 등입니다.</p>
+
+<p><a class="p_ident" id="p_+ayfFmFdze" href="#p_+ayfFmFdze" tabindex="-1" role="presentation"></a>값을 생성하려면 단지 해당 이름을 호출하기만 하면 됩니다. 값에 관한 재료를 수집하거나 비용을 지불할 필요가 없습니다. 물론 모든 값은 어딘가에 저장되어 있고, 동시에 엄청난 양을 사용하려면 메모리가 부족할 수 있습니다. 더 이상 사용되지 않는 값들은 즉시 소멸되어 다음 값들을 위한 자재로 재활용될 비트로 남습니다.</p>
+
+<p><a class="p_ident" id="p_lWUuVOz1Pd" href="#p_lWUuVOz1Pd" tabindex="-1" role="presentation"></a>이 페이지에서는 JavaScript 프로그램의 원자적 요소, 즉 단순 값 타입과 이러한 값에 대해 작동할 수 있는 연산자를 소개합니다.</p>
+
+<h2><a class="h_ident" id="h_flOCH3CuFg" href="#h_flOCH3CuFg" tabindex="-1" role="presentation"></a>Numbers</h2>
+
+<p><a class="p_ident" id="p_lB/BspzEbz" href="#p_lB/BspzEbz" tabindex="-1" role="presentation"></a><em>number</em> 타입의 값은 수치 값입니다. JavaScript 프로그램에서는 다음과 같이 작성됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_/u5ErTZbax" href="#c_/u5ErTZbax" tabindex="-1" role="presentation"></a><span class="cm-number">13</span></pre>
+
+<p><a class="p_ident" id="p_nFVjE3kHJh" href="#p_nFVjE3kHJh" tabindex="-1" role="presentation"></a>이것을 프로그램에서 사용하면 숫자 13에 대한 비트 패턴이 컴퓨터 메모리 내부에 존재하게 됩니다.</p>
+
+<p><a class="p_ident" id="p_TBpgYLjzVr" href="#p_TBpgYLjzVr" tabindex="-1" role="presentation"></a>JavaScript는 고정된 수의 비트(그 중 64개)를 사용하여 단일 숫자 값을 저장합니다. 64비트로 만들 수 있는 패턴이 너무 많기 때문에 표현할 수 있는 다른 숫자의 수가 제한됩니다. <em>N</em> 진수의 경우에 10<sup>N</sup>개 수들을 나타낼 수 있습니다. 유사하게 64개 바이너리 디지트는 2<sup>64</sup>개의 상이한 수들을 나타내며 이것은 대략 18 quintillion을 (18 다음에 18개의 열들이 있음) 나타냅니다.</p>
+
+<p><a class="p_ident" id="p_WcfWpTcQB6" href="#p_WcfWpTcQB6" tabindex="-1" role="presentation"></a>오늘날에는 주머니에 쏙 들어가는 컴퓨터라도 메모리가 충분하므로 64비트 덩어리를 자유롭게 사용할 수 있으며 진정한 천문학적 숫자를 다룰 때만 <em>overflow</em>에 대해 걱정하면 됩니다.</p>
+
+<p><a class="p_ident" id="p_qgS+bpqvEk" href="#p_qgS+bpqvEk" tabindex="-1" role="presentation"></a>18 퀸틸리언 미만의 모든 정수가 JavaScript 숫자에 맞는 것은 아닙니다. 음수도 저장하므로 하나의 비트는 숫자의 부호를 나타냅니다. 더 큰 문제는 정수가 아닌 숫자도 표시해야 한다는 것입니다. 이를 위해 일부 비트는 소수점 위치를 저장하는 데 사용됩니다. 저장할 수 있는 실제 최대 정수는 9천조(15개의 0) 범위에 더 가깝습니다.</p>
+
+<p><a class="p_ident" id="p_+wzyK91zcb" href="#p_+wzyK91zcb" tabindex="-1" role="presentation"></a>소수들은 점을 사용하여 작성됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_tM8nqv41Gp" href="#c_tM8nqv41Gp" tabindex="-1" role="presentation"></a><span class="cm-number">9.81</span></pre>
+
+<p><a class="p_ident" id="p_oofHxZNW9M" href="#p_oofHxZNW9M" tabindex="-1" role="presentation"></a>아주 크거나 아주 작은 숫자를 위해 과학적 표기법을 사용할 수 있습니다(지수 부분 <em>e</em> (<em>exponent</em>)를 추가하는 방식으로).</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_6ew5w+VhSM" href="#c_6ew5w+VhSM" tabindex="-1" role="presentation"></a><span class="cm-number">2.998e8</span></pre>
+
+<p><a class="p_ident" id="p_YbACmHw8Kd" href="#p_YbACmHw8Kd" tabindex="-1" role="presentation"></a>즉 2.998 × 10<sup>8</sup> = 299,800,000</p>
+
+<p><a class="p_ident" id="p_8KgYC0F1fX" href="#p_8KgYC0F1fX" tabindex="-1" role="presentation"></a>앞서 언급한 9 quadrillion보다 작은 정수로 (<em>integers</em>로 불리는) 계산하면 항상 정확합니다. 불행히도 소수 자리 계산은 일반적으로 그렇지 않습니다. π (pi)가 유한한 소수 자릿수로 정확하게 표현될 수 없는 것처럼 많은 숫자는 64비트만 저장할 수 있는 경우 어느 정도 정밀도를 잃습니다. 특정 상황에서는 실질적인 문제를 야기합니다. 중요한 것은 그것을 인식하고 소수 자리 디지털 숫자를 정확한 값이 아닌 근사치로 취급하는 것입니다.</p>
+
+<h3><a class="i_ident" id="i_RfBT3HMnYs" href="#i_RfBT3HMnYs" tabindex="-1" role="presentation"></a>산술</h3>
+
+<p><a class="p_ident" id="p_PO8MaZIpG1" href="#p_PO8MaZIpG1" tabindex="-1" role="presentation"></a>숫자와 관련하여 가장 중요한 것은 산술입니다. 더하기 또는 곱하기와 같은 산술 연산은 두 개의 숫자 값을 가져와서 새 숫자를 생성합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_bSU4Vtv/mt" href="#c_bSU4Vtv/mt" tabindex="-1" role="presentation"></a><span class="cm-number">100</span> <span class="cm-operator">+</span> <span class="cm-number">4</span> <span class="cm-operator">*</span> <span class="cm-number">11</span></pre>
+
+<p><a class="p_ident" id="p_Gbkt+ofKYQ" href="#p_Gbkt+ofKYQ" tabindex="-1" role="presentation"></a><code>+</code>와 <code>*</code> 기호는 <em>연산자</em>로 불립니다. 두 값 사이에 연산자를 넣으면 해당 값에 연산자가 적용되고 새 값이 생성됩니다.</p>
+
+<p><a class="p_ident" id="p_UaADJxNSjA" href="#p_UaADJxNSjA" tabindex="-1" role="presentation"></a>다음과 같이 괄호를 사용하여 계산 순서를 변경할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_ij6V90ZZBQ" href="#c_ij6V90ZZBQ" tabindex="-1" role="presentation"></a>(<span class="cm-number">100</span> <span class="cm-operator">+</span> <span class="cm-number">4</span>) <span class="cm-operator">*</span> <span class="cm-number">11</span></pre>
+
+<p><a class="p_ident" id="p_OSF05nVTV6" href="#p_OSF05nVTV6" tabindex="-1" role="presentation"></a>뺄셈에는 <code>-</code> 연산자가 있고 나눗셈은 <code>/</code> 연산자로 할 수 있습니다</p>
+
+<p><a class="p_ident" id="p_3aZxtaabKD" href="#p_3aZxtaabKD" tabindex="-1" role="presentation"></a>또 다른 연산자로 <code>%</code> 기호는 <em>나머지</em> 연산에 사용됩니다. <code>X % Y</code>는 <code>X</code>를 <code>Y</code>로 나눈 나머지입니다. 예를 들어, <code>314 % 100</code>은 <code>14</code>이고, <code>144 % 12</code>는 <code>0</code>입니다.</p>
+
+<h3><a class="i_ident" id="i_R4eFf8w7Yz" href="#i_R4eFf8w7Yz" tabindex="-1" role="presentation"></a>특수 넘버</h3>
+
+<p><a class="p_ident" id="p_JBBwZano0e" href="#p_JBBwZano0e" tabindex="-1" role="presentation"></a>JavaScript에는 숫자로 간주되지만 일반 숫자처럼 작동하지 않는 세 가지 특수 값이 있습니다.</p>
+
+<p><a class="p_ident" id="p_Vk/nIi3mWM" href="#p_Vk/nIi3mWM" tabindex="-1" role="presentation"></a>첫 두 개는 <code>Infinity</code>와 <code>-Infinity</code>로 각각 양과 음의 무한대를 나타냅니다. <code>Infinity - 1</code>는 <code>Infinity</code>입니다. 다음 특수한 넘버는 <code>NaN</code>입니다.</p>
+
+<p><a class="p_ident" id="p_kS+V22+tDp" href="#p_kS+V22+tDp" tabindex="-1" role="presentation"></a><code>NaN</code>은 "not a number"를 나타내며, 예를 들어, <code>0 / 0</code>, <code>Infinity - Infinity</code> 또는 의미가 있는 결과를 나타내지 못하는 기타 수치 연산에 등장합니다.</p>
+
+<h2><a class="h_ident" id="h_OBbEvqxHHH" href="#h_OBbEvqxHHH" tabindex="-1" role="presentation"></a>Strings</h2>
+
+<p><a class="p_ident" id="p_JUYnmsnZEA" href="#p_JUYnmsnZEA" tabindex="-1" role="presentation"></a>다음 기본 데이터 타입으로 <em>string</em>을 들 수 있습니다. 문자열은 텍스트를 나타내는데 사용됩니다. 내용을 따옴표로 묶어서 작성합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_JcfC82q1V/" href="#c_JcfC82q1V/" tabindex="-1" role="presentation"></a><span class="cm-string-2">`Down on the sea`</span>
+<span class="cm-string">&quot;Lie on the ocean&quot;</span>
+<span class="cm-string">'Float on the ocean'</span></pre>
+
+<p><a class="p_ident" id="p_J5Re/uQFh3" href="#p_J5Re/uQFh3" tabindex="-1" role="presentation"></a>문자열의 시작과 끝에 있는 따옴표가 일치하는 한 작은따옴표, 큰따옴표 또는 역따옴표를 사용하여 문자열을 표시할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_zqSxAQbLww" href="#p_zqSxAQbLww" tabindex="-1" role="presentation"></a>거의 모든 것이 따옴표 사이에 들어갈 수 있으며 JavaScript는 문자열 값을 만듭니다. 하지만 몇몇 캐릭터는 더 어렵습니다. 따옴표 사이에 따옴표를 넣는 것이 얼마나 어려운지 상상할 수 있습니다. <em>Newlines</em>는 (<span class="keyname">enter</span>를 누르는 것에 해당하는 문자) 문자열이 역 따옴표(<code>`</code>)로 인용된 경우에만 탈출없이 포함할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_Fhyuks46v3" href="#p_Fhyuks46v3" tabindex="-1" role="presentation"></a>문자열에 이러한 문자를 포함할 수 있도록 하기 위해 다음 표기법이 사용됩니다. 인용된 텍스트 내에서 백슬래시(<code>\</code>)가 발견될 때마다 이는 뒤에 오는 문자가 특별한 의미를 갖는다는 것을 나타냅니다. 이것을 캐릭터 탈출이라고 합니다. 백슬래시가 앞에 오는 따옴표는 문자열을 끝내지 않고 문자열의 일부입니다. <code>n</code> 문자가 백 슬래시 이후에 발생할 때 그것은 개행 문자로 해석됩니다. 마찬가지로 백슬래시 뒤의 <code>t</code>는 탭 문자를 의미합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_L1XyfWLjvh" href="#c_L1XyfWLjvh" tabindex="-1" role="presentation"></a><span class="cm-string">&quot;This is the first line\nAnd this is the second&quot;</span></pre>
+
+<p><a class="p_ident" id="p_rtFNX67M4o" href="#p_rtFNX67M4o" tabindex="-1" role="presentation"></a>포함된 실제 텍스트는 다음과 같습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="null" ><a class="c_ident" id="c_dbS7S3Fqly" href="#c_dbS7S3Fqly" tabindex="-1" role="presentation"></a>This is the first line
+And this is the second</pre>
+
+<p><a class="p_ident" id="p_RcQxEVsohZ" href="#p_RcQxEVsohZ" tabindex="-1" role="presentation"></a>물론 문자열의 백슬래시가 특수 코드가 아닌 백슬래시가 되기를 원하는 상황이 있습니다. 두 개의 백슬래시가 서로 뒤따르면 함께 축소되고 결과 문자열 값에는 하나만 남습니다. 예를 들어, "<em>A newline character is written like <code>&quot;</code>\n<code>&quot;</code>.</em>"는 다음과 같이 표현할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_AuMrnbfo/X" href="#c_AuMrnbfo/X" tabindex="-1" role="presentation"></a><span class="cm-string">&quot;A newline character is written like \&quot;\\n\&quot;.&quot;</span></pre>
+
+<p id="unicode"><a class="p_ident" id="p_FkxXOQHt6a" href="#p_FkxXOQHt6a" tabindex="-1" role="presentation"></a>문자열도 컴퓨터 내부에 존재할 수 있도록 일련의 비트로 모델링되어야 합니다. JavaScript가 이를 수행하는 방식은 <em>Unicode</em> 표준을 기반으로 합니다. 이 표준은 그리스어, 아랍어, 일본어, 아르메니아어 등의 문자를 포함하여 필요한 거의 모든 문자에 숫자를 할당합니다. 모든 문자에 대한 숫자가 있는 경우 문자열은 일련의 숫자로 설명될 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_FZTkxxFJHy" href="#p_FZTkxxFJHy" tabindex="-1" role="presentation"></a>하지만 문제가 있습니다. JavaScript 표현은 문자열 요소당 16 비트를 사용하기 때문에 2<sup>16</sup>개의 상이한 문자들만 상술할 수 있습니다. 그러나 유니코드는 그보다 더 많은 문자를 정의합니다. 대략 두 배입니다. 따라서 많은 이모티콘과 같은 일부 문자는 JavaScript 문자열에서 두 개의 "문자 위치"를 차지합니다. 이에 대해서는 5장에서 다시 다루겠습니다.</p>
+
+<p><a class="p_ident" id="p_+y5+JTiKgR" href="#p_+y5+JTiKgR" tabindex="-1" role="presentation"></a>문자열은 <code>+</code> 연산자를 사용하여 연결할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_eCO7oekmP9" href="#c_eCO7oekmP9" tabindex="-1" role="presentation"></a><span class="cm-string">&quot;con&quot;</span> <span class="cm-operator">+</span> <span class="cm-string">&quot;cat&quot;</span> <span class="cm-operator">+</span> <span class="cm-string">&quot;e&quot;</span> <span class="cm-operator">+</span> <span class="cm-string">&quot;nate&quot;</span></pre>
+
+<p><a class="p_ident" id="p_f802i8aCZi" href="#p_f802i8aCZi" tabindex="-1" role="presentation"></a>문자열 값에는 다른 작업을 수행하는데 사용할 수 있는 여러 관련 함수(메서드)가 있습니다. 이에 대해서는 4장에서 자세히 설명하겠습니다.</p>
+
+<p><a class="p_ident" id="p_3NJXrCLWRR" href="#p_3NJXrCLWRR" tabindex="-1" role="presentation"></a>작은따옴표나 큰따옴표로 작성된 문자열은 거의 동일하게 작동합니다. 유일한 차이점은 내부에서 이스케이프해야 하는 따옴표 유형입니다. 일반적으로 템플릿 리터럴 이라고 하는 역따옴표로 묶인 문자열은 몇 가지 트릭을 더 수행할 수 있습니다. 여러 줄에 걸쳐 있는 것 외에도 다른 값을 포함할 수도 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_1ObyeNEDOw" href="#c_1ObyeNEDOw" tabindex="-1" role="presentation"></a><span class="cm-string-2">`half of 100 is ${</span><span class="cm-number">100</span> <span class="cm-operator">/</span> <span class="cm-number">2</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span></pre>
+
+<p><a class="p_ident" id="p_ogkFBzzZhi" href="#p_ogkFBzzZhi" tabindex="-1" role="presentation"></a>템플릿 리터럴에서 <code>${}</code> 내부에 무언가를 작성하면 결과가 계산되고 문자열로 변환되어 해당 위치에 포함됩니다. 예는 "<em>half of 100 is 50</em>"을 생성합니다.</p>
+
+<h2><a class="h_ident" id="h_ygn12/ieo+" href="#h_ygn12/ieo+" tabindex="-1" role="presentation"></a>단항 연산자</h2>
+
+<p><a class="p_ident" id="p_GyQlmgK5IK" href="#p_GyQlmgK5IK" tabindex="-1" role="presentation"></a>모든 연산자가 기호는 아닙니다. 일부는 단어로 기록됩니다. 한 가지 예는 제공한 값의 타입을 명명하는 문자열 값을 생성하는 <code>typeof</code> 연산자입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_iWT//VyY7j" href="#c_iWT//VyY7j" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">typeof</span> <span class="cm-number">4.5</span>)
+<span class="cm-comment">// → number</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">typeof</span> <span class="cm-string">&quot;x&quot;</span>)
+<span class="cm-comment">// → string</span></pre>
+
+<p id="console.log"><a class="p_ident" id="p_edv0ySDJvj" href="#p_edv0ySDJvj" tabindex="-1" role="presentation"></a>예 코드에서 <code>console.log</code>를 사용하여 전개된 무엇인가를 나타낼 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_fvxC7oK7dT" href="#p_fvxC7oK7dT" tabindex="-1" role="presentation"></a>두 개의 값을 사용하는 연산자를 <em>binary</em> 연산자라 하고 하나를 사용하는 연산자를 단항 연산자라 합니다. 빼기 연산자는 이항 연산자와 단항 연산자로 모두 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_VpL89RFAPj" href="#c_VpL89RFAPj" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-operator">-</span> (<span class="cm-number">10</span> <span class="cm-operator">-</span> <span class="cm-number">2</span>))
+<span class="cm-comment">// → -8</span></pre>
+
+<h2><a class="h_ident" id="h_cTPxJxlmFR" href="#h_cTPxJxlmFR" tabindex="-1" role="presentation"></a>Boolean 값</h2>
+
+<p><a class="p_ident" id="p_OL3ZufvGRE" href="#p_OL3ZufvGRE" tabindex="-1" role="presentation"></a>"예"와 "아니요" 또는 "켜기"와 "끄기"와 같이 두 가지 가능성만 구별하는 값을 갖는 것이 종종 유용합니다. 이를 위해 JavaScript에는 true와 false의 두 가지 값만 있는 <em>Boolean</em> 타입이 있으며, 이 값은 해당 단어로 작성됩니다.</p>
+
+<h3><a class="i_ident" id="i_Lfz4mKO9Tg" href="#i_Lfz4mKO9Tg" tabindex="-1" role="presentation"></a>비교</h3>
+
+<p><a class="p_ident" id="p_T4yLn4fXDH" href="#p_T4yLn4fXDH" tabindex="-1" role="presentation"></a>다음은 부울 값을 생성하는 한 가지 방식입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_GaxnXrIPwC" href="#c_GaxnXrIPwC" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-number">3</span> <span class="cm-operator">&gt;</span> <span class="cm-number">2</span>)
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-number">3</span> <span class="cm-operator">&lt;</span> <span class="cm-number">2</span>)
+<span class="cm-comment">// → false</span></pre>
+
+<p><a class="p_ident" id="p_j0tOwzfb6M" href="#p_j0tOwzfb6M" tabindex="-1" role="presentation"></a><code>&gt;</code>와 <code>&lt;</code> 부호는 각각 "보다 적은" "보다 크다"에 대한 전통적인 기호입니다. 그들은 이항 연산자입니다. 이를 적용하면 이 경우에 해당하는지 여부를 나타내는 부울 값이 생성됩니다.</p>
+
+<p><a class="p_ident" id="p_NxTGvCsM4s" href="#p_NxTGvCsM4s" tabindex="-1" role="presentation"></a>문자열도 같은 방식으로 비교할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Qud5plnVuV" href="#c_Qud5plnVuV" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Aardvark&quot;</span> <span class="cm-operator">&lt;</span> <span class="cm-string">&quot;Zoroaster&quot;</span>)
+<span class="cm-comment">// → true</span></pre>
+
+<p><a class="p_ident" id="p_No3uOP/bY2" href="#p_No3uOP/bY2" tabindex="-1" role="presentation"></a>문자열이 정렬되는 방식은 대략 알파벳 순이지만 사전에서 볼 것으로 예상되는 것과는 다릅니다. 대문자는 항상 소문자보다 작습니다. 따라서 <code>&quot;Z&quot; &lt; &quot;a&quot;</code>이고 알파벳이 아닌 문자(!, - 등)도 포함됩니다.</p>
+
+<p><a class="p_ident" id="p_fGKTuK5BBc" href="#p_fGKTuK5BBc" tabindex="-1" role="presentation"></a>기타 연산로 <code>&gt;=</code> (greater than or equal to), <code>&lt;=</code> (less than or equal to), <code>==</code> (equal to) 및 <code>!=</code> (not equal to)가 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_9h4L8Mnvdg" href="#c_9h4L8Mnvdg" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Itchy&quot;</span> <span class="cm-operator">!=</span> <span class="cm-string">&quot;Scratchy&quot;</span>)
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Apple&quot;</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;Orange&quot;</span>)
+<span class="cm-comment">// → false</span></pre>
+
+<h3><a class="i_ident" id="i_pdqDW7Pebo" href="#i_pdqDW7Pebo" tabindex="-1" role="presentation"></a>논리 연산자</h3>
+
+<p><a class="p_ident" id="p_nRCLrGwcCn" href="#p_nRCLrGwcCn" tabindex="-1" role="presentation"></a>JavaScript는 <em>and</em>, <em>or</em> 및 <em>not</em>의 세 가지 논리 연산자를 지원합니다. 이들은 부울에 대해 추론하는 데 사용할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_h6pEyNS4IJ" href="#p_h6pEyNS4IJ" tabindex="-1" role="presentation"></a><code>&amp;&amp;</code> 연산자는 논리적 <em>and</em>를 나타냅니다. 이항 연산자로 그것의 결과는 주어진 값이 모두 true인 경우에만 결과가 true입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_SHi38sNkwM" href="#c_SHi38sNkwM" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">true</span> <span class="cm-operator">&amp;</span><span class="cm-operator">&amp;</span> <span class="cm-atom">false</span>)
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">true</span> <span class="cm-operator">&amp;</span><span class="cm-operator">&amp;</span> <span class="cm-atom">true</span>)
+<span class="cm-comment">// → true</span></pre>
+
+<p><a class="p_ident" id="p_T/V30CHY82" href="#p_T/V30CHY82" tabindex="-1" role="presentation"></a><code>||</code> 연산자는 논리적 <em>or</em>로 주어진 값 중 하나가 true이면 true를 생성합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_diXyv7iPd1" href="#c_diXyv7iPd1" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">false</span> <span class="cm-operator">|</span><span class="cm-operator">|</span> <span class="cm-atom">true</span>)
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">false</span> <span class="cm-operator">|</span><span class="cm-operator">|</span> <span class="cm-atom">false</span>)
+<span class="cm-comment">// → false</span></pre>
+
+<p><a class="p_ident" id="p_OxH3G7iBRz" href="#p_OxH3G7iBRz" tabindex="-1" role="presentation"></a><em>Not</em>은 느낌표( !)로 표시됩니다.</p>
+
+<p><a class="p_ident" id="p_qSXjNNI5/y" href="#p_qSXjNNI5/y" tabindex="-1" role="presentation"></a>이러한 부울 연산자를 산술 및 기타 연산자와 혼합할 때 괄호가 필요한 시점이 항상 명확한 것은 아닙니다. 일반적으로 지금까지 본 연산자 중에 <code>||</code>이 가장 낮은 우선 순위를 가지고 있고, 그 다음이 <code>&amp;&amp;</code>, 그 다음이 비교 연산자(<code>&gt;</code>, <code>==</code> 등), 그 다음이 나머지라는 것을 알면 해결할 수 있습니다. 이 순서는 다음과 같은 일반적인 표현에서 가능한 한 적은 수의 괄호가 필요하도록 선택되었습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_6eZ07bDo11" href="#c_6eZ07bDo11" tabindex="-1" role="presentation"></a><span class="cm-number">1</span> <span class="cm-operator">+</span> <span class="cm-number">1</span> <span class="cm-operator">==</span> <span class="cm-number">2</span> <span class="cm-operator">&amp;</span><span class="cm-operator">&amp;</span> <span class="cm-number">10</span> <span class="cm-operator">*</span> <span class="cm-number">10</span> <span class="cm-operator">&gt;</span> <span class="cm-number">50</span></pre>
+
+<p><a class="p_ident" id="p_EWJu4coIAh" href="#p_EWJu4coIAh" tabindex="-1" role="presentation"></a>마지막 논리 연산자는 이항이 아니라 세 값에 대해 작동하는 삼항 연산자입니다. 다음과 같이 물음표와 콜론으로 작성됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_G7eVm8ilWm" href="#c_G7eVm8ilWm" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">true</span> <span class="cm-operator">?</span> <span class="cm-number">1</span> : <span class="cm-number">2</span>);
+<span class="cm-comment">// → 1</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">false</span> <span class="cm-operator">?</span> <span class="cm-number">1</span> : <span class="cm-number">2</span>);
+<span class="cm-comment">// → 2</span></pre>
+
+<h2><a class="h_ident" id="h_FewqJ8K2E+" href="#h_FewqJ8K2E+" tabindex="-1" role="presentation"></a>Empty 값</h2>
+
+<p><a class="p_ident" id="p_Q/OIPtr8xY" href="#p_Q/OIPtr8xY" tabindex="-1" role="presentation"></a><code>null</code>과 <code>undefined</code>로 작성되는 두 가지 특수한 값이 있습니다. 그것들은 그 자체로 가치가 있지만 정보를 가지고 있지 않습니다.</p>
+
+<h2><a class="h_ident" id="h_AY+YGu6qyM" href="#h_AY+YGu6qyM" tabindex="-1" role="presentation"></a>자동 타입 변환</h2>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_QqYG9KqZ2/" href="#c_QqYG9KqZ2/" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-number">8</span> <span class="cm-operator">*</span> <span class="cm-atom">null</span>)
+<span class="cm-comment">// → 0</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;5&quot;</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>)
+<span class="cm-comment">// → 4</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;5&quot;</span> <span class="cm-operator">+</span> <span class="cm-number">1</span>)
+<span class="cm-comment">// → 51</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;five&quot;</span> <span class="cm-operator">*</span> <span class="cm-number">2</span>)
+<span class="cm-comment">// → NaN</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">false</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>)
+<span class="cm-comment">// → true</span></pre>
+
+<p><a class="p_ident" id="p_3GSZqcE16B" href="#p_3GSZqcE16B" tabindex="-1" role="presentation"></a>연산자가 잘못된 타입의 값에 적용되면 JavaScript는 사용자가 원하거나 기대하지 않는 규칙 집합을 사용하여 해당 값을 필요한 타입으로 조용히 변환합니다. 이것을 타입 강제라 합니다.</p>
+
+<p><a class="p_ident" id="p_XbK88HE+DJ" href="#p_XbK88HE+DJ" tabindex="-1" role="presentation"></a><code>==</code>를 사용하여 같은 타입의 값을 비교할 때 결과를 쉽게 예측할 수 있습니다. <code>NaN</code>의 경우를 제외하고 두 값이 같을 때 참이어야 합니다. 그러나 타입이 다른 경우 JavaScript는 복잡하고 혼란스러운 규칙 집합을 사용하여 수행할 작업을 결정합니다. 대부분의 경우 값 중 하나를 다른 값의 유형으로 변환하려고 합니다. 그러나 연산자의 양쪽에 <code>null</code> 또는 <code>undefined</code>가 발생하면 양쪽이 <code>null</code> 또는 <code>undefined</code>중 하나인 경우에만 true를 생성합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_qmGDPdETlf" href="#c_qmGDPdETlf" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">null</span> <span class="cm-operator">==</span> <span class="cm-atom">undefined</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">null</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>);
+<span class="cm-comment">// → false</span></pre>
+
+<p><a class="p_ident" id="p_hu+ZqjMro3" href="#p_hu+ZqjMro3" tabindex="-1" role="presentation"></a>그러한 행위는 종종 유용합니다. <code>null</code> 또는 <code>undefined</code> 대신에 실제 값이 있는지 테스트하려는 경우 <code>==</code> (또는 <code>!=</code>) 연산자를 갖는 <code>null</code>과 그것을 비교할 수 있습니다.</p>
+
+<h3><a class="i_ident" id="i_3jN0iK4yKW" href="#i_3jN0iK4yKW" tabindex="-1" role="presentation"></a>논리 연산자들의 Short-circuiting</h3>
+
+<p><a class="p_ident" id="p_CFbagJsQYK" href="#p_CFbagJsQYK" tabindex="-1" role="presentation"></a>논리 연산자 <code>&amp;&amp;</code>와 <code>||</code>는 독특한 방식으로 상이한 타입의 값을 처리합니다. 그들은 무엇을 할지 결정하기 위해 왼쪽 값을 부울 타입으로 변환하지만 연산자와 해당 변환 결과에 따라 원래 왼쪽 값이나 오른쪽 값을 반환합니다.</p>
+
+<p><a class="p_ident" id="p_BFq+/JeBH9" href="#p_BFq+/JeBH9" tabindex="-1" role="presentation"></a>예를 들어, <code>||</code> 연산자는 true로 변환될 수 있을 때 그것의 좌측에 값을 반환하고 그렇지 않은 경우에는 우측에 값을 반환합니다. 이는 값이 부울일 때 예상되는 효과를 가지며 다른 타입의 값과 유사한 작업을 수행합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_ENjxHGMklb" href="#c_ENjxHGMklb" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-atom">null</span> <span class="cm-operator">|</span><span class="cm-operator">|</span> <span class="cm-string">&quot;user&quot;</span>)
+<span class="cm-comment">// → user</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Agnes&quot;</span> <span class="cm-operator">|</span><span class="cm-operator">|</span> <span class="cm-string">&quot;user&quot;</span>)
+<span class="cm-comment">// → Agnes</span></pre>
+
+<p><a class="p_ident" id="p_+E3wg/b+ti" href="#p_+E3wg/b+ti" tabindex="-1" role="presentation"></a>이러한 기능을 기본값으로 대체하는 방법으로 사용할 수 있습니다. 비어 있을 수 있는 값이 있으면 대체 값을 사용하여 그것 다음에 <code>||</code>를 넣을 수 있습니다. 초기 값을 false로 변환할 수 있는 경우 대신 대체 값을 얻습니다. 문자열과 숫자를 부울 값으로 변환하는 규칙에 따르면 <code>0</code>, <code>NaN</code> 및 빈 문자열(<code>&quot;&quot;</code>)은 <code>false</code>로 계산되고, 다른 모든 값은 <code>true</code>로 계산됩니다. 그래서 <code>0 || -1</code>은 <code>-1</code>을 산출하고, <code>&quot;&quot; || &quot;!?&quot;</code>은 <code>&quot;!?&quot;</code>을 산출합니다.</p>
+
+<nav><a href="00_intro.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="02_program_structure.html" title="next chapter">▶</a></nav>
+</article>

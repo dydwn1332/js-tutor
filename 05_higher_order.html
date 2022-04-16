@@ -1,0 +1,500 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>고수준 함수</title>
+  <link rel=stylesheet href="js/node_modules/codemirror/lib/codemirror.css">
+  <script src="js/acorn_codemirror.js"></script>
+  <link rel=stylesheet href="css/ejs.css">
+  <script src="js/sandbox.js"></script>
+  <script src="js/ejs.js"></script><script>var chapNum = 5;var sandboxLoadFiles = ["code/scripts.js","code/chapter/05_higher_order.js","code/intro.js"];</script></head>
+
+<article>
+<nav><a href="04_data.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="06_object.html" title="next chapter">▶</a></nav>
+
+<h1><span class=chap_num>5장</span>고수준 함수</h1>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_7EubtoOeCu" href="#p_7EubtoOeCu" tabindex="-1" role="presentation"></a>소프트웨어 설계를 구성하는 방법에는 두 가지가 있습니다. 한 가지 방법은 너무 단순하여 분명히 결함이 없도록 만드는 것이고 다른 방법은 너무 복잡하여 명백한 결함이 없도록 만드는 것입니다.</p>
+
+<footer>C.A.R. Hoare, <cite>1980 ACM Turing Award 강의</cite></footer>
+
+</blockquote><figure class="chapter true"><img src="img/chapter_picture_5.jpg" alt="Letters from different scripts"></figure>
+
+<p><a class="p_ident" id="p_rj9+mMLZbL" href="#p_rj9+mMLZbL" tabindex="-1" role="presentation"></a>대규모 프로그램은 비용이 많이 드는 프로그램이며 구축 시간 때문 만은 아닙니다. 크기는 거의 항상 복잡성을 수반하며 복잡성은 프로그래머를 혼란스럽게 합니다. 혼란스러운 프로그래머는 차례로 프로그램에 실수(<em>bugs</em>)를 도입합니다. 그런 다음 큰 프로그램은 이러한 버그를 숨길 수 있는 많은 공간을 제공하므로 찾기가 어렵습니다.</p>
+
+<p><a class="p_ident" id="p_nR+iebr1Ci" href="#p_nR+iebr1Ci" tabindex="-1" role="presentation"></a>아래 첫 번째는 독립형이며 길이가 6줄입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_uIkg9pj99q" href="#c_uIkg9pj99q" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">total</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>, <span class="cm-def">count</span> <span class="cm-operator">=</span> <span class="cm-number">1</span>;
+<span class="cm-keyword">while</span> (<span class="cm-variable">count</span> <span class="cm-operator">&lt;=</span> <span class="cm-number">10</span>) {
+  <span class="cm-variable">total</span> <span class="cm-operator">+=</span> <span class="cm-variable">count</span>;
+  <span class="cm-variable">count</span> <span class="cm-operator">+=</span> <span class="cm-number">1</span>;
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">total</span>);</pre>
+
+<p><a class="p_ident" id="p_Sy8N6Qcb09" href="#p_Sy8N6Qcb09" tabindex="-1" role="presentation"></a>두 번째는 두 개의 외부 함수에 의존하며 한 줄 길이입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_KTbQMmMCli" href="#c_KTbQMmMCli" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">sum</span>(<span class="cm-variable">range</span>(<span class="cm-number">1</span>, <span class="cm-number">10</span>)));</pre>
+
+<p><a class="p_ident" id="p_srOi7846QY" href="#p_srOi7846QY" tabindex="-1" role="presentation"></a>어느 것이 버그를 포함할 가능성이 더 높습니까?</p>
+
+<p><a class="p_ident" id="p_G+ApGqjOk4" href="#p_G+ApGqjOk4" tabindex="-1" role="presentation"></a><code>sum</code>과 <code>range</code>의 정의 크기를 계산하면 두 번째 프로그램도 첫 번째 프로그램보다 큽니다. 그러나 여전히 그것이 옳을 가능성이 더 높습니다.</p>
+
+<p><a class="p_ident" id="p_R0XQHDENqH" href="#p_R0XQHDENqH" tabindex="-1" role="presentation"></a>해가 풀고 있는 문제에 해당하는 어휘로 풀이를 표현하기 때문에 맞을 확률이 더 높습니다. 숫자 범위를 합산하는 것은 루프와 카운터에 관한 것이 아닙니다. 범위와 합계에 관한 것입니다.</p>
+
+<p><a class="p_ident" id="p_VwxmDNivhe" href="#p_VwxmDNivhe" tabindex="-1" role="presentation"></a>이러한 어휘 정의는 (함수 <code>sum</code>과 <code>range</code>) 여전히 루프, 카운터 및 기타 부수적인 세부 사항이 포함됩니다. 하지만 프로그램 전체보다 단순한 개념을 표현하고 있기 때문에 이해하기 쉽습니다.</p>
+
+<h2><a class="h_ident" id="h_j9ps8qrlyo" href="#h_j9ps8qrlyo" tabindex="-1" role="presentation"></a>추상</h2>
+
+<p><a class="p_ident" id="p_ZPK6t/LrMG" href="#p_ZPK6t/LrMG" tabindex="-1" role="presentation"></a>프로그래밍의 맥락에서 이러한 종류의 어휘는 일반적으로 <em>abstractions</em>라고 합니다. 추상화는 세부 사항을 숨기고 더 높은(또는 더 추상적인) 수준에서 문제에 대해 이야기할 수 있는 기능을 제공합니다.</p>
+
+<p><a class="p_ident" id="p_bTxJr46qvN" href="#p_bTxJr46qvN" tabindex="-1" role="presentation"></a>비유로 완두콩 수프에 대한이 두 가지 요리법을 들 수 있습니다. 첫 번째:</p>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_F+PunfZCXq" href="#p_F+PunfZCXq" tabindex="-1" role="presentation"></a>1인당 말린 완두콩 1컵을 용기에 담습니다. 완두콩이 잘 덮일 때까지 물을 추가합니다. 완두콩을 물에 적어도 12시간 동안 두십시오. 완두콩을 물에서 꺼내 냄비에 넣습니다. 1인당 4컵의 물을 추가합니다. 팬을 덮고 완두콩을 2시간 동안 끓인다. 1인당 양파 반개를 섭취하세요. 칼로 조각으로 자릅니다. 완두콩에 추가하십시오. 1인당 샐러리 줄기를 가져 가라. 칼로 조각으로 자릅니다. 완두콩에 추가하십시오. 당근은 1인당 섭취하세요. 조각으로 자르십시오. 칼로! 완두콩에 추가하십시오. 10분 더 끓입니다.</p>
+
+</blockquote>
+
+<p><a class="p_ident" id="p_K0c2hwcDfp" href="#p_K0c2hwcDfp" tabindex="-1" role="presentation"></a>두 번째:</p>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_iNBZReprTd" href="#p_iNBZReprTd" tabindex="-1" role="presentation"></a>1인당: 말린 완두콩 1컵, 다진 양파 반개, 셀러리 줄기, 당근</p>
+
+<p><a class="p_ident" id="p_k5rI5P5p5u" href="#p_k5rI5P5p5u" tabindex="-1" role="presentation"></a>완두콩을 12시간 동안 불립니다. 물 4컵(1인당)에 2시간 동안 끓입니다. 야채를 자르고 추가하십시오. 10분 더 끓입니다.</p>
+
+</blockquote>
+
+<p><a class="p_ident" id="p_cSeY164LbX" href="#p_cSeY164LbX" tabindex="-1" role="presentation"></a>두 번째는 더 짧고 해석하기 쉽습니다. 그러나 Soak, Boiler, chop, 야채와 같은 요리와 관련된 몇 가지 단어를 더 이해해야 합니다.</p>
+
+<p><a class="p_ident" id="p_g/g3l7uyEG" href="#p_g/g3l7uyEG" tabindex="-1" role="presentation"></a>프로그래밍할 때 사전에서 필요한 모든 단어에 의존할 수는 없습니다. 따라서 첫 번째 레시피의 패턴에 빠질 수 있습니다. 즉, 컴퓨터가 표현하는 더 높은 수준의 개념을 보지 않고 컴퓨터가 수행해야 하는 정확한 단계를 하나씩 수행하는 것입니다.</p>
+
+<p><a class="p_ident" id="p_Hp26gkGVxA" href="#p_Hp26gkGVxA" tabindex="-1" role="presentation"></a>너무 낮은 추상화 수준에서는 유용한 기술입니다.</p>
+
+<h2><a class="h_ident" id="h_8AV6kA9jcD" href="#h_8AV6kA9jcD" tabindex="-1" role="presentation"></a>반복적 추상화</h2>
+
+<p><a class="p_ident" id="p_kYV0l7wLUe" href="#p_kYV0l7wLUe" tabindex="-1" role="presentation"></a>지금까지 살펴본 일반 함수는 추상화를 구축하는 좋은 방법입니다. 그러나 때때로 그것들은 부족합니다.</p>
+
+<p><a class="p_ident" id="p_1v9Uha9PnV" href="#p_1v9Uha9PnV" tabindex="-1" role="presentation"></a>프로그램이 주어진 횟수만큼 작업을 수행하는 것은 일반적입니다. 다음과 같이 <code>for</code> 루프를 작성할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_5c+C2+9IG1" href="#c_5c+C2+9IG1" tabindex="-1" role="presentation"></a><span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable">i</span> <span class="cm-operator">&lt;</span> <span class="cm-number">10</span>; <span class="cm-variable">i</span><span class="cm-operator">++</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">i</span>);
+}</pre>
+
+<p><a class="p_ident" id="p_cNB+u+7TGa" href="#p_cNB+u+7TGa" tabindex="-1" role="presentation"></a>무엇인가를 <em>N</em>번 하기를 함수로 추상화할 수 있습니까? <code>console.log</code>를 <em>N</em>번 호출하는 함수를 작성하는 것은 쉽습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_/gKhlra9P+" href="#c_/gKhlra9P+" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">repeatLog</span>(<span class="cm-def">n</span>) {
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">n</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>) {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable-2">i</span>);
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_q8hNTrfIYb" href="#p_q8hNTrfIYb" tabindex="-1" role="presentation"></a>그러나 숫자를 기록하는 것 이외의 다른 작업을 수행하려면 어떻게 해야 합니까? "무언가를 하는 것"은 함수로 표현될 수 있고 함수는 값일 뿐이므로 액션을 함수 값으로 전달할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_p03rPqGmn9" href="#c_p03rPqGmn9" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">repeat</span>(<span class="cm-def">n</span>, <span class="cm-def">action</span>) {
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">n</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>) {
+    <span class="cm-variable-2">action</span>(<span class="cm-variable-2">i</span>);
+  }
+}
+
+<span class="cm-variable">repeat</span>(<span class="cm-number">3</span>, <span class="cm-variable">console</span>.<span class="cm-property">log</span>);
+<span class="cm-comment">// → 0</span>
+<span class="cm-comment">// → 1</span>
+<span class="cm-comment">// → 2</span></pre>
+
+<p><a class="p_ident" id="p_zYjmzihkkN" href="#p_zYjmzihkkN" tabindex="-1" role="presentation"></a>미리 정의된 함수를 <code>repeat</code>에 전달할 필요가 없습니다. 종종 그 자리에서 함수 값을 생성하는 것이 더 쉽습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_EiK2Y8M/Mh" href="#c_EiK2Y8M/Mh" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">labels</span> <span class="cm-operator">=</span> [];
+<span class="cm-variable">repeat</span>(<span class="cm-number">5</span>, <span class="cm-def">i</span> <span class="cm-operator">=&gt;</span> {
+  <span class="cm-variable">labels</span>.<span class="cm-property">push</span>(<span class="cm-string-2">`Unit ${</span><span class="cm-variable-2">i</span> <span class="cm-operator">+</span> <span class="cm-number">1</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+});
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">labels</span>);
+<span class="cm-comment">// → [&quot;Unit 1&quot;, &quot;Unit 2&quot;, &quot;Unit 3&quot;, &quot;Unit 4&quot;, &quot;Unit 5&quot;]</span></pre>
+
+<p><a class="p_ident" id="p_iuDYWrtCLy" href="#p_iuDYWrtCLy" tabindex="-1" role="presentation"></a>for 루프와 약간 유사한 구조로 되어 있습니다. 먼저 루프의 종류를 설명한 다음 본문을 제공합니다. 그러나 본문은 이제 <code>repeat</code>에 대한 호출의 괄호로 묶인 함수 값으로 작성됩니다. 이것이 닫는 중괄호와 닫는 괄호로 닫아야 하는 이유입니다. 본문이 하나의 작은 표현식인 이 예와 같은 경우 중괄호를 생략하고 한 줄에 루프를 작성할 수도 있습니다.</p>
+
+<h2><a class="h_ident" id="h_xxCc98lOBK" href="#h_xxCc98lOBK" tabindex="-1" role="presentation"></a>고수준 함수</h2>
+
+<p><a class="p_ident" id="p_cao2fH68Tj" href="#p_cao2fH68Tj" tabindex="-1" role="presentation"></a>다른 함수를 인수로 사용하거나 반환하여 다른 함수에서 작동하는 함수를 고수준 함수라 합니다. 이미 함수가 정규 값임을 보았기 때문에 그러한 함수가 존재한다는 사실에 대해 특별히 주목할 만한 것은 없습니다. 이 용어는 함수와 다른 값 사이의 구분이 더 심각하게 고려되는 수학에서 유래했습니다.</p>
+
+<p><a class="p_ident" id="p_+cgNTV2i2y" href="#p_+cgNTV2i2y" tabindex="-1" role="presentation"></a>고수준 함수를 사용하면 값뿐만 아니라 작업에 대해서도 추상화할 수 있습니다. 그것들은 여러 형태로 제공됩니다. 예를 들어, 새로운 함수를 생성하는 함수를 가질 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_kHXugeV8Vn" href="#c_kHXugeV8Vn" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">greaterThan</span>(<span class="cm-def">n</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-def">m</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">m</span> <span class="cm-operator">&gt;</span> <span class="cm-variable-2">n</span>;
+}
+<span class="cm-keyword">let</span> <span class="cm-def">greaterThan10</span> <span class="cm-operator">=</span> <span class="cm-variable">greaterThan</span>(<span class="cm-number">10</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">greaterThan10</span>(<span class="cm-number">11</span>));
+<span class="cm-comment">// → true</span></pre>
+
+<p><a class="p_ident" id="p_Py4BnhS60O" href="#p_Py4BnhS60O" tabindex="-1" role="presentation"></a>또한 다른 함수를 변경하는 함수를 가질 수도 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_17dfYaooPK" href="#c_17dfYaooPK" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">noisy</span>(<span class="cm-def">f</span>) {
+  <span class="cm-keyword">return</span> (<span class="cm-meta">...</span><span class="cm-def">args</span>) <span class="cm-operator">=&gt;</span> {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;calling with&quot;</span>, <span class="cm-variable-2">args</span>);
+    <span class="cm-keyword">let</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable-2">f</span>(<span class="cm-meta">...</span><span class="cm-variable-2">args</span>);
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;called with&quot;</span>, <span class="cm-variable-2">args</span>, <span class="cm-string">&quot;, returned&quot;</span>, <span class="cm-variable-2">result</span>);
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">result</span>;
+  };
+}
+<span class="cm-variable">noisy</span>(<span class="cm-variable">Math</span>.<span class="cm-property">min</span>)(<span class="cm-number">3</span>, <span class="cm-number">2</span>, <span class="cm-number">1</span>);
+<span class="cm-comment">// → calling with [3, 2, 1]</span>
+<span class="cm-comment">// → called with [3, 2, 1] , returned 1</span></pre>
+
+<p><a class="p_ident" id="p_lObEs7dS9+" href="#p_lObEs7dS9+" tabindex="-1" role="presentation"></a>새로운 타입의 제어 흐름을 제공하는 함수를 작성할 수도 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_of6iH06dyE" href="#c_of6iH06dyE" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">unless</span>(<span class="cm-def">test</span>, <span class="cm-def">then</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">test</span>) <span class="cm-variable-2">then</span>();
+}
+
+<span class="cm-variable">repeat</span>(<span class="cm-number">3</span>, <span class="cm-def">n</span> <span class="cm-operator">=&gt;</span> {
+  <span class="cm-variable">unless</span>(<span class="cm-variable-2">n</span> <span class="cm-operator">%</span> <span class="cm-number">2</span> <span class="cm-operator">==</span> <span class="cm-number">1</span>, () <span class="cm-operator">=&gt;</span> {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable-2">n</span>, <span class="cm-string">&quot;is even&quot;</span>);
+  });
+});
+<span class="cm-comment">// → 0 is even</span>
+<span class="cm-comment">// → 2 is even</span></pre>
+
+<p><a class="p_ident" id="p_/zKXdveDWD" href="#p_/zKXdveDWD" tabindex="-1" role="presentation"></a><code>for</code>/<code>of</code> 루프와 같은 것을 고소준 함수로 제공 하는 내장 배열 메서드인 <code>forEach</code>가 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_v9jL6NafRj" href="#c_v9jL6NafRj" tabindex="-1" role="presentation"></a>[<span class="cm-string">&quot;A&quot;</span>, <span class="cm-string">&quot;B&quot;</span>].<span class="cm-property">forEach</span>(<span class="cm-def">l</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable-2">l</span>));
+<span class="cm-comment">// → A</span>
+<span class="cm-comment">// → B</span></pre>
+
+<h2><a class="h_ident" id="h_/SVokn16u9" href="#h_/SVokn16u9" tabindex="-1" role="presentation"></a>스크립트 데이터 세트</h2>
+
+<p><a class="p_ident" id="p_t0gePcJ5To" href="#p_t0gePcJ5To" tabindex="-1" role="presentation"></a>고소준 함수가 빛나는 영역 중 하나는 데이터 처리입니다. 데이터를 처리하려면 실제 데이터가 필요합니다. 이 페이지에서는 라틴어, 키릴 자모 또는 아랍어와 같은 쓰기 시스템과 같은 스크립트에 대한 데이터 세트를 사용합니다.</p>
+
+<p><a class="p_ident" id="p_1SGsVGpO8P" href="#p_1SGsVGpO8P" tabindex="-1" role="presentation"></a>문자로 된 각 문자에 숫자를 할당하는 시스템인 유니코드가 있습니다. 이러한 문자의 대부분은 특정 스크립트와 연결되어 있습니다. 표준에는 140개의 서로 다른 스크립트가 포함되어 있습니다. 81개는 오늘날에도 여전히 사용 중이고 59개는 역사적입니다.</p>
+
+<p><a class="p_ident" id="p_0ebPJMgh6D" href="#p_0ebPJMgh6D" tabindex="-1" role="presentation"></a>예를 들어 다음은 타밀어 필기 샘플입니다.</p><figure><img src="img/tamil.png" alt="Tamil handwriting"></figure>
+
+<p><a class="p_ident" id="p_RWVZnsc/dS" href="#p_RWVZnsc/dS" tabindex="-1" role="presentation"></a>예제 데이터 세트에는 유니코드로 정의된 140개 스크립트에 대한 일부 정보가 포함되어 있습니다. 이 페이지 관련 <a href="https://eloquentjavascript.net/code#5">coding sandbox</a>에서 <code>SCRIPTS</code> 바인딩으로 사용할 수 있습니다. 바인딩에는 각각 스크립트를 설명하는 객체 배열이 포함되어 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="application/json" ><a class="c_ident" id="c_YkfuyBG2fl" href="#c_YkfuyBG2fl" tabindex="-1" role="presentation"></a>{
+  <span class="cm-property">name</span>: <span class="cm-string">&quot;Coptic&quot;</span>,
+  <span class="cm-property">ranges</span>: [[<span class="cm-number">994</span>, <span class="cm-number">1008</span>], [<span class="cm-number">11392</span>, <span class="cm-number">11508</span>], [<span class="cm-number">11513</span>, <span class="cm-number">11520</span>]],
+  <span class="cm-property">direction</span>: <span class="cm-string">&quot;ltr&quot;</span>,
+  <span class="cm-property">year</span>: <span class="cm-operator">-</span><span class="cm-number">200</span>,
+  <span class="cm-property">living</span>: <span class="cm-atom">false</span>,
+  <span class="cm-property">link</span>: <span class="cm-string">&quot;https://en.wikipedia.org/wiki/Coptic_alphabet&quot;</span>
+}</pre>
+
+<p><a class="p_ident" id="p_rrPU5ybF5Y" href="#p_rrPU5ybF5Y" tabindex="-1" role="presentation"></a>이러한 객체는 스크립트 이름, 할당된 유니코드 범위, 작성된 방향, (대략적인) 시작 시간, 아직 사용 중인지 여부 및 추가 정보에 대한 링크를 알려줍니다. 방향은 왼쪽에서 오른쪽으로는 <code>&quot;ltr&quot;</code>, 오른쪽에서 왼쪽은 <code>&quot;rtl&quot;</code>입니다(아랍어 및 히브리어 텍스트 작성 방식). 또는 위에서 아래와 관련해서는 <code>&quot;ttb&quot;</code>일 수 있습니다(몽골어 쓰기).</p>
+
+<p><a class="p_ident" id="p_AvCZCbMsgs" href="#p_AvCZCbMsgs" tabindex="-1" role="presentation"></a><code>ranges</code> 속성은 각각이 하한 및 상한을 포함하는 두 요소 배열인 유니 코드 문자 범위의 배열을 포함합니다. 이 범위 내의 모든 문자 코드는 스크립트에 할당됩니다. 하한은 포괄적이고(코드 994는 콥트어 문자임) 상한은 비포함입니다(코드 1008은 아님).</p>
+
+<h2><a class="h_ident" id="h_MM7RF32uzF" href="#h_MM7RF32uzF" tabindex="-1" role="presentation"></a>배열 여과</h2>
+
+<p><a class="p_ident" id="p_Vpf83lHLbL" href="#p_Vpf83lHLbL" tabindex="-1" role="presentation"></a>데이터 집합에서 아직 사용 중인 스크립트를 찾으려면 다음 함수가 도움이 될 수 있습니다. 테스트를 통과하지 못한 배열의 요소를 필터링합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_POEf7pMCk0" href="#c_POEf7pMCk0" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">filter</span>(<span class="cm-def">array</span>, <span class="cm-def">test</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">passed</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">element</span> <span class="cm-keyword">of</span> <span class="cm-variable-2">array</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">test</span>(<span class="cm-variable-2">element</span>)) {
+      <span class="cm-variable-2">passed</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">element</span>);
+    }
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">passed</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">filter</span>(<span class="cm-variable">SCRIPTS</span>, <span class="cm-def">script</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">script</span>.<span class="cm-property">living</span>));
+<span class="cm-comment">// → [{name: &quot;Adlam&quot;, …}, …]</span></pre>
+
+<p><a class="p_ident" id="p_tQlzCduFqI" href="#p_tQlzCduFqI" tabindex="-1" role="presentation"></a>함수는 <code>test</code>라는 인수를 사용하여 "갭"을 채웁니다. 즉, 수집할 요소를 결정하는 프로세스입니다.</p>
+
+<p><a class="p_ident" id="p_veimKHV5hF" href="#p_veimKHV5hF" tabindex="-1" role="presentation"></a>참고로 기존 배열에서 요소를 삭제하는 것보다 <code>filter</code> 함수를 사용하여 테스트를 통과 요소만을 가진 새로운 배열을 작성합니다. 이 함수는 주어진 배열을 수정하지 않습니다.</p>
+
+<p><a class="p_ident" id="p_nxWtg+vobY" href="#p_nxWtg+vobY" tabindex="-1" role="presentation"></a><code>forEach</code>처럼 <code>filter</code>는 표준 배열 메서드입니다. 다음 예는 내부적으로 수행하는 작업을 보여주기 위해서만 함수를 정의한 것입니다. 이제부터 대신 사용하기로 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_x8e0PmGGB1" href="#c_x8e0PmGGB1" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">SCRIPTS</span>.<span class="cm-property">filter</span>(<span class="cm-def">s</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">s</span>.<span class="cm-property">direction</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;ttb&quot;</span>));
+<span class="cm-comment">// → [{name: &quot;Mongolian&quot;, …}, …]</span></pre>
+
+<h2 id="map"><a class="h_ident" id="h_lJEtQ+qjXz" href="#h_lJEtQ+qjXz" tabindex="-1" role="presentation"></a>map을 사용한 변환</h2>
+
+<p><a class="p_ident" id="p_z7ZYMFMZh1" href="#p_z7ZYMFMZh1" tabindex="-1" role="presentation"></a>어떻게든 배열 <code>SCRIPTS</code>을 필터링하여 생성된 스크립트를 나타내는 객체 배열이 있다고 가정해 보겠습니다. 그러나 검사하기 쉬운 이름의 배열을 원합니다.</p>
+
+<p><a class="p_ident" id="p_6b1/g51xNK" href="#p_6b1/g51xNK" tabindex="-1" role="presentation"></a>다음 <code>map</code> 메서드는 모든 요소에 함수를 적용하고 반환된 값에서 새 배열을 빌드하여 배열을 변환합니다. 새 배열의 길이는 입력 배열과 같지만 그 내용은 함수에 의해 새 형식에 매핑됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_03caQcQElo" href="#c_03caQcQElo" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">map</span>(<span class="cm-def">array</span>, <span class="cm-def">transform</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">mapped</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">element</span> <span class="cm-keyword">of</span> <span class="cm-variable-2">array</span>) {
+    <span class="cm-variable-2">mapped</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">transform</span>(<span class="cm-variable-2">element</span>));
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">mapped</span>;
+}
+
+<span class="cm-keyword">let</span> <span class="cm-def">rtlScripts</span> <span class="cm-operator">=</span> <span class="cm-variable">SCRIPTS</span>.<span class="cm-property">filter</span>(<span class="cm-def">s</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">s</span>.<span class="cm-property">direction</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;rtl&quot;</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">map</span>(<span class="cm-variable">rtlScripts</span>, <span class="cm-def">s</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">s</span>.<span class="cm-property">name</span>));
+<span class="cm-comment">// → [&quot;Adlam&quot;, &quot;Arabic&quot;, &quot;Imperial Aramaic&quot;, …]</span></pre>
+
+<p><a class="p_ident" id="p_337o6zaWyY" href="#p_337o6zaWyY" tabindex="-1" role="presentation"></a><code>forEach</code>와 <code>filter</code>처럼, <code>map</code>은 표준 배열 메서드입니다.</p>
+
+<h2><a class="h_ident" id="h_fx3e34kT/k" href="#h_fx3e34kT/k" tabindex="-1" role="presentation"></a>reduce를 통한 요약</h2>
+
+<p><a class="p_ident" id="p_QSyM/hwBKc" href="#p_QSyM/hwBKc" tabindex="-1" role="presentation"></a>배열과 관련된 또 다른 일반적인 사항은 배열에서 단일 값을 계산하는 것입니다. 숫자 모음을 합산하는 반복되는 예가 이에 대한 예입니다. 또 다른 예는 가장 많은 문자가 있는 스크립트를 찾는 것입니다.</p>
+
+<p><a class="p_ident" id="p_AQTWjyAzxS" href="#p_AQTWjyAzxS" tabindex="-1" role="presentation"></a>이 패턴을 나타내는 고수준 연산을 <em>reduce</em>라 합니다(<em>fold</em>라고도 함). 배열에서 단일 요소를 반복적으로 가져와 현재 값과 결합하여 값을 빌드합니다. 숫자를 합산할 때 숫자 0부터 시작하여 각 요소에 대해 합에 더합니다.</p>
+
+<p><a class="p_ident" id="p_4TujL14aLE" href="#p_4TujL14aLE" tabindex="-1" role="presentation"></a><code>reduce</code>에 관한 매개 변수는 배열과는 달리 결합 함수와 시작 값입니다. 이 함수는 <code>filter</code> 및 <code>map</code>보다 덜 직접적이기 때문에 자세히 살펴보기로 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_k5GDHjqpSc" href="#c_k5GDHjqpSc" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">reduce</span>(<span class="cm-def">array</span>, <span class="cm-def">combine</span>, <span class="cm-def">start</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">current</span> <span class="cm-operator">=</span> <span class="cm-variable-2">start</span>;
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">element</span> <span class="cm-keyword">of</span> <span class="cm-variable-2">array</span>) {
+    <span class="cm-variable-2">current</span> <span class="cm-operator">=</span> <span class="cm-variable-2">combine</span>(<span class="cm-variable-2">current</span>, <span class="cm-variable-2">element</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">current</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">reduce</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>, <span class="cm-number">3</span>, <span class="cm-number">4</span>], (<span class="cm-def">a</span>, <span class="cm-def">b</span>) <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">a</span> <span class="cm-operator">+</span> <span class="cm-variable-2">b</span>, <span class="cm-number">0</span>));
+<span class="cm-comment">// → 10</span></pre>
+
+<p><a class="p_ident" id="p_r9cFmJJTar" href="#p_r9cFmJJTar" tabindex="-1" role="presentation"></a>물론 이 함수에 해당하는 표준 배열 메서드 <code>reduce</code>에는 추가된 편의가 있습니다. 배열에 하나 이상의 요소가 포함되어 있으면 <code>start</code> 인수를 생략할 수 있습니다. 이 메서드는 배열의 첫 번째 요소를 시작 값으로 사용하고 두 번째 요소에서 감소를 시작합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Dxn7muuMkk" href="#c_Dxn7muuMkk" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>, <span class="cm-number">3</span>, <span class="cm-number">4</span>].<span class="cm-property">reduce</span>((<span class="cm-def">a</span>, <span class="cm-def">b</span>) <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">a</span> <span class="cm-operator">+</span> <span class="cm-variable-2">b</span>));
+<span class="cm-comment">// → 10</span></pre>
+
+<p><a class="p_ident" id="p_co+X+c08nc" href="#p_co+X+c08nc" tabindex="-1" role="presentation"></a><code>reduce</code>를 두 번 사용하여 가장 많은 문자가 있는 스크립트를 찾으려면 다음과 같이 작성할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_x76Ukt5X+H" href="#c_x76Ukt5X+H" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">characterCount</span>(<span class="cm-def">script</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">script</span>.<span class="cm-property">ranges</span>.<span class="cm-property">reduce</span>((<span class="cm-def">count</span>, [<span class="cm-def">from</span>, <span class="cm-def">to</span>]) <span class="cm-operator">=&gt;</span> {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">count</span> <span class="cm-operator">+</span> (<span class="cm-variable-2">to</span> <span class="cm-operator">-</span> <span class="cm-variable-2">from</span>);
+  }, <span class="cm-number">0</span>);
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">SCRIPTS</span>.<span class="cm-property">reduce</span>((<span class="cm-def">a</span>, <span class="cm-def">b</span>) <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">return</span> <span class="cm-variable">characterCount</span>(<span class="cm-variable-2">a</span>) <span class="cm-operator">&lt;</span> <span class="cm-variable">characterCount</span>(<span class="cm-variable-2">b</span>) <span class="cm-operator">?</span> <span class="cm-variable-2">b</span> : <span class="cm-variable-2">a</span>;
+}));
+<span class="cm-comment">// → {name: &quot;Han&quot;, …}</span></pre>
+
+<p><a class="p_ident" id="p_Zk/GcSOyra" href="#p_Zk/GcSOyra" tabindex="-1" role="presentation"></a><code>characterCount</code> 함수는 크기를 합산하여 스크립트에 할당된 범위를 줄입니다. reducer 함수의 매개변수 리스트에서 구조화의 사용에 유의하십시오. <code>reduce</code>에 대한 두 번째 호출은 이를 사용하여 두 스크립트를 반복적으로 비교하고 더 큰 스크립트를 반환하여 가장 큰 스크립트를 찾습니다.</p>
+
+<p><a class="p_ident" id="p_mdiQoTXDgm" href="#p_mdiQoTXDgm" tabindex="-1" role="presentation"></a>Han 스크립트는 유니코드 표준에서 89,000개 이상의 문자가 할당되어 데이터 세트에서 가장 큰 쓰기 시스템이 되었습니다. 한자는 중국어, 일본어 및 한국어 텍스트에 사용되는 스크립트(가끔)입니다. 이러한 언어는 서로 다르게 쓰는 경향이 있지만 많은 문자를 공유합니다(미국 기반). 유니 코드 컨소시엄은 문자 코드를 저장하기 위해 단일 쓰기 시스템으로 처리하기로 결정했습니다. 이것을 한나라 통일이라고 하며 여전히 일부 사람들을 매우 화나게 합니다.</p>
+
+<h2><a class="h_ident" id="h_+NeFt8aXxf" href="#h_+NeFt8aXxf" tabindex="-1" role="presentation"></a>구성 가능성(Composability)</h2>
+
+<p><a class="p_ident" id="p_6rxgOjYIEh" href="#p_6rxgOjYIEh" tabindex="-1" role="presentation"></a>고수준 함수가 없이 이전 예(가장 큰 스크립트 찾기)를 어떻게 작성했을지 생각해 보십시오. 코드는 그렇게 나쁘지 않습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_1FmIKHNB24" href="#c_1FmIKHNB24" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">biggest</span> <span class="cm-operator">=</span> <span class="cm-atom">null</span>;
+<span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">script</span> <span class="cm-keyword">of</span> <span class="cm-variable">SCRIPTS</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">biggest</span> <span class="cm-operator">==</span> <span class="cm-atom">null</span> <span class="cm-operator">|</span><span class="cm-operator">|</span>
+      <span class="cm-variable">characterCount</span>(<span class="cm-variable">biggest</span>) <span class="cm-operator">&lt;</span> <span class="cm-variable">characterCount</span>(<span class="cm-variable">script</span>)) {
+    <span class="cm-variable">biggest</span> <span class="cm-operator">=</span> <span class="cm-variable">script</span>;
+  }
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">biggest</span>);
+<span class="cm-comment">// → {name: &quot;Han&quot;, …}</span></pre>
+
+<p><a class="p_ident" id="p_rW1l2uIQYQ" href="#p_rW1l2uIQYQ" tabindex="-1" role="presentation"></a>바인딩이 몇 개 더 있으며 프로그램은 네 줄 더 깁니다. 그러나 여전히 매우 읽기 쉽습니다.</p>
+
+<p id="average_function"><a class="p_ident" id="p_a0FspsuDHF" href="#p_a0FspsuDHF" tabindex="-1" role="presentation"></a>작업을 구성해야 할 때 고소준 함수가 빛을 발하기 시작 합니다. 예를 들어 데이터 세트에서 살아있는 스크립트와 죽은 스크립트의 평균 출처 연도를 찾는 코드를 작성해 보겠습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_rumPqbzokK" href="#c_rumPqbzokK" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">average</span>(<span class="cm-def">array</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">array</span>.<span class="cm-property">reduce</span>((<span class="cm-def">a</span>, <span class="cm-def">b</span>) <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">a</span> <span class="cm-operator">+</span> <span class="cm-variable-2">b</span>) <span class="cm-operator">/</span> <span class="cm-variable-2">array</span>.<span class="cm-property">length</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Math</span>.<span class="cm-property">round</span>(<span class="cm-variable">average</span>(
+  <span class="cm-variable">SCRIPTS</span>.<span class="cm-property">filter</span>(<span class="cm-def">s</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">s</span>.<span class="cm-property">living</span>).<span class="cm-property">map</span>(<span class="cm-def">s</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">s</span>.<span class="cm-property">year</span>))));
+<span class="cm-comment">// → 1165</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Math</span>.<span class="cm-property">round</span>(<span class="cm-variable">average</span>(
+  <span class="cm-variable">SCRIPTS</span>.<span class="cm-property">filter</span>(<span class="cm-def">s</span> <span class="cm-operator">=&gt;</span> <span class="cm-operator">!</span><span class="cm-variable-2">s</span>.<span class="cm-property">living</span>).<span class="cm-property">map</span>(<span class="cm-def">s</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">s</span>.<span class="cm-property">year</span>))));
+<span class="cm-comment">// → 204</span></pre>
+
+<p><a class="p_ident" id="p_SoxeEh7KKJ" href="#p_SoxeEh7KKJ" tabindex="-1" role="presentation"></a>따라서 유니코드의 죽은 스크립트는 평균적으로 살아있는 스크립트보다 오래되었습니다. 이것은 매우 의미 있거나 놀라운 통계가 아닙니다. 그러나 그것을 계산하는데 사용된 코드가 읽기 어렵지 않다는 데 동의하기를 바랍니다. 파이프라인으로 볼 수 있습니다. 모든 스크립트에서 시작하여 살아있는(또는 죽은) 스크립트를 걸러내고, 그로부터 몇 년을 취하고, 평균을 내고, 결과를 반올림합니다.</p>
+
+<p><a class="p_ident" id="p_FNSiaZ2hBC" href="#p_FNSiaZ2hBC" tabindex="-1" role="presentation"></a>이 계산을 하나의 큰 루프로 작성할 수도 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_noyYOD0Kiy" href="#c_noyYOD0Kiy" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">total</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>, <span class="cm-def">count</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>;
+<span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">script</span> <span class="cm-keyword">of</span> <span class="cm-variable">SCRIPTS</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">script</span>.<span class="cm-property">living</span>) {
+    <span class="cm-variable">total</span> <span class="cm-operator">+=</span> <span class="cm-variable">script</span>.<span class="cm-property">year</span>;
+    <span class="cm-variable">count</span> <span class="cm-operator">+=</span> <span class="cm-number">1</span>;
+  }
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Math</span>.<span class="cm-property">round</span>(<span class="cm-variable">total</span> <span class="cm-operator">/</span> <span class="cm-variable">count</span>));
+<span class="cm-comment">// → 1165</span></pre>
+
+<p><a class="p_ident" id="p_yjuOvdnLHf" href="#p_yjuOvdnLHf" tabindex="-1" role="presentation"></a>그러나 무엇을 계산하고 어떻게 계산했는지 확인하기가 더 어렵습니다. 그리고 중간 결과가 일관된 값으로 표현되지 않기 때문에 별도의 함수로 추출하는 작업이 <code>average</code>보다 훨씬 더 많을 것 입니다.</p>
+
+<p><a class="p_ident" id="p_CiGDWoU0I9" href="#p_CiGDWoU0I9" tabindex="-1" role="presentation"></a>컴퓨터가 실제로 수행하는 작업의 관점에서 이 두 가지 접근 방식도 상당히 다릅니다. 첫 번째는 <code>filter</code> 및 <code>map</code>을 실행할 때 새 배열을 구축하는 반면 두 번째는 적은 작업을 수행하는 일부 숫자만 계산합니다. 일반적으로 읽기 쉬운 접근 방식을 사용할 수 있지만 거대한 배열을 처리하고 여러 번 수행하는 경우 덜 추상적인 스타일이 추가 속도의 가치가 있을 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_gQf5HZNGpM" href="#h_gQf5HZNGpM" tabindex="-1" role="presentation"></a>문자열 및 문자 코드</h2>
+
+<p><a class="p_ident" id="p_CbVTXgjOFe" href="#p_CbVTXgjOFe" tabindex="-1" role="presentation"></a>데이터 세트의 한 가지 용도는 텍스트 조각이 사용하는 스크립트를 파악하는 것입니다. 이 작업을 수행하는 프로그램을 살펴보겠습니다.</p>
+
+<p><a class="p_ident" id="p_aEEZgRpp75" href="#p_aEEZgRpp75" tabindex="-1" role="presentation"></a>각 스크립트에는 연관된 문자 코드 범위의 배열이 있음을 기억하십시오. 따라서 문자 코드가 주어지면 다음과 같은 함수를 사용하여 해당 스크립트(있는 경우)를 찾을 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Q8918ecfHn" href="#c_Q8918ecfHn" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">characterScript</span>(<span class="cm-def">code</span>) {
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">script</span> <span class="cm-keyword">of</span> <span class="cm-variable">SCRIPTS</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">script</span>.<span class="cm-property">ranges</span>.<span class="cm-property">some</span>(([<span class="cm-def">from</span>, <span class="cm-def">to</span>]) <span class="cm-operator">=&gt;</span> {
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">code</span> <span class="cm-operator">&gt;=</span> <span class="cm-variable-2">from</span> <span class="cm-operator">&amp;</span><span class="cm-operator">&amp;</span> <span class="cm-variable-2">code</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">to</span>;
+    })) {
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">script</span>;
+    }
+  }
+  <span class="cm-keyword">return</span> <span class="cm-atom">null</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">characterScript</span>(<span class="cm-number">121</span>));
+<span class="cm-comment">// → {name: &quot;Latin&quot;, …}</span></pre>
+
+<p><a class="p_ident" id="p_j3Y+wD1N4H" href="#p_j3Y+wD1N4H" tabindex="-1" role="presentation"></a><code>some</code> 메서드는 다른 고수준 함수입니다. 테스트 함수를 사용하여 해당 함수가 배열의 요소에 대해 true를 반환하는지 여부를 알려줍니다.</p>
+
+<p id="code_units"><a class="p_ident" id="p_NZ3lS1jnJX" href="#p_NZ3lS1jnJX" tabindex="-1" role="presentation"></a>그러나 문자열에서 문자 코드를 얻는 방법은 무엇인가?</p>
+
+<p><a class="p_ident" id="p_UsDhhqR3EH" href="#p_UsDhhqR3EH" tabindex="-1" role="presentation"></a>1장에서 자바 스크립트 문자열은 16비트 수열로 인코딩되는 것을 언급했습니다. 이를 코드 단위라고 합니다. 유니코드 문자 코드는 처음에 이러한 단위(65,000자를 약간 넘는 문자를 제공함)에 맞아야 했습니다. 그것이 충분하지 않을 것이라는 것이 분명해졌을 때, 많은 사람들은 캐릭터당 더 많은 메모리를 사용해야 할 필요성에 대해 주저했습니다. 이러한 문제를 해결하기 위해 JavaScript 문자열에서 사용하는 형식인 UTF-16이 고안되었습니다. 단일 16비트 코드 단위를 사용하여 가장 일반적인 문자를 설명하지만 다른 경우에는 이러한 단위 두 쌍을 사용합니다.</p>
+
+<p><a class="p_ident" id="p_VWL7aDQvAS" href="#p_VWL7aDQvAS" tabindex="-1" role="presentation"></a>오늘날 UTF-16은 일반적으로 나쁜 생각으로 간주됩니다. 실수를 유도하기 위해 거의 의도적으로 설계된 것 같습니다. 코드 단위와 문자가 같은 것으로 가장하는 프로그램을 작성하는 것은 쉽습니다. 그리고 당신의 언어가 2단위 문자를 사용하지 않는다면, 그것은 잘 작동하는 것처럼 보일 것입니다. 그러나 누군가 덜 일반적인 중국어 문자로 이러한 프로그램을 사용하려고 하면 바로 중단됩니다. 다행히 이모티콘의 등장으로 모두가 2단위 캐릭터를 사용하기 시작했고, 이러한 문제를 해결해야 하는 부담이 보다 공평하게 분산됐다.</p>
+
+<p><a class="p_ident" id="p_iQl/Gok4Mf" href="#p_iQl/Gok4Mf" tabindex="-1" role="presentation"></a>불행히도 <code>length</code> 속성을 통해 길이를 가져오고 대괄호를 사용하여 내용에 액세스하는 것과 같은 JavaScript 문자열에 대한 명백한 작업은 코드 단위만 처리합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_50Oes+9anA" href="#c_50Oes+9anA" tabindex="-1" role="presentation"></a><span class="cm-comment">// Two emoji characters, horse and shoe</span>
+<span class="cm-keyword">let</span> <span class="cm-def">horseShoe</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;🐴👟&quot;</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">horseShoe</span>.<span class="cm-property">length</span>);
+<span class="cm-comment">// → 4</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">horseShoe</span>[<span class="cm-number">0</span>]);
+<span class="cm-comment">// → (Invalid half-character)</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">horseShoe</span>.<span class="cm-property">charCodeAt</span>(<span class="cm-number">0</span>));
+<span class="cm-comment">// → 55357 (Code of the half-character)</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">horseShoe</span>.<span class="cm-property">codePointAt</span>(<span class="cm-number">0</span>));
+<span class="cm-comment">// → 128052 (Actual code for horse emoji)</span></pre>
+
+<p><a class="p_ident" id="p_whNOOL2UUI" href="#p_whNOOL2UUI" tabindex="-1" role="presentation"></a>JavaScript의 <code>charCodeAt</code> 메서드는 전체 문자 코드가 아닌 코드 단위를 제공합니다. 나중에 추가된 <code>codePointAt</code> 메서드는 전체 유니코드 문자를 제공합니다. 그래서 그것을 사용하여 문자열에서 문자를 가져올 수 있습니다. 그러나 <code>codePointAt</code>에 전달된 인수는 여전히 코드 단위 수열에 대한 인덱스입니다. 따라서 문자열의 모든 문자를 실행하려면 문자가 하나 또는 두 개의 코드 단위를 차지하는지 여부에 대한 질문을 처리해야 합니다.</p>
+
+<p><a class="p_ident" id="p_AEbxGojOu6" href="#p_AEbxGojOu6" tabindex="-1" role="presentation"></a>앞 페이지에서 문자열에 사용될 수 있는 <code>for</code>/<code>of</code> 루프를 나타냈습니다. <code>codePointAt</code>처럼 이러한 타입의 루프는 사람들이 UTF-16의 문제를 심각하게 인식하던 시기에 도입되었습니다. 문자열을 반복하는 데 사용하면 코드 단위가 아닌 실제 문자가 표시됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_9QIfA1qjtG" href="#c_9QIfA1qjtG" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">roseDragon</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;🌹🐉&quot;</span>;
+<span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">char</span> <span class="cm-keyword">of</span> <span class="cm-variable">roseDragon</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">char</span>);
+}
+<span class="cm-comment">// → 🌹</span>
+<span class="cm-comment">// → 🐉</span></pre>
+
+<p><a class="p_ident" id="p_1lRKu8d5oS" href="#p_1lRKu8d5oS" tabindex="-1" role="presentation"></a>하나 또는 두 개의 코드 단위로 구성된 문자열이 될 문자가 있는 경우 <code>codePointAt(0)</code>를 사용하여 해당 코드를 가져올 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_qYzPQMwIvv" href="#h_qYzPQMwIvv" tabindex="-1" role="presentation"></a>텍스트 인식</h2>
+
+<p><a class="p_ident" id="p_tzTGijMwow" href="#p_tzTGijMwow" tabindex="-1" role="presentation"></a>문자를 올바르게 반복하기 위한 <code>characterScript</code> 함수가 있습니다. 다음 단계는 각 스크립트에 속하는 문자를 계산하는 것입니다. 다음과 같은 계산 추상화가 유용할 것입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_nau/OQcf6J" href="#c_nau/OQcf6J" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">countBy</span>(<span class="cm-def">items</span>, <span class="cm-def">groupName</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">counts</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">item</span> <span class="cm-keyword">of</span> <span class="cm-variable-2">items</span>) {
+    <span class="cm-keyword">let</span> <span class="cm-def">name</span> <span class="cm-operator">=</span> <span class="cm-variable-2">groupName</span>(<span class="cm-variable-2">item</span>);
+    <span class="cm-keyword">let</span> <span class="cm-def">known</span> <span class="cm-operator">=</span> <span class="cm-variable-2">counts</span>.<span class="cm-property">findIndex</span>(<span class="cm-def">c</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">c</span>.<span class="cm-property">name</span> <span class="cm-operator">==</span> <span class="cm-variable-2">name</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">known</span> <span class="cm-operator">==</span> <span class="cm-operator">-</span><span class="cm-number">1</span>) {
+      <span class="cm-variable-2">counts</span>.<span class="cm-property">push</span>({<span class="cm-property">name</span>, <span class="cm-property">count</span>: <span class="cm-number">1</span>});
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-variable-2">counts</span>[<span class="cm-variable-2">known</span>].<span class="cm-property">count</span><span class="cm-operator">++</span>;
+    }
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">counts</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">countBy</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>, <span class="cm-number">3</span>, <span class="cm-number">4</span>, <span class="cm-number">5</span>], <span class="cm-def">n</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">n</span> <span class="cm-operator">&gt;</span> <span class="cm-number">2</span>));
+<span class="cm-comment">// → [{name: false, count: 2}, {name: true, count: 3}]</span></pre>
+
+<p><a class="p_ident" id="p_XJKbcULdUw" href="#p_XJKbcULdUw" tabindex="-1" role="presentation"></a><code>countBy</code> 함수는 컬렉션(<code>for</code>/<code>of</code>로 어는 것이나 순회할 수 있는)과 주어진 요소에 대한 그룹 이름을 계산하는 함수를 기대합니다. 각 객체는 그룹의 이름을 지정하고 해당 그룹에서 발견된 요소의 수를 알려 주는 객체의 배열을 반환합니다.</p>
+
+<p><a class="p_ident" id="p_YjH+mbwxM+" href="#p_YjH+mbwxM+" tabindex="-1" role="presentation"></a>또 다른 배열 메서드 <code>findIndex</code>를 사용할 수 있는데, 이 메서드는 <code>indexOf</code>와 다소 비슷하지만 특정 값을 찾는 대신 주어진 함수가 true를 반환하는 첫 번째 값을 찾습니다. <code>indexOf</code>와 마찬가지로 그러한 요소가 발견되지 않으면 -1을 반환합니다.</p>
+
+<p><a class="p_ident" id="p_T2D/Ix5YaM" href="#p_T2D/Ix5YaM" tabindex="-1" role="presentation"></a><code>countBy</code>를 사용하여 텍스트에 사용된 스크립트를 알려주는 함수를 작성할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_TyAeKAD0HB" href="#c_TyAeKAD0HB" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">textScripts</span>(<span class="cm-def">text</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">scripts</span> <span class="cm-operator">=</span> <span class="cm-variable">countBy</span>(<span class="cm-variable-2">text</span>, <span class="cm-def">char</span> <span class="cm-operator">=&gt;</span> {
+    <span class="cm-keyword">let</span> <span class="cm-def">script</span> <span class="cm-operator">=</span> <span class="cm-variable">characterScript</span>(<span class="cm-variable-2">char</span>.<span class="cm-property">codePointAt</span>(<span class="cm-number">0</span>));
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">script</span> <span class="cm-operator">?</span> <span class="cm-variable-2">script</span>.<span class="cm-property">name</span> : <span class="cm-string">&quot;none&quot;</span>;
+  }).<span class="cm-property">filter</span>(({<span class="cm-def">name</span>}) <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">name</span> <span class="cm-operator">!=</span> <span class="cm-string">&quot;none&quot;</span>);
+
+  <span class="cm-keyword">let</span> <span class="cm-def">total</span> <span class="cm-operator">=</span> <span class="cm-variable-2">scripts</span>.<span class="cm-property">reduce</span>((<span class="cm-def">n</span>, {<span class="cm-def">count</span>}) <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">n</span> <span class="cm-operator">+</span> <span class="cm-variable-2">count</span>, <span class="cm-number">0</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">total</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>) <span class="cm-keyword">return</span> <span class="cm-string">&quot;No scripts found&quot;</span>;
+
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">scripts</span>.<span class="cm-property">map</span>(({<span class="cm-def">name</span>, <span class="cm-def">count</span>}) <span class="cm-operator">=&gt;</span> {
+    <span class="cm-keyword">return</span> <span class="cm-string-2">`${</span><span class="cm-variable">Math</span>.<span class="cm-property">round</span>(<span class="cm-variable-2">count</span> <span class="cm-operator">*</span> <span class="cm-number">100</span> <span class="cm-operator">/</span> <span class="cm-variable-2">total</span>)<span class="cm-string-2">}</span><span class="cm-string-2">% ${</span><span class="cm-variable-2">name</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span>;
+  }).<span class="cm-property">join</span>(<span class="cm-string">&quot;, &quot;</span>);
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">textScripts</span>(<span class="cm-string">'英国的狗说&quot;woof&quot;, 俄罗斯的狗说&quot;тяв&quot;'</span>));
+<span class="cm-comment">// → 61% Han, 22% Latin, 17% Cyrillic</span></pre>
+
+<p><a class="p_ident" id="p_ydjmkrkJ8Y" href="#p_ydjmkrkJ8Y" tabindex="-1" role="presentation"></a>이 함수는 먼저 이름으로 문자를 계산하고 <code>characterScript</code>를 사용하여 이름을 할당하고 스크립트의 일부가 아닌 문자의 경우 문자열 <code>&quot;none&quot;</code>로 대체합니다. <code>filter</code> 호출은 <code>&quot;none&quot;</code> 관련 항목을 제거시킵니다.</p>
+
+<p><a class="p_ident" id="p_avwH1AKErw" href="#p_avwH1AKErw" tabindex="-1" role="presentation"></a>백분율을 계산할 수 있으려면 먼저 스크립트에 속하는 총 문자 수가 필요합니다. 이 수는 <code>reduce</code>로 계산할 수 있습니다. 그러한 문자가 없으면 함수는 특정 문자열을 반환합니다. 그렇지 않으면 <code>map</code>을 사용해 계산 항목을 읽을 수 있는 문자열로 변환한 다음 <code>join</code>과 결합합니다.</p>
+
+<h2><a class="h_ident" id="h_ErccPg/l98" href="#h_ErccPg/l98" tabindex="-1" role="presentation"></a>요약</h2>
+
+<p><a class="p_ident" id="p_N6wo+JYLCW" href="#p_N6wo+JYLCW" tabindex="-1" role="presentation"></a>함수 값을 다른 함수에 전달할 수 있다는 것은 JavaScript의 매우 유용한 측면입니다. 이를 통해 "갭"이 있는 계산을 모델링하는 함수를 작성할 수 있습니다. 이러한 함수를 호출하는 코드는 함수 값을 제공하여 공백을 채울 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_pZzOMOrxaO" href="#p_pZzOMOrxaO" tabindex="-1" role="presentation"></a>배열은 여러 가지 유용한 고수준 메서드를 제공합니다. 배열의 요소를 반복하는 데 <code>forEach</code>를 사용할 수 있습니다. <code>filter</code> 메서드는 술어 함수를 전달하는 요소만 포함하는 새 배열을 반환합니다. 함수를 통해 각 요소를 넣어 배열을 변환하는 것은 <code>map</code>로 수행됩니다. 배열의 모든 요소를 단일 값으로 결합하는데 <code>reduce</code>를 사용할 수 있습니다. <code>some</code> 메서드는 주어진 술어 함수와 일치하는 요소가 있는지 테스트합니다. <code>findIndex</code>는 술어와 일치하는 첫 번째 요소의 위치를 찾습니다.</p>
+
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="#h_TcUD2vzyMe" tabindex="-1" role="presentation"></a>연습 문제</h2>
+
+<h3><a class="i_ident" id="i_aIOczlLyX1" href="#i_aIOczlLyX1" tabindex="-1" role="presentation"></a>평탄화(Flattening)</h3>
+
+<p><a class="p_ident" id="p_6CVUmjaoYw" href="#p_6CVUmjaoYw" tabindex="-1" role="presentation"></a>배열의 배열을 평탄화시키기 위해 <code>concat</code> 메서드와 결합된 <code>reduce</code> 메서드를 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_I+o+qLGLXB" href="#c_I+o+qLGLXB" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">arrays</span> <span class="cm-operator">=</span> [[<span class="cm-number">1</span>, <span class="cm-number">2</span>, <span class="cm-number">3</span>], [<span class="cm-number">4</span>, <span class="cm-number">5</span>], [<span class="cm-number">6</span>]];
+<span class="cm-comment">// 여기에 코드 작성</span>
+<span class="cm-comment">// → [1, 2, 3, 4, 5, 6]</span></pre>
+
+<h3><a class="i_ident" id="i_gKQ1S54F4o" href="#i_gKQ1S54F4o" tabindex="-1" role="presentation"></a>자신만의 루프</h3>
+
+<p><a class="p_ident" id="p_LWMRzXlJIe" href="#p_LWMRzXlJIe" tabindex="-1" role="presentation"></a><code>for</code> 루프 문과 같은 고수준 루프 함수를 작성합니다. 값, 테스트 함수, 업데이트 함수 및 본문 함수를 사용합니다. 각 반복마다 먼저 현재 루프 값에 대해 테스트 함수를 실행하고 false를 반환하면 중지합니다. 그런 다음 body 함수를 호출하여 현재 값을 제공합니다. 마지막으로 업데이트 함수를 호출하여 새 값을 만들고 처음부터 시작합니다.</p>
+
+<p><a class="p_ident" id="p_S48JjGYRAU" href="#p_S48JjGYRAU" tabindex="-1" role="presentation"></a>함수를 정의할 때 일반 루프를 사용하여 실제 루프를 수행할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Fv1rc97GEM" href="#c_Fv1rc97GEM" tabindex="-1" role="presentation"></a><span class="cm-comment">// 여기에 코드 작성</span>
+
+<span class="cm-variable">loop</span>(<span class="cm-number">3</span>, <span class="cm-def">n</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">n</span> <span class="cm-operator">&gt;</span> <span class="cm-number">0</span>, <span class="cm-def">n</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">n</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>, <span class="cm-variable">console</span>.<span class="cm-property">log</span>);
+<span class="cm-comment">// → 3</span>
+<span class="cm-comment">// → 2</span>
+<span class="cm-comment">// → 1</span></pre>
+
+<h3><a class="i_ident" id="i_SmbRSAd5GA" href="#i_SmbRSAd5GA" tabindex="-1" role="presentation"></a>Everything</h3>
+
+<p><a class="p_ident" id="p_/J/AO4UyLj" href="#p_/J/AO4UyLj" tabindex="-1" role="presentation"></a><code>some</code> 메서드와 유사하게 배열에도 <code>every</code> 메서드가 있습니다. 주어진 함수가 배열의 모든 요소에 대해 true를 반환할 때 이것은 true를 반환합니다 . 어떤 면에서 <code>some</code>은 배열에 작용하는 연산자 <code>||</code>의 버전이며 <code>every</code>는 <code>&amp;&amp;</code> 연산자와 같습니다.</p>
+
+<p><a class="p_ident" id="p_myqdLDWQWl" href="#p_myqdLDWQWl" tabindex="-1" role="presentation"></a>배열과 술어 함수를 매개변수로 취하는 함수로 <code>every</code>를 구현하십시오. 루프를 사용하는 버전과 <code>some</code> 메서드를 사용하는 버전의 두 가지 버전을 작성합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_NludaTWDls" href="#c_NludaTWDls" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">every</span>(<span class="cm-def">array</span>, <span class="cm-def">test</span>) {
+  <span class="cm-comment">// 여기에 코드 작성</span>
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">every</span>([<span class="cm-number">1</span>, <span class="cm-number">3</span>, <span class="cm-number">5</span>], <span class="cm-def">n</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">n</span> <span class="cm-operator">&lt;</span> <span class="cm-number">10</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">every</span>([<span class="cm-number">2</span>, <span class="cm-number">4</span>, <span class="cm-number">16</span>], <span class="cm-def">n</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">n</span> <span class="cm-operator">&lt;</span> <span class="cm-number">10</span>));
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">every</span>([], <span class="cm-def">n</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">n</span> <span class="cm-operator">&lt;</span> <span class="cm-number">10</span>));
+<span class="cm-comment">// → true</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_1QG7tGMA79" href="#p_1QG7tGMA79" tabindex="-1" role="presentation"></a><code>&amp;&amp;</code> 연산자와 마찬가지로 <code>every</code> 메서드는 일치하지 않는 요소를 찾는 즉시 추가 요소 평가를 중지할 수 있습니다. 루프 기반 버전은 루프와 밖으로 이동할 수 있도록 <code>break</code> 하거나 <code>return</code> 합니다. 루프가 그러한 요소를 찾지 않고 끝까지 실행되면 모든 요소가 일치한다는 것을 알고 true를 반환해야 합니다.</p>
+
+<p><a class="p_ident" id="p_Ox5LquJ8IQ" href="#p_Ox5LquJ8IQ" tabindex="-1" role="presentation"></a><code>some</code>의 상단에 <code>every</code>를 구축하기 위해 <em>De Morgan 법칙</em>을 적용할 수 있습니다(<code>a &amp;&amp; b</code> equals <code>!(!a || !b)</code>). 이것은 배열에 일치하지 않는 요소가 없는 경우 배열의 모든 요소가 일치하는 배열로 일반화할 수 있습니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_4ccl4J1nOw" href="#i_4ccl4J1nOw" tabindex="-1" role="presentation"></a>지배적인 작성 방향</h3>
+
+<p><a class="p_ident" id="p_9kMfnY4I1g" href="#p_9kMfnY4I1g" tabindex="-1" role="presentation"></a>텍스트 문자열에서 지배적인 쓰기 방향을 계산하는 함수를 작성하십시오. 각 스크립트 객체에는 <code>&quot;ltr&quot;</code>(왼쪽에서 오른쪽으로), <code>&quot;rtl&quot;</code>(오른쪽에서 왼쪽으로) 또는 <code>&quot;ttb&quot;</code>(위에서 아래로)의 <code>direction</code> 속성이 있습니다 .</p>
+
+<p><a class="p_ident" id="p_WGH1oH+EyU" href="#p_WGH1oH+EyU" tabindex="-1" role="presentation"></a>지배적인 방향은 관련된 스크립트가 있는 대부분의 캐릭터의 방향입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_CNawUvyti3" href="#c_CNawUvyti3" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">dominantDirection</span>(<span class="cm-def">text</span>) {
+  <span class="cm-comment">// 여기에 코드 작성</span>
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">dominantDirection</span>(<span class="cm-string">&quot;Hello!&quot;</span>));
+<span class="cm-comment">// → ltr</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">dominantDirection</span>(<span class="cm-string">&quot;Hey, مساء الخير&quot;</span>));
+<span class="cm-comment">// → rtl</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_Z2nEY1sOaH" href="#p_Z2nEY1sOaH" tabindex="-1" role="presentation"></a>솔루션은 <code>textScripts</code>의 예 전반부와 매우 유사할 수 있습니다. 다시 <code>characterScript</code>을 바탕으로 하는 기준에 따라 문자를 계산한 다음 흥미롭지 않은(스크립트가 없는) 문자를 참조하는 결과 부분을 필터링해야 합니다.</p>
+
+<p><a class="p_ident" id="p_1yNhVH0QH9" href="#p_1yNhVH0QH9" tabindex="-1" role="presentation"></a><code>reduce</code>로 문자 수가 가장 많은 방향을 찾을 수 있습니다. 방법이 명확하지 않으면 앞부분에 있는 예를 참조하십시오. 여기서 <code>reduce</code>는 문자가 가장 많은 스크립트를 찾는 데 사용되었습니다.</p>
+
+</div></div><nav><a href="04_data.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="06_object.html" title="next chapter">▶</a></nav>
+</article>

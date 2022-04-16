@@ -1,0 +1,500 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>프로그래밍 언어</title>
+  <link rel=stylesheet href="js/node_modules/codemirror/lib/codemirror.css">
+  <script src="js/acorn_codemirror.js"></script>
+  <link rel=stylesheet href="css/ejs.css">
+  <script src="js/sandbox.js"></script>
+  <script src="js/ejs.js"></script><script>var chapNum = 12;var sandboxLoadFiles = ["code/chapter/12_language.js"];</script></head>
+
+<article>
+<nav><a href="11_async.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="13_browser.html" title="next chapter">▶</a></nav>
+
+<h1><span class=chap_num>12장</span>프로그래밍 언어</h1>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_Mt+zDiEThG" href="#p_Mt+zDiEThG" tabindex="-1" role="presentation"></a>프로그래밍 언어에서 표현의 의미를 결정하는 평가자는 또 다른 프로그램일 뿐입니다.</p>
+
+<footer>Hal Abelson과 Gerald Sussman, <cite>컴퓨터 프로그램의 구조와 해석</cite></footer>
+
+</blockquote><figure class="chapter framed"><img src="img/chapter_picture_12.jpg" alt="Picture of an egg with smaller eggs inside"></figure>
+
+<p><a class="p_ident" id="p_sLOpE8A1YZ" href="#p_sLOpE8A1YZ" tabindex="-1" role="presentation"></a>자신의 프로그래밍 언어를 구축하는 것은 목표를 너무 높게 잡지 않는 한 쉽고 매우 계몽적입니다.</p>
+
+<p><a class="p_ident" id="p_XWyxXihLGw" href="#p_XWyxXihLGw" tabindex="-1" role="presentation"></a>이 페이지에서 강조하고 싶은 것은 자신의 언어를 구축하는 것과 관련된 마법은 없다는 것입니다. 종종 어떤 인간의 발명품은 너무나 영리하고 복잡해서 도저히 이해할 수 없다고 느낄 수 있지만, 약간의 독서와 실험을 통해 그것들은 종종 아주 평범한 것으로 판명됩니다.</p>
+
+<p><a class="p_ident" id="p_lwKaxcGOfP" href="#p_lwKaxcGOfP" tabindex="-1" role="presentation"></a>Egg라는 프로그래밍 언어를 만들 것입니다. 작고 단순한 언어이지만 생각할 수 있는 모든 계산을 표현할 수 있을 만큼 강력한 언어입니다. 함수를 기반으로 하는 간단한 추상화를 허용합니다.</p>
+
+<h2 id="parsing"><a class="h_ident" id="h_cpTTNxAWkQ" href="#h_cpTTNxAWkQ" tabindex="-1" role="presentation"></a>Parsing</h2>
+
+<p><a class="p_ident" id="p_iHS+/Um+4q" href="#p_iHS+/Um+4q" tabindex="-1" role="presentation"></a>프로그래밍 언어에서 가장 즉각적으로 보이는 부분은 <em>syntax</em> 또는 표기법입니다. <em>parser</em>는 텍스트의 일부를 판독하고, 해당 텍스트에 포함되는 프로그램의 구조를 반영하는 데이터 구조를 생성하는 프로그램입니다. 텍스트가 유효한 프로그램을 구성하지 않으면 파서는 오류를 지적해야 합니다.</p>
+
+<p><a class="p_ident" id="p_aBKAId2dD2" href="#p_aBKAId2dD2" tabindex="-1" role="presentation"></a>여기에서 언어는 단순하고 균일한 구문을 가질 것입니다. Egg의 모든 것은 표현입니다. 표현식은 바인딩 이름, 숫자, 문자열 또는 <em>application</em>일 수 있습니다. 응용 프로그램은 함수 호출에 사용되지만 <code>if</code> 또는 <code>while</code>과 같은 구성에도 사용됩니다.</p>
+
+<p><a class="p_ident" id="p_Us9En1q6+r" href="#p_Us9En1q6+r" tabindex="-1" role="presentation"></a>파서를 단순하게 유지하기 위해 Egg의 문자열은 백슬래시 이스케이프와 같은 것을 지원하지 않습니다. 문자열은 큰따옴표가 아닌 단순히 큰따옴표로 묶인 일련의 문자입니다. 숫자는 일련의 숫자입니다. 바인딩 이름은 공백이 아니고 구문에서 특별한 의미가 없는 모든 문자로 구성될 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_N7llkiWaN/" href="#p_N7llkiWaN/" tabindex="-1" role="presentation"></a>응용 프로그램은 표현식 뒤에 괄호를 넣고 쉼표로 구분하여 괄호 사이에 임의의 수의 인수를 둠으로써 JavaScript에서와 같이 작성됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="null" ><a class="c_ident" id="c_WUuISgykcX" href="#c_WUuISgykcX" tabindex="-1" role="presentation"></a>do(define(x, 10),
+   if(&gt;(x, 5),
+      print(&quot;large&quot;),
+      print(&quot;small&quot;)))</pre>
+
+<p><a class="p_ident" id="p_HBJ5fbzauR" href="#p_HBJ5fbzauR" tabindex="-1" role="presentation"></a>Egg 언어의 균일성은 JavaScript의 연산자가 (<code>&gt;</code>와 같은) 이 언어의 일반 바인딩이며 다른 함수와 마찬가지로 적용됨을 의미합니다. 그리고 구문에는 블록이라는 개념이 없기 때문에 여러 작업을 순서대로 수행하는 것을 나타내는 <code>do</code> 구성이 필요합니다.</p>
+
+<p><a class="p_ident" id="p_aL3GdDKR9a" href="#p_aL3GdDKR9a" tabindex="-1" role="presentation"></a>파서가 프로그램을 설명하는데 사용할 데이터 구조는 표현식 객체로 구성되며, 각 객체에는 표현의 종류를 나타내는 <code>type</code> 속성과 내용을 설명하는 기타 속성이 있습니다.</p>
+
+<p><a class="p_ident" id="p_1s3I5AYr64" href="#p_1s3I5AYr64" tabindex="-1" role="presentation"></a>타입 <code>&quot;value&quot;</code>의 표현식은 리터럴 문자열 또는 숫자를 나타냅니다. 그것들의 <code>value</code> 속성은 대표하는 문자열 또는 숫자 값을 포함합니다. 타입 <code>&quot;word&quot;</code>의 표현식은 식별자(이름)에 사용됩니다. 이러한 객체에는 식별자의 이름을 문자열로 보유하는 <code>name</code> 속성이 있습니다. 마지막으로 <code>&quot;apply&quot;</code> 표현식은 응용 프로그램을 나타냅니다. 그것들은 적용되는 표현을 참조하는 <code>operator</code> 속성 뿐만 아니라 인수 식의 배열을 포함하는 <code>args</code> 속성을 가집니다.</p>
+
+<p><a class="p_ident" id="p_wueahIWuuc" href="#p_wueahIWuuc" tabindex="-1" role="presentation"></a>이 전 프로그램의 <code>&gt;(x, 5)</code> 부분은 다음과 같이 나타낼 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="application/json" ><a class="c_ident" id="c_YRUVy1WdLZ" href="#c_YRUVy1WdLZ" tabindex="-1" role="presentation"></a>{
+  <span class="cm-property">type</span>: <span class="cm-string">&quot;apply&quot;</span>,
+  <span class="cm-property">operator</span>: {<span class="cm-property">type</span>: <span class="cm-string">&quot;word&quot;</span>, <span class="cm-property">name</span>: <span class="cm-string">&quot;&gt;&quot;</span>},
+  <span class="cm-property">args</span>: [
+    {<span class="cm-property">type</span>: <span class="cm-string">&quot;word&quot;</span>, <span class="cm-property">name</span>: <span class="cm-string">&quot;x&quot;</span>},
+    {<span class="cm-property">type</span>: <span class="cm-string">&quot;value&quot;</span>, <span class="cm-property">value</span>: <span class="cm-number">5</span>}
+  ]
+}</pre>
+
+<p><a class="p_ident" id="p_97QzTGLJEr" href="#p_97QzTGLJEr" tabindex="-1" role="presentation"></a>이러한 데이터 구조를 <em>구문 트리(syntax tree)</em>라 합니다. 객체를 점으로 상상하고 그 사이의 링크를 점 사이의 선으로 상상하면 나무 모양이 됩니다. 표현식에 더 많은 표현식이 포함될 수 있는 다른 표현식이 포함되어 있다는 사실은 나뭇가지가 분할되고 다시 분할되는 방식과 유사합니다.</p>
+<figure><img src="img/syntax_tree.svg" alt="The structure of a syntax tree"></figure>
+
+<p><a class="p_ident" id="p_TiCtOm6qwQ" href="#p_TiCtOm6qwQ" tabindex="-1" role="presentation"></a>이것을 간단한 구조를 가진 9장에서 구성 파일 형식에 대해 작성한 파서와 대조하십시오. 입력을 행으로 분할하고 한 번에 하나씩 해당 행을 처리합니다. 선이 가질 수 있는 간단한 형식은 몇 가지 밖에 없었습니다.</p>
+
+<p><a class="p_ident" id="p_OtoCO51d4l" href="#p_OtoCO51d4l" tabindex="-1" role="presentation"></a>여기서 다른 접근 방식을 찾아야 합니다. 표현식은 줄로 구분되지 않으며 재귀적 구조를 가지고 있습니다. 애플리케이션 표현식에는 다른 표현식이 포함됩니다.</p>
+
+<p><a class="p_ident" id="p_ouduag85mO" href="#p_ouduag85mO" tabindex="-1" role="presentation"></a>다행히도 이 문제는 언어의 재귀적 특성을 반영하는 방식으로 재귀적인 파서 함수를 작성하여 매우 잘 해결할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_vEMw7RQ1iA" href="#p_vEMw7RQ1iA" tabindex="-1" role="presentation"></a>함수 <code>parseExpression</code>을 정의하는데, 이것은 문자열을 입력으로 받아 문자열의 시작 부분에 표현식에 대한 데이터 구조를 포함하는 객체를 반환하는 함수를 정의하고 이 표현식을 구문 분석한 후 남은 문자열 부분과 함께 반환합니다. 하위 표현식을 (예를 들어, 응용 프로그램에 대한 인수) 구문 분석할 때 이 함수를 다시 호출하여 인수 표현식과 남아 있는 텍스트를 생성할 수 있습니다. 이 텍스트는 더 많은 인수를 포함하거나 인수 목록을 끝내는 닫는 괄호가 될 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_qQZOLuZdMw" href="#p_qQZOLuZdMw" tabindex="-1" role="presentation"></a>다음은 파서의 첫 번째 부분입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Wq0wHUqay5" href="#c_Wq0wHUqay5" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">parseExpression</span>(<span class="cm-def">program</span>) {
+  <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">program</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">match</span>, <span class="cm-def">expr</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">match</span> <span class="cm-operator">=</span> <span class="cm-string-2">/^&quot;([^&quot;]*)&quot;/</span>.<span class="cm-property">exec</span>(<span class="cm-variable-2">program</span>)) {
+    <span class="cm-variable-2">expr</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">&quot;value&quot;</span>, <span class="cm-property">value</span>: <span class="cm-variable-2">match</span>[<span class="cm-number">1</span>]};
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">match</span> <span class="cm-operator">=</span> <span class="cm-string-2">/^\d+\b/</span>.<span class="cm-property">exec</span>(<span class="cm-variable-2">program</span>)) {
+    <span class="cm-variable-2">expr</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">&quot;value&quot;</span>, <span class="cm-property">value</span>: <span class="cm-variable">Number</span>(<span class="cm-variable-2">match</span>[<span class="cm-number">0</span>])};
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">match</span> <span class="cm-operator">=</span> <span class="cm-string-2">/^[^\s(),#&quot;]+/</span>.<span class="cm-property">exec</span>(<span class="cm-variable-2">program</span>)) {
+    <span class="cm-variable-2">expr</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">&quot;word&quot;</span>, <span class="cm-property">name</span>: <span class="cm-variable-2">match</span>[<span class="cm-number">0</span>]};
+  } <span class="cm-keyword">else</span> {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">&quot;Unexpected syntax: &quot;</span> <span class="cm-operator">+</span> <span class="cm-variable-2">program</span>);
+  }
+
+  <span class="cm-keyword">return</span> <span class="cm-variable">parseApply</span>(<span class="cm-variable-2">expr</span>, <span class="cm-variable-2">program</span>.<span class="cm-property">slice</span>(<span class="cm-variable-2">match</span>[<span class="cm-number">0</span>].<span class="cm-property">length</span>));
+}
+
+<span class="cm-keyword">function</span> <span class="cm-def">skipSpace</span>(<span class="cm-def">string</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">first</span> <span class="cm-operator">=</span> <span class="cm-variable-2">string</span>.<span class="cm-property">search</span>(<span class="cm-string-2">/\S/</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">first</span> <span class="cm-operator">==</span> <span class="cm-operator">-</span><span class="cm-number">1</span>) <span class="cm-keyword">return</span> <span class="cm-string">&quot;&quot;</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">string</span>.<span class="cm-property">slice</span>(<span class="cm-variable-2">first</span>);
+}</pre>
+
+<p><a class="p_ident" id="p_Y6B44JswIj" href="#p_Y6B44JswIj" tabindex="-1" role="presentation"></a>Egg는 JavaScript와 마찬가지로 요소 사이에 공백을 허용하므로 프로그램 문자열의 시작 부분에서 공백을 반복적으로 잘라야 합니다. <code>skipSpace</code> 함수가 도움이 됩니다.</p>
+
+<p><a class="p_ident" id="p_OMLAKNeu9S" href="#p_OMLAKNeu9S" tabindex="-1" role="presentation"></a>선행 공백을 건너뛴 후 <code>parseExpression</code>은 세 가지 정규식을 사용하여 Egg가 지원하는 세 가지 원자 요소(문자열, 숫자 및 단어)를 찾습니다. 파서는 어떤 것이 일치하는지에 따라 다른 종류의 데이터 구조를 구성합니다. 입력이 이 세 가지 형식 중 하나와 일치하지 않으면 유효한 표현식이 아니며 파서에서 오류가 발생합니다. 또 다른 표준 오류 유형인 예외 생성자로 <code>Error</code>대신 <code>SyntaxError</code>을 사용합니다. 이는 좀 더 구체적이기 때문입니다. 잘못된 JavaScript 프로그램을 실행하려고 할 때 발생하는 오류 유형이기도 합니다.</p>
+
+<p><a class="p_ident" id="p_pGQdVONUL4" href="#p_pGQdVONUL4" tabindex="-1" role="presentation"></a>그런 다음 프로그램 문자열에서 일치하는 부분을 잘라내어 표현식에 대한 객체와 함께 <code>parseApply</code>에 전달하여 표현식이 응용 프로그램인지 여부를 확인합니다. 그렇다면 괄호로 묶인 인수 목록을 구문 분석합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_tCV23NW6UI" href="#c_tCV23NW6UI" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">parseApply</span>(<span class="cm-def">expr</span>, <span class="cm-def">program</span>) {
+  <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">program</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">program</span>[<span class="cm-number">0</span>] <span class="cm-operator">!=</span> <span class="cm-string">&quot;(&quot;</span>) {
+    <span class="cm-keyword">return</span> {<span class="cm-property">expr</span>: <span class="cm-variable-2">expr</span>, <span class="cm-property">rest</span>: <span class="cm-variable-2">program</span>};
+  }
+
+  <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">program</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>));
+  <span class="cm-variable-2">expr</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">&quot;apply&quot;</span>, <span class="cm-property">operator</span>: <span class="cm-variable-2">expr</span>, <span class="cm-property">args</span>: []};
+  <span class="cm-keyword">while</span> (<span class="cm-variable-2">program</span>[<span class="cm-number">0</span>] <span class="cm-operator">!=</span> <span class="cm-string">&quot;)&quot;</span>) {
+    <span class="cm-keyword">let</span> <span class="cm-def">arg</span> <span class="cm-operator">=</span> <span class="cm-variable">parseExpression</span>(<span class="cm-variable-2">program</span>);
+    <span class="cm-variable-2">expr</span>.<span class="cm-property">args</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">arg</span>.<span class="cm-property">expr</span>);
+    <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">arg</span>.<span class="cm-property">rest</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">program</span>[<span class="cm-number">0</span>] <span class="cm-operator">==</span> <span class="cm-string">&quot;,&quot;</span>) {
+      <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">program</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>));
+    } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">program</span>[<span class="cm-number">0</span>] <span class="cm-operator">!=</span> <span class="cm-string">&quot;)&quot;</span>) {
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">&quot;Expected ',' or ')'&quot;</span>);
+    }
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable">parseApply</span>(<span class="cm-variable-2">expr</span>, <span class="cm-variable-2">program</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>));
+}</pre>
+
+<p><a class="p_ident" id="p_s9VFvU/BT3" href="#p_s9VFvU/BT3" tabindex="-1" role="presentation"></a>프로그램의 다음 문자가 여는 괄호가 아니면 응용 프로그램이 아니며 <code>parseApply</code>은 제공된 표현식을 반환합니다.</p>
+
+<p><a class="p_ident" id="p_rdoND4Um+i" href="#p_rdoND4Um+i" tabindex="-1" role="presentation"></a>그렇지 않으면 여는 괄호를 건너뛰고 이 응용 프로그램 식에 대한 구문 트리 객체를 만듭니다. 그런 다음 닫는 괄호를 찾을 때까지 각 인수를 구문 분석하기 위해 재귀적으로 <code>parseExpression</code>을 호출 합니다. 재귀는 간접적으로 <code>parseApply</code>와 <code>parseExpression</code>를 서로 호출합니다.</p>
+
+<p><a class="p_ident" id="p_G9HFeaWQ5+" href="#p_G9HFeaWQ5+" tabindex="-1" role="presentation"></a>응용 프로그램 표현식은 자체적으로 적용될 수 있기 때문에(<code>multiplier(2)(1)</code>와 같이) <code>parseApply</code>는 응용 프로그램을 구문 분석한 후 자신을 다시 호출하여 다른 쌍의 괄호가 뒤따르는지 확인해야 합니다.</p>
+
+<p><a class="p_ident" id="p_ZG1H567GVD" href="#p_ZG1H567GVD" tabindex="-1" role="presentation"></a>이것이 Egg를 구문 분석하는 데 필요한 전부입니다. 표현식을 (Egg 프로그램은 단일 표현식임)을 구문 분석한 후 입력 문자열의 끝에 도달했는지 확인하고, 프로그램의 데이터 구조를 제공하는 편리한 함수 <code>parse</code>로 래핑합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_P0tq+UdJy1" href="#c_P0tq+UdJy1" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">parse</span>(<span class="cm-def">program</span>) {
+  <span class="cm-keyword">let</span> {<span class="cm-def">expr</span>, <span class="cm-def">rest</span>} <span class="cm-operator">=</span> <span class="cm-variable">parseExpression</span>(<span class="cm-variable-2">program</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">rest</span>).<span class="cm-property">length</span> <span class="cm-operator">&gt;</span> <span class="cm-number">0</span>) {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">&quot;Unexpected text after program&quot;</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">expr</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">parse</span>(<span class="cm-string">&quot;+(a, 10)&quot;</span>));
+<span class="cm-comment">// → {type: &quot;apply&quot;,</span>
+<span class="cm-comment">//    operator: {type: &quot;word&quot;, name: &quot;+&quot;},</span>
+<span class="cm-comment">//    args: [{type: &quot;word&quot;, name: &quot;a&quot;},</span>
+<span class="cm-comment">//           {type: &quot;value&quot;, value: 10}]}</span></pre>
+
+<p><a class="p_ident" id="p_sbjERs3L8Y" href="#p_sbjERs3L8Y" tabindex="-1" role="presentation"></a>효과가 있습니다. 실패할 때 매우 유용한 정보를 제공하지 않으며 각 표현식이 시작되는 행과 열을 저장하지 않습니다. 이는 나중에 오류를 보고할 때 도움이 될 수 있지만 현재 목적에는 충분합니다.</p>
+
+<h2><a class="h_ident" id="h_HlYkF24q0q" href="#h_HlYkF24q0q" tabindex="-1" role="presentation"></a>evaluator</h2>
+
+<p><a class="p_ident" id="p_zhwRUqtrSl" href="#p_zhwRUqtrSl" tabindex="-1" role="presentation"></a>프로그램의 구문 트리로 무엇을 할 수 있는가? 그것이 평가자가 하는 일입니다. 이름을 값과 연결하는 구문 트리 및 범위 객체를 제공하면 트리가 나타내는 표현식을 평가하고 이것이 생성하는 값을 반환합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_v23JbR3fAL" href="#c_v23JbR3fAL" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">specialForms</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+
+<span class="cm-keyword">function</span> <span class="cm-def">evaluate</span>(<span class="cm-def">expr</span>, <span class="cm-def">scope</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">expr</span>.<span class="cm-property">type</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;value&quot;</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">expr</span>.<span class="cm-property">value</span>;
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">expr</span>.<span class="cm-property">type</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;word&quot;</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">expr</span>.<span class="cm-property">name</span> <span class="cm-keyword">in</span> <span class="cm-variable-2">scope</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">scope</span>[<span class="cm-variable-2">expr</span>.<span class="cm-property">name</span>];
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">ReferenceError</span>(
+        <span class="cm-string-2">`Undefined binding: ${</span><span class="cm-variable-2">expr</span>.<span class="cm-property">name</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+    }
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">expr</span>.<span class="cm-property">type</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;apply&quot;</span>) {
+    <span class="cm-keyword">let</span> {<span class="cm-def">operator</span>, <span class="cm-def">args</span>} <span class="cm-operator">=</span> <span class="cm-variable-2">expr</span>;
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">operator</span>.<span class="cm-property">type</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;word&quot;</span> <span class="cm-operator">&amp;</span><span class="cm-operator">&amp;</span>
+        <span class="cm-variable-2">operator</span>.<span class="cm-property">name</span> <span class="cm-keyword">in</span> <span class="cm-variable">specialForms</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable">specialForms</span>[<span class="cm-variable-2">operator</span>.<span class="cm-property">name</span>](<span class="cm-variable-2">expr</span>.<span class="cm-property">args</span>, <span class="cm-variable-2">scope</span>);
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">let</span> <span class="cm-def">op</span> <span class="cm-operator">=</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">operator</span>, <span class="cm-variable-2">scope</span>);
+      <span class="cm-keyword">if</span> (<span class="cm-keyword">typeof</span> <span class="cm-variable-2">op</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;function&quot;</span>) {
+        <span class="cm-keyword">return</span> <span class="cm-variable-2">op</span>(<span class="cm-meta">...</span><span class="cm-variable-2">args</span>.<span class="cm-property">map</span>(<span class="cm-def">arg</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">arg</span>, <span class="cm-variable-2">scope</span>)));
+      } <span class="cm-keyword">else</span> {
+        <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">TypeError</span>(<span class="cm-string">&quot;Applying a non-function.&quot;</span>);
+      }
+    }
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_iJ+cB7ncAD" href="#p_iJ+cB7ncAD" tabindex="-1" role="presentation"></a>평가자에는 각 표현식 유형에 대한 코드가 있습니다. 리터럴 값 표현식은 해당 값을 생성합니다(예를 들어 표현식 100은 숫자 100으로 평가). 바인딩의 경우 실제로 범위에 정의되어 있는지 확인하고, 정의되어 있으면 바인딩 값을 가져와야 합니다.</p>
+
+<p><a class="p_ident" id="p_NLdaIAcdf6" href="#p_NLdaIAcdf6" tabindex="-1" role="presentation"></a>응용 프로그램은 더 복잡합니다. <code>if</code>와 같은 특수 형식인 경우 아무 것도 평가하지 않고 범위와 함께 인수 표현식을 이 형식을 처리하는 함수에 전달합니다. 정상적인 호출이면 연산자를 평가하고 함수인지 확인한 다음 평가된 인수로 호출합니다.</p>
+
+<p><a class="p_ident" id="p_6TdgYHF3F3" href="#p_6TdgYHF3F3" tabindex="-1" role="presentation"></a>일반 JavaScript 함수 값을 사용하여 Egg의 함수 값을 나타냅니다. 이에 대해서는 나중에 <code>fun</code>라는 특수 형식이 정의 될 때 다시 설명합니다.</p>
+
+<p><a class="p_ident" id="p_wol0KtLeGh" href="#p_wol0KtLeGh" tabindex="-1" role="presentation"></a><code>evaluate</code>의 재귀 구조는 파서의 유사한 구조와 유사하며 둘 다 언어 자체의 구조를 반영합니다. 파서를 평가자와 통합하고 파싱하는 동안 평가하는 것도 가능하지만 이러한 방식으로 분할하면 프로그램이 더 명확해집니다.</p>
+
+<p><a class="p_ident" id="p_lfbXYqM2w2" href="#p_lfbXYqM2w2" tabindex="-1" role="presentation"></a>이것이 Egg를 해석하는 데 필요한 전부입니다. 그것은 간단합니다. 그러나 몇 가지 특별한 형식을 정의하고 환경에 유용한 값을 추가하지 않고는 이 언어로 아직 많은 것을 할 수 없습니다.</p>
+
+<h2><a class="h_ident" id="h_JOCrYKZbDr" href="#h_JOCrYKZbDr" tabindex="-1" role="presentation"></a>특수 양식</h2>
+
+<p><a class="p_ident" id="p_R9YTZoL8Oo" href="#p_R9YTZoL8Oo" tabindex="-1" role="presentation"></a><code>specialForms</code> 객체는 Egg에 특별한 문법을 정의하는 데 사용됩니다. 이러한 형식을 평가하는 함수와 단어들을 연결합니다. 현재 비어 있습니다. <code>if</code>를 추가합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_4kMBuxSNgt" href="#c_4kMBuxSNgt" tabindex="-1" role="presentation"></a><span class="cm-variable">specialForms</span>.<span class="cm-property">if</span> <span class="cm-operator">=</span> (<span class="cm-def">args</span>, <span class="cm-def">scope</span>) <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">!=</span> <span class="cm-number">3</span>) {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">&quot;Wrong number of args to if&quot;</span>);
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">0</span>], <span class="cm-variable-2">scope</span>) <span class="cm-operator">!==</span> <span class="cm-atom">false</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">1</span>], <span class="cm-variable-2">scope</span>);
+  } <span class="cm-keyword">else</span> {
+    <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">2</span>], <span class="cm-variable-2">scope</span>);
+  }
+};</pre>
+
+<p><a class="p_ident" id="p_8j6jdyDOpo" href="#p_8j6jdyDOpo" tabindex="-1" role="presentation"></a>Egg의 <code>if</code> 구성은 정확히 세 개의 인수를 예상합니다. 첫 번째를 평가하고 결과가 <code>false</code> 값이 아니면 두 번째를 평가합니다. 그렇지 않으면 세 번째가 평가됩니다. 이러한 <code>if</code> 형식은 JavaScript의 삼항 <code>?:</code> 연산자와 더 유사합니다. 이것은 문장이 아니라 표현식이며, 두 번째 또는 세 번째 인수의 결과인 이른바 값을 생성합니다.</p>
+
+<p><a class="p_ident" id="p_9fjtidVbOZ" href="#p_9fjtidVbOZ" tabindex="-1" role="presentation"></a>Egg는 조건 값을 처리하는 방식에서도 JavaScript와 다릅니다(<code>if</code>에서 조건 값을 처리하는 방식). 0이나 빈 문자열을 false로 취급하지 않고 정확한 값 <code>false</code>만 취급합니다.</p>
+
+<p><a class="p_ident" id="p_vwKmxnusyS" href="#p_vwKmxnusyS" tabindex="-1" role="presentation"></a>정규 함수가 아닌 특수한 양식으로서 <code>if</code>를 표현해야 하는 이유는 함수들에 대한 모든 인수가 함수 호출 전에 평가된다는 것입니다. 이에 반해 <code>if</code>는 첫 번째의 값에 따라, 두 번째 또는 세 번째 인수만 평가합니다.</p>
+
+<p><a class="p_ident" id="p_QqSon2ioSi" href="#p_QqSon2ioSi" tabindex="-1" role="presentation"></a><code>while</code> 양식과 유사</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_wZb+EB+hgA" href="#c_wZb+EB+hgA" tabindex="-1" role="presentation"></a><span class="cm-variable">specialForms</span>.<span class="cm-property">while</span> <span class="cm-operator">=</span> (<span class="cm-def">args</span>, <span class="cm-def">scope</span>) <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">!=</span> <span class="cm-number">2</span>) {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">&quot;Wrong number of args to while&quot;</span>);
+  }
+  <span class="cm-keyword">while</span> (<span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">0</span>], <span class="cm-variable-2">scope</span>) <span class="cm-operator">!==</span> <span class="cm-atom">false</span>) {
+    <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">1</span>], <span class="cm-variable-2">scope</span>);
+  }
+
+  <span class="cm-comment">// Since undefined does not exist in Egg, we return false,</span>
+  <span class="cm-comment">// for lack of a meaningful result.</span>
+  <span class="cm-keyword">return</span> <span class="cm-atom">false</span>;
+};</pre>
+
+<p><a class="p_ident" id="p_SIqEJzuMdz" href="#p_SIqEJzuMdz" tabindex="-1" role="presentation"></a>또 다른 기본 구축 블록은 <code>do</code>로 그것은 모든 인수를 위에서 아래로 실행합니다. 그 값은 마지막 인수에 의해 생성된 값입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_QkaRUun3ao" href="#c_QkaRUun3ao" tabindex="-1" role="presentation"></a><span class="cm-variable">specialForms</span>.<span class="cm-property">do</span> <span class="cm-operator">=</span> (<span class="cm-def">args</span>, <span class="cm-def">scope</span>) <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">let</span> <span class="cm-def">value</span> <span class="cm-operator">=</span> <span class="cm-atom">false</span>;
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">arg</span> <span class="cm-keyword">of</span> <span class="cm-variable-2">args</span>) {
+    <span class="cm-variable-2">value</span> <span class="cm-operator">=</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">arg</span>, <span class="cm-variable-2">scope</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">value</span>;
+};</pre>
+
+<p><a class="p_ident" id="p_KvAMPTVJ2y" href="#p_KvAMPTVJ2y" tabindex="-1" role="presentation"></a>바인딩을 만들고 새 값을 제공할 수 있도록 <code>define</code>이라는 형식도 만듭니다. 첫 번째 인수로 단어를 예상하고 두 번째 인수로 해당 단어에 할당할 값을 생성하는 표현식을 기대합니다. <code>define</code>은 표현식이기 때문에 값을 반환해야합니다. 할당된 값을 반환하도록 만듭니다(JavaScript의 <code>=</code> 연산자처럼).</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_/TYE9JhkNk" href="#c_/TYE9JhkNk" tabindex="-1" role="presentation"></a><span class="cm-variable">specialForms</span>.<span class="cm-property">define</span> <span class="cm-operator">=</span> (<span class="cm-def">args</span>, <span class="cm-def">scope</span>) <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">!=</span> <span class="cm-number">2</span> <span class="cm-operator">|</span><span class="cm-operator">|</span> <span class="cm-variable-2">args</span>[<span class="cm-number">0</span>].<span class="cm-property">type</span> <span class="cm-operator">!=</span> <span class="cm-string">&quot;word&quot;</span>) {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">&quot;Incorrect use of define&quot;</span>);
+  }
+  <span class="cm-keyword">let</span> <span class="cm-def">value</span> <span class="cm-operator">=</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">1</span>], <span class="cm-variable-2">scope</span>);
+  <span class="cm-variable-2">scope</span>[<span class="cm-variable-2">args</span>[<span class="cm-number">0</span>].<span class="cm-property">name</span>] <span class="cm-operator">=</span> <span class="cm-variable-2">value</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">value</span>;
+};</pre>
+
+<h2><a class="h_ident" id="h_2Tc54fkIgF" href="#h_2Tc54fkIgF" tabindex="-1" role="presentation"></a>환경</h2>
+
+<p><a class="p_ident" id="p_Mkc8xlkeHk" href="#p_Mkc8xlkeHk" tabindex="-1" role="presentation"></a><code>evaluate</code>가 허용하는 범위는 이름이 바인딩 이름에 해당하고 값이 해당 바인딩이 바인딩되는 값에 해당하는 속성이 있는 객체입니다. 전역 범위를 나타내는 객체를 정의합니다.</p>
+
+<p><a class="p_ident" id="p_3eybUSvE1z" href="#p_3eybUSvE1z" tabindex="-1" role="presentation"></a>방금 정의한 <code>if</code> 구성을 사용하려면 부울 값에 액세스할 수 있어야 합니다. Boolean 값이 두 개뿐이므로 특별한 구문이 필요하지 않습니다. 단순히 값을 <code>true</code>와 <code>false</code>라는 이름으로 결합하고 그것들을 사용합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_vJ45zHlK0v" href="#c_vJ45zHlK0v" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">topScope</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+
+<span class="cm-variable">topScope</span>.<span class="cm-property">true</span> <span class="cm-operator">=</span> <span class="cm-atom">true</span>;
+<span class="cm-variable">topScope</span>.<span class="cm-property">false</span> <span class="cm-operator">=</span> <span class="cm-atom">false</span>;</pre>
+
+<p><a class="p_ident" id="p_mLmm584R4a" href="#p_mLmm584R4a" tabindex="-1" role="presentation"></a>이제 부울 값을 부정하는 간단한 표현식을 평가할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_ynBEgrK+/h" href="#c_ynBEgrK+/h" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">prog</span> <span class="cm-operator">=</span> <span class="cm-variable">parse</span>(<span class="cm-string-2">`if(true, false, true)`</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">evaluate</span>(<span class="cm-variable">prog</span>, <span class="cm-variable">topScope</span>));
+<span class="cm-comment">// → false</span></pre>
+
+<p><a class="p_ident" id="p_zuRstuTjxo" href="#p_zuRstuTjxo" tabindex="-1" role="presentation"></a>기본 산술 및 비교 연산자를 제공하기 위해 범위에 일부 함수 값도 추가합니다. 코드를 짧게 유지하기 위해 개별적으로 정의하는 대신 루프에서 여러 연산자 함수를 합성하는데 <code>Function</code>을 사용할 것입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_OTgmEw/s8v" href="#c_OTgmEw/s8v" tabindex="-1" role="presentation"></a><span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">op</span> <span class="cm-keyword">of</span> [<span class="cm-string">&quot;+&quot;</span>, <span class="cm-string">&quot;-&quot;</span>, <span class="cm-string">&quot;*&quot;</span>, <span class="cm-string">&quot;/&quot;</span>, <span class="cm-string">&quot;==&quot;</span>, <span class="cm-string">&quot;&lt;&quot;</span>, <span class="cm-string">&quot;&gt;&quot;</span>]) {
+  <span class="cm-variable">topScope</span>[<span class="cm-variable">op</span>] <span class="cm-operator">=</span> <span class="cm-variable">Function</span>(<span class="cm-string">&quot;a, b&quot;</span>, <span class="cm-string-2">`return a ${</span><span class="cm-variable">op</span><span class="cm-string-2">}</span> <span class="cm-string-2">b;`</span>);
+}</pre>
+
+<p><a class="p_ident" id="p_nv+OyOKpzZ" href="#p_nv+OyOKpzZ" tabindex="-1" role="presentation"></a>값을 출력하는 방법도 유용하므로 함수에서 <code>console.log</code>를 래핑 하고 <code>print</code>로 호출합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_XFrq8jIuQC" href="#c_XFrq8jIuQC" tabindex="-1" role="presentation"></a><span class="cm-variable">topScope</span>.<span class="cm-property">print</span> <span class="cm-operator">=</span> <span class="cm-def">value</span> <span class="cm-operator">=&gt;</span> {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable-2">value</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">value</span>;
+};</pre>
+
+<p><a class="p_ident" id="p_+CG1YjXYFG" href="#p_+CG1YjXYFG" tabindex="-1" role="presentation"></a>그것은 간단한 프로그램을 작성하기에 충분한 기본 도구를 제공합니다. 다음 함수는 프로그램을 구문 분석하고 새로운 범위에서 실행하는 편리한 방법을 제공합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_aPeJgSZPEO" href="#c_aPeJgSZPEO" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">run</span>(<span class="cm-def">program</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable">parse</span>(<span class="cm-variable-2">program</span>), <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">topScope</span>));
+}</pre>
+
+<p><a class="p_ident" id="p_3RSx9KsCbf" href="#p_3RSx9KsCbf" tabindex="-1" role="presentation"></a>프로그램이 최상위 범위를 변경하지 않고 로컬 범위에 바인딩을 추가할 수 있도록 개체 프로토타입 체인을 사용하여 중첩 범위를 나타냅니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_uW/XtfVXMZ" href="#c_uW/XtfVXMZ" tabindex="-1" role="presentation"></a><span class="cm-variable">run</span>(<span class="cm-string-2">`</span>
+<span class="cm-string-2">do(define(total, 0),</span>
+   <span class="cm-string-2">define(count, 1),</span>
+   <span class="cm-string-2">while(&lt;(count, 11),</span>
+         <span class="cm-string-2">do(define(total, +(total, count)),</span>
+            <span class="cm-string-2">define(count, +(count, 1)))),</span>
+   <span class="cm-string-2">print(total))</span>
+<span class="cm-string-2">`</span>);
+<span class="cm-comment">// → 55</span></pre>
+
+<p><a class="p_ident" id="p_4cQhF2ypgW" href="#p_4cQhF2ypgW" tabindex="-1" role="presentation"></a>이것은 이전에 여러 번 나타낸 프로그램으로, Egg로 표현되는 1에서 10까지의 숫자의 합을 계산합니다. 동등한 JavaScript 프로그램보다 분명히 못하지만 150줄 미만의 코드로 구현된 언어에는 나쁘지 않습니다.</p>
+
+<h2 id="egg_fun"><a class="h_ident" id="h_K5Yd6h3Axg" href="#h_K5Yd6h3Axg" tabindex="-1" role="presentation"></a>Functions</h2>
+
+<p><a class="p_ident" id="p_r7HIVKVzo4" href="#p_r7HIVKVzo4" tabindex="-1" role="presentation"></a>함수가 없는 프로그래밍 언어는 실제로 빈약한 프로그래밍 언어입니다.</p>
+
+<p><a class="p_ident" id="p_OEAPwS9R8Z" href="#p_OEAPwS9R8Z" tabindex="-1" role="presentation"></a>다행스럽게도 마지막 인수를 함수의 본문으로 취급하고 그 이전의 모든 인수를 함수 매개변수의 이름으로 사용하는 <code>fun</code> 구조를 추가하는 것은 어렵지 않습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_cnvuH0fWH0" href="#c_cnvuH0fWH0" tabindex="-1" role="presentation"></a><span class="cm-variable">specialForms</span>.<span class="cm-property">fun</span> <span class="cm-operator">=</span> (<span class="cm-def">args</span>, <span class="cm-def">scope</span>) <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">args</span>.<span class="cm-property">length</span>) {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">&quot;Functions need a body&quot;</span>);
+  }
+  <span class="cm-keyword">let</span> <span class="cm-def">body</span> <span class="cm-operator">=</span> <span class="cm-variable-2">args</span>[<span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>];
+  <span class="cm-keyword">let</span> <span class="cm-def">params</span> <span class="cm-operator">=</span> <span class="cm-variable-2">args</span>.<span class="cm-property">slice</span>(<span class="cm-number">0</span>, <span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>).<span class="cm-property">map</span>(<span class="cm-def">expr</span> <span class="cm-operator">=&gt;</span> {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">expr</span>.<span class="cm-property">type</span> <span class="cm-operator">!=</span> <span class="cm-string">&quot;word&quot;</span>) {
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">&quot;Parameter names must be words&quot;</span>);
+    }
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">expr</span>.<span class="cm-property">name</span>;
+  });
+
+  <span class="cm-keyword">return</span> <span class="cm-keyword">function</span>() {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">arguments</span>.<span class="cm-property">length</span> <span class="cm-operator">!=</span> <span class="cm-variable-2">params</span>.<span class="cm-property">length</span>) {
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">TypeError</span>(<span class="cm-string">&quot;Wrong number of arguments&quot;</span>);
+    }
+    <span class="cm-keyword">let</span> <span class="cm-def">localScope</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable-2">scope</span>);
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">arguments</span>.<span class="cm-property">length</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>) {
+      <span class="cm-variable-2">localScope</span>[<span class="cm-variable-2">params</span>[<span class="cm-variable-2">i</span>]] <span class="cm-operator">=</span> <span class="cm-variable-2">arguments</span>[<span class="cm-variable-2">i</span>];
+    }
+    <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">body</span>, <span class="cm-variable-2">localScope</span>);
+  };
+};</pre>
+
+<p><a class="p_ident" id="p_KsTEGYhZ+f" href="#p_KsTEGYhZ+f" tabindex="-1" role="presentation"></a>Egg의 함수는 고유한 로컬 범위를 갖습니다. <code>fun</code> 양식에 의해 생성된 함수는 이 지역 범위를 만들고 여기에 인수 바인딩을 추가합니다. 그런 다음 이 범위에서 함수 본문을 평가하고 결과를 반환합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_tn5DChGAkA" href="#c_tn5DChGAkA" tabindex="-1" role="presentation"></a><span class="cm-variable">run</span>(<span class="cm-string-2">`</span>
+<span class="cm-string-2">do(define(plusOne, fun(a, +(a, 1))),</span>
+   <span class="cm-string-2">print(plusOne(10)))</span>
+<span class="cm-string-2">`</span>);
+<span class="cm-comment">// → 11</span>
+
+<span class="cm-variable">run</span>(<span class="cm-string-2">`</span>
+<span class="cm-string-2">do(define(pow, fun(base, exp,</span>
+     <span class="cm-string-2">if(==(exp, 0),</span>
+        <span class="cm-string-2">1,</span>
+        <span class="cm-string-2">*(base, pow(base, -(exp, 1)))))),</span>
+   <span class="cm-string-2">print(pow(2, 10)))</span>
+<span class="cm-string-2">`</span>);
+<span class="cm-comment">// → 1024</span></pre>
+
+<h2><a class="h_ident" id="h_qtdV3kKVQe" href="#h_qtdV3kKVQe" tabindex="-1" role="presentation"></a>Compilation</h2>
+
+<p><a class="p_ident" id="p_JRcPOXDFEi" href="#p_JRcPOXDFEi" tabindex="-1" role="presentation"></a>구축한 것은 interpreter입니다. 평가하는 동안 파서에 의해 생성된 프로그램의 표현에 직접적으로 작용합니다.</p>
+
+<p><a class="p_ident" id="p_Lk17qNau8L" href="#p_Lk17qNau8L" tabindex="-1" role="presentation"></a><em>Compilation</em>은 파싱과 프로그램 실행 사이에 또 다른 단계를 추가하는 과정으로 사전에 최대한 많은 작업을 수행하여 프로그램을 보다 효율적으로 평가할 수 있는 것으로 변환합니다. 예를 들어, 잘 설계된 언어에서는 실제로 프로그램을 실행하지 않고도 바인딩을 사용할 때마다 어떤 바인딩이 참조되는지가 분명합니다. 이것은 액세스할 때마다 이름으로 바인딩을 찾는 것을 방지하는 데 사용할 수 있습니다. 대신 미리 결정된 메모리 위치에서 직접 가져옵니다.</p>
+
+<p><a class="p_ident" id="p_HrQe0PuoCJ" href="#p_HrQe0PuoCJ" tabindex="-1" role="presentation"></a>전통적으로 컴파일에는 프로그램을 컴퓨터 프로세서가 실행할 수 있는 원시 형식인 기계 코드로 변환하는 작업이 포함됩니다. 그러나 프로그램을 다른 표현으로 변환하는 모든 프로세스는 컴파일로 생각할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_+HfDnbf6cY" href="#p_+HfDnbf6cY" tabindex="-1" role="presentation"></a>프로그램을 먼저 JavaScript 프로그램으로 변환하고 <code>Function</code>을 사용하여 JavaScript 컴파일러를 호출한 다음 결과를 실행하는 Egg에 대한 대체 평가 전략을 작성하는 것이 가능합니다. 올바르게 수행되면 구현이 매우 간단하면서도 Egg가 매우 빠르게 실행됩니다.</p>
+
+<h2><a class="h_ident" id="h_DmDK0dWdfE" href="#h_DmDK0dWdfE" tabindex="-1" role="presentation"></a>Cheating</h2>
+
+<p><a class="p_ident" id="p_WFyw9AWF7D" href="#p_WFyw9AWF7D" tabindex="-1" role="presentation"></a><code>if</code>와 <code>while</code>을 정의할 때, 그것들이 다소간 JavaScript의 <code>if</code>와 <code>while</code> 관련 wrapper들임을 알 수 있습니다. 유사하게 Egg에서 값들은 단지 이전 JavaScript 정규 값들입니다.</p>
+
+<p><a class="p_ident" id="p_qMvm2xpt6o" href="#p_qMvm2xpt6o" tabindex="-1" role="presentation"></a>JavaScript를 기반으로 구축된 Egg의 구현을 기계가 제공하는 원시 함수에 직접 프로그래밍 언어를 구축하는 데 필요한 작업량 및 복잡성과 비교하면 차이가 엄청납니다. 그럼에도 불구하고 이 예는 프로그래밍 언어가 작동하는 방식에 대한 인상을 이상적으로 주었습니다.</p>
+
+<p><a class="p_ident" id="p_xuQu2Hdpx2" href="#p_xuQu2Hdpx2" tabindex="-1" role="presentation"></a>그리고 어떤 일을 할 때 모든 것을 스스로 하는 것보다 부정 행위가 더 효과적입니다. 이 장의 장난감 언어는 JavaScript에서 더 잘 수행할 수 없는 작업을 수행하지 않지만 작은 언어를 작성하는 것이 실제 작업을 완료하는 데 도움이 됩니다.</p>
+
+<p><a class="p_ident" id="p_0TKyk5rWYK" href="#p_0TKyk5rWYK" tabindex="-1" role="presentation"></a>이러한 언어는 일반적인 프로그래밍 언어와 유사할 필요가 없습니다. 예를 들어 JavaScript에 정규 표현식이 제공되지 않은 경우 정규 표현식에 대한 자체 파서 및 평가기를 작성할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_fdoy9duCSp" href="#p_fdoy9duCSp" tabindex="-1" role="presentation"></a>또는 거대한 로봇 공룡을 만들고 그 행동을 프로그래밍해야 한다고 상상해 보십시오. JavaScript는 이를 수행하는 가장 효과적인 방법이 아닐 수 있습니다. 대신 다음과 같은 언어를 선택할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="null" ><a class="c_ident" id="c_831P/I2TjC" href="#c_831P/I2TjC" tabindex="-1" role="presentation"></a>behavior walk
+  perform when
+    destination ahead
+  actions
+    move left-foot
+    move right-foot
+
+behavior attack
+  perform when
+    Godzilla in-view
+  actions
+    fire laser-eyes
+    launch arm-rockets</pre>
+
+<p><a class="p_ident" id="p_O9+2Ve51P4" href="#p_O9+2Ve51P4" tabindex="-1" role="presentation"></a>이것은 일반적으로 <em>도메인 지향 언어</em>라고 하는 좁은 영역의 지식을 표현하도록 맞춤화된 언어입니다. 이러한 언어는 해당 영역에서 설명해야 하는 항목만 설명하도록 설계되었기 때문에 범용 언어보다 표현력이 뛰어납니다.</p>
+
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="#h_TcUD2vzyMe" tabindex="-1" role="presentation"></a>연습 문제</h2>
+
+<h3><a class="i_ident" id="i_uQzJv9I1Z6" href="#i_uQzJv9I1Z6" tabindex="-1" role="presentation"></a>배열</h3>
+
+<p><a class="p_ident" id="p_tNcRruOv4Q" href="#p_tNcRruOv4Q" tabindex="-1" role="presentation"></a>Add support for arrays to Egg by adding the 다음 세 함수를 상위 스코프로 추가하여 Egg가 배열을 지원할 수 있도록 함: 인수 값을 포함하는 배열 구성을 위한 <code>array(...values)</code>, 배열 길이를 취하기 위한 <code>length(array)</code>, 배열에서 n<sup>th</sup>요소를 가져오기 위한 <code>element(array, n)</code></p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_eB3J9xBy0h" href="#c_eB3J9xBy0h" tabindex="-1" role="presentation"></a><span class="cm-comment">// 정의 변경 ...</span>
+
+<span class="cm-variable">topScope</span>.<span class="cm-property">array</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;...&quot;</span>;
+
+<span class="cm-variable">topScope</span>.<span class="cm-property">length</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;...&quot;</span>;
+
+<span class="cm-variable">topScope</span>.<span class="cm-property">element</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;...&quot;</span>;
+
+<span class="cm-variable">run</span>(<span class="cm-string-2">`</span>
+<span class="cm-string-2">do(define(sum, fun(array,</span>
+     <span class="cm-string-2">do(define(i, 0),</span>
+        <span class="cm-string-2">define(sum, 0),</span>
+        <span class="cm-string-2">while(&lt;(i, length(array)),</span>
+          <span class="cm-string-2">do(define(sum, +(sum, element(array, i))),</span>
+             <span class="cm-string-2">define(i, +(i, 1)))),</span>
+        <span class="cm-string-2">sum))),</span>
+   <span class="cm-string-2">print(sum(array(1, 2, 3))))</span>
+<span class="cm-string-2">`</span>);
+<span class="cm-comment">// → 6</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_wvp5VE3wUs" href="#p_wvp5VE3wUs" tabindex="-1" role="presentation"></a>이를 수행하는 가장 쉬운 방법은 Egg 배열을 JavaScript 배열로 나타내는 것입니다.</p>
+
+<p><a class="p_ident" id="p_pIQgd4yDJ0" href="#p_pIQgd4yDJ0" tabindex="-1" role="presentation"></a>최상위 범위에 추가되는 값은 함수여야 합니다. 나머지 인수(삼중점 표기법 사용)를 사용하면 <code>array</code>의 정의가 매우 간단해질 수 있습니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_hOd+yVxaku" href="#i_hOd+yVxaku" tabindex="-1" role="presentation"></a>Closure</h3>
+
+<p><a class="p_ident" id="p_v1H/2L3I5F" href="#p_v1H/2L3I5F" tabindex="-1" role="presentation"></a>정의한 방식 <code>fun</code>은 Egg의 함수가 주변 범위를 참조할 수 있도록 하여 함수의 본문이 JavaScript 함수와 마찬가지로 함수가 정의될 때 볼 수 있었던 로컬 값을 사용할 수 있도록 합니다.</p>
+
+<p><a class="p_ident" id="p_CyqsFIcQdy" href="#p_CyqsFIcQdy" tabindex="-1" role="presentation"></a>다음 프로그램은 이를 설명합니다. 함수 <code>f</code>는 <code>f</code>의 인수에 인수를 추가하는 함수를 반환합니다. 즉, <code>a</code> 바인딩을 사용할 수 있으려면 <code>f</code> 내부의 로컬 범위에 액세스해야 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_zJ2x7sbWRv" href="#c_zJ2x7sbWRv" tabindex="-1" role="presentation"></a><span class="cm-variable">run</span>(<span class="cm-string-2">`</span>
+<span class="cm-string-2">do(define(f, fun(a, fun(b, +(a, b)))),</span>
+   <span class="cm-string-2">print(f(4)(5)))</span>
+<span class="cm-string-2">`</span>);
+<span class="cm-comment">// → 9</span></pre>
+
+<p><a class="p_ident" id="p_40Yj7LMkYl" href="#p_40Yj7LMkYl" tabindex="-1" role="presentation"></a><code>fun</code> 양식의 정의로 돌아가서 이것이 작동하는 메커니즘을 설명하십시오.</p>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_LOgpHZsyhJ" href="#p_LOgpHZsyhJ" tabindex="-1" role="presentation"></a>다시 말하지만, Egg에서 동등한 기능을 얻기 위해 JavaScript 메커니즘을 사용하고 있습니다. 특수 양식은 해당 범위에서 하위 양식을 평가할 수 있도록 평가되는 로컬 범위를 전달합니다. <code>fun</code>에 의해 반환된 함수는 둘러싸는 함수에 제공된 <code>scope</code> 인수에 액세스 할 수 있으며 호출될 때 이를 사용하여 함수의 로컬 범위를 생성합니다.</p>
+
+<p><a class="p_ident" id="p_w6RFAh/z4Z" href="#p_w6RFAh/z4Z" tabindex="-1" role="presentation"></a>즉, 로컬 범위의 프로토타입은 함수가 생성된 범위가 되므로 함수에서 해당 범위의 바인딩에 액세스할 수 있습니다. 이것이 클로저 구현의 전부입니다(실제로 효율적인 방식으로 컴파일하려면 더 많은 작업이 필요).</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_/OBuIOX390" href="#i_/OBuIOX390" tabindex="-1" role="presentation"></a>Comments</h3>
+
+<p><a class="p_ident" id="p_qV4w3Ov/ee" href="#p_qV4w3Ov/ee" tabindex="-1" role="presentation"></a>Egg에 댓글을 쓸 수 있다면 좋을 것입니다. 예를 들어 해시 기호(<code>#</code>)를 찾을 때마다 JavaScript에서 <code>//</code>와 마찬가지로 행의 나머지 부분을 주석으로 처리하고 무시할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_EVGdU2vHLH" href="#p_EVGdU2vHLH" tabindex="-1" role="presentation"></a>이를 지원하기 위해 파서를 크게 변경할 필요는 없습니다. 주석을 공백처럼 건너뛰도록 <code>skipSpace</code>를 간단히 변경할 수 있으므로 <code>skipSpace</code>가 호출되는 모든 지점도 이제 주석을 건너뛸 수 있습니다. 다음과 같이 변경합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_HlvQkY82YH" href="#c_HlvQkY82YH" tabindex="-1" role="presentation"></a><span class="cm-comment">// This is the old skipSpace. Modify it...</span>
+<span class="cm-keyword">function</span> <span class="cm-def">skipSpace</span>(<span class="cm-def">string</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">first</span> <span class="cm-operator">=</span> <span class="cm-variable-2">string</span>.<span class="cm-property">search</span>(<span class="cm-string-2">/\S/</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">first</span> <span class="cm-operator">==</span> <span class="cm-operator">-</span><span class="cm-number">1</span>) <span class="cm-keyword">return</span> <span class="cm-string">&quot;&quot;</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">string</span>.<span class="cm-property">slice</span>(<span class="cm-variable-2">first</span>);
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">parse</span>(<span class="cm-string">&quot;# hello\nx&quot;</span>));
+<span class="cm-comment">// → {type: &quot;word&quot;, name: &quot;x&quot;}</span>
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">parse</span>(<span class="cm-string">&quot;a # one\n   # two\n()&quot;</span>));
+<span class="cm-comment">// → {type: &quot;apply&quot;,</span>
+<span class="cm-comment">//    operator: {type: &quot;word&quot;, name: &quot;a&quot;},</span>
+<span class="cm-comment">//    args: []}</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_Dds6GLJzwb" href="#p_Dds6GLJzwb" tabindex="-1" role="presentation"></a>솔루션이 여러 주석을 연속으로 처리하는지 확인하십시오. 주석 사이나 뒤에 공백이 있을 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_w/PeZhCFV2" href="#p_w/PeZhCFV2" tabindex="-1" role="presentation"></a>정규식은 아마도 이것을 해결하는 가장 쉬운 방법일 것입니다. "공백 또는 주석, 0회 이상"과 일치하는 것을 작성하십시오. <code>exec</code> 또는 <code>match</code> 메서드를 사용하고 반환된 배열(전체 일치)에서 첫 번째 요소의 길이를 보고 잘라낼 문자 수를 찾습니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_Y9ZDMshYCQ" href="#i_Y9ZDMshYCQ" tabindex="-1" role="presentation"></a>범위 수정</h3>
+
+<p><a class="p_ident" id="p_wiUendOwjA" href="#p_wiUendOwjA" tabindex="-1" role="presentation"></a>현재 바인딩 값을 할당하는 유일한 방법은 <code>define</code>입니다. 이 구성은 새 바인딩을 정의하고 기존 바인딩에 새 값을 제공하는 방법으로 작동합니다.</p>
+
+<p><a class="p_ident" id="p_O06fqfa6CU" href="#p_O06fqfa6CU" tabindex="-1" role="presentation"></a>이러한 모호성으로 인해 문제가 발생합니다. 로컬이 아닌 바인딩에 새 값을 지정하려고 하면 결국 같은 이름으로 로컬 값을 정의하게 됩니다. 일부 언어는 의도적으로 이와 같이 작동하지만 범위를 처리하는데 항상 어색한 방법을 찾았습니다.</p>
+
+<p><a class="p_ident" id="p_wG0OsCIoJb" href="#p_wG0OsCIoJb" tabindex="-1" role="presentation"></a>바인딩에 새 값을 제공하는 <code>define</code>와 유사한 특수 형식 <code>set</code>을 추가하여 내부 범위에 아직 존재하지 않는 경우 외부 범위의 바인딩을 업데이트합니다. 바인딩이 전혀 정의되지 않은 경우 <code>ReferenceError</code>(다른 표준 오류 유형)를 던집니다.</p>
+
+<p><a class="p_ident" id="p_vI0CMB91dl" href="#p_vI0CMB91dl" tabindex="-1" role="presentation"></a>범위를 간단한 객체로 표현하는 기법을 지금까지 편리하게 만들었습니다. 객체의 프로토타입을 반환하는 함수 <code>Object.<wbr>getPrototypeOf</code>를 사용할 수 있습니다. 또한 범위는 <code>Object.prototype</code>에서 파생되지 않으므로 <code>hasOwnProperty</code>를 호출하려면 다음과 같은 서투른 표현을 사용해야 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_uQ8XmGT/j0" href="#c_uQ8XmGT/j0" tabindex="-1" role="presentation"></a><span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>.<span class="cm-property">hasOwnProperty</span>.<span class="cm-property">call</span>(<span class="cm-variable">scope</span>, <span class="cm-variable">name</span>);</pre>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_A8iULt4bk6" href="#c_A8iULt4bk6" tabindex="-1" role="presentation"></a><span class="cm-variable">specialForms</span>.<span class="cm-property">set</span> <span class="cm-operator">=</span> (<span class="cm-def">args</span>, <span class="cm-def">scope</span>) <span class="cm-operator">=&gt;</span> {
+  <span class="cm-comment">// 여기에 코드 작성</span>
+};
+
+<span class="cm-variable">run</span>(<span class="cm-string-2">`</span>
+<span class="cm-string-2">do(define(x, 4),</span>
+   <span class="cm-string-2">define(setx, fun(val, set(x, val))),</span>
+   <span class="cm-string-2">setx(50),</span>
+   <span class="cm-string-2">print(x))</span>
+<span class="cm-string-2">`</span>);
+<span class="cm-comment">// → 50</span>
+<span class="cm-variable">run</span>(<span class="cm-string-2">`set(quux, true)`</span>);
+<span class="cm-comment">// → Some kind of ReferenceError</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_NhXhfFLedb" href="#p_NhXhfFLedb" tabindex="-1" role="presentation"></a>다음 외부 범위로 이동하려면 <code>Object.<wbr>getPrototypeOf</code>를 사용하여 한 번에 하나의 범위를 반복해야 합니다. 각 범위에 대해 <code>set</code>에 대한 첫 번째 인수 <code>name</code>의 속성으로 표시된 바인딩이 해당 범위에 존재하는지 확인하는데 사용합니다. 그렇다면 <code>set</code>의 두 번째 인수를 평가한 결과로 설정한 다음 해당 값을 반환합니다.</p>
+
+<p><a class="p_ident" id="p_vdMHRjshzJ" href="#p_vdMHRjshzJ" tabindex="-1" role="presentation"></a>가장 바깥쪽 범위에 도달하고 (<code>Object.<wbr>getPrototypeOf</code>이 null을 반환) 바인딩을 아직 찾지 못한 경우 바인딩이 존재하지 않으므로 오류가 발생해야 합니다.</p>
+
+</div></div><nav><a href="11_async.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="13_browser.html" title="next chapter">▶</a></nav>
+</article>

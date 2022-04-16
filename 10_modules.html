@@ -1,0 +1,277 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>모듈</title>
+  <link rel=stylesheet href="js/node_modules/codemirror/lib/codemirror.css">
+  <script src="js/acorn_codemirror.js"></script>
+  <link rel=stylesheet href="css/ejs.css">
+  <script src="js/sandbox.js"></script>
+  <script src="js/ejs.js"></script><script>var chapNum = 10;var sandboxLoadFiles = ["code/packages_chapter_10.js","code/chapter/07_robot.js"];</script></head>
+
+<article>
+<nav><a href="09_regexp.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="11_async.html" title="next chapter">▶</a></nav>
+
+<h1><span class=chap_num>10</span>모듈</h1>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_OwlHMaRbBt" href="#p_OwlHMaRbBt" tabindex="-1" role="presentation"></a>삭제하기 쉽고 확장하기 쉽지 않은 코드를 작성하십시오.</p>
+
+<footer>Tef, <cite>프로그래밍은 끔찍하다</cite></footer>
+
+</blockquote><figure class="chapter framed"><img src="img/chapter_picture_10.jpg" alt="Picture of a building built from modular pieces"></figure>
+
+<p><a class="p_ident" id="p_lt7t/NZub8" href="#p_lt7t/NZub8" tabindex="-1" role="presentation"></a>이상적인 프로그램은 수정처럼 맑은 구조를 가지고 있습니다. 작동 방식은 설명하기 쉽고 각 부분은 잘 정의된 역할을 합니다.</p>
+
+<p><a class="p_ident" id="p_HLTCewyOYT" href="#p_HLTCewyOYT" tabindex="-1" role="presentation"></a>전형적인 실제 프로그램은 유기적으로 성장합니다. 새로운 요구 사항이 나타나면 새로운 기능이 추가됩니다. 구조화 및 구조 보존은 추가 작업입니다. 다음에 누군가가 프로그램에서 일할 때만 대가를 치르게 될 작업입니다. 따라서 이를 무시하고 프로그램의 일부가 깊이 얽히도록 내버려 두는 것이 좋습니다.</p>
+
+<p><a class="p_ident" id="p_Ph53LAfIAv" href="#p_Ph53LAfIAv" tabindex="-1" role="presentation"></a>이것은 두 가지 실질적인 문제를 야기합니다. 첫째, 그러한 시스템을 이해하는 것은 어렵습니다. 모든 것이 다른 모든 것과 접할 수 있다면 주어진 조각을 따로따로 보기는 어렵습니다. 전체에 대한 전체적인 이해를 구축해야 합니다. 둘째, 다른 상황에서 그러한 프로그램의 기능을 사용하려는 경우 컨텍스트에서 분리하는 것보다 다시 작성하는 것이 더 쉬울 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_pzOEW37Kfc" href="#p_pzOEW37Kfc" tabindex="-1" role="presentation"></a>"큰 진흙 덩어리"라는 문구는 이러한 크고 구조가 없는 프로그램에 자주 사용됩니다. 모든 것이 뭉쳐지고 한 조각을 뽑으려고 하면 전체가 흩어지고 손이 더러워진다.</p>
+
+<h2><a class="h_ident" id="h_BOlGLA/wK7" href="#h_BOlGLA/wK7" tabindex="-1" role="presentation"></a>Modules</h2>
+
+<p><a class="p_ident" id="p_LoWZBZ2Vpv" href="#p_LoWZBZ2Vpv" tabindex="-1" role="presentation"></a><em>Modules</em>은 이러한 문제를 피하기 위한 시도입니다. 모듈은 의존하는 다른 부분과 다른 모듈이 사용할 기능(해당 <em>interface</em>)을 지정하는 프로그램의 한 부분입니다.</p>
+
+<p><a class="p_ident" id="p_kjhUrZ1SF0" href="#p_kjhUrZ1SF0" tabindex="-1" role="presentation"></a>모듈 인터페이스는 6장에서 보았듯이 객체 인터페이스와 공통점이 많습니다. 그것들은 모듈의 일부를 외부 세계에서 사용할 수 있도록 만들고 나머지는 비공개로 유지합니다. 모듈이 서로 상호 작용하는 방식을 제한함으로써 시스템은 부품이 잘 정의된 커넥터를 통해 상호 작용하는 LEGO와 비슷해지고 모든 것이 모든 것과 혼합되는 진흙처럼 덜 됩니다.</p>
+
+<p><a class="p_ident" id="p_l+1k6bprY2" href="#p_l+1k6bprY2" tabindex="-1" role="presentation"></a>모듈 간의 관계를 종속성이라고 합니다. 모듈이 다른 모듈의 조각을 필요로 하는 경우 해당 모듈에 의존한다고 합니다. 이 사실이 모듈 자체에 명확하게 지정되어 있으면 주어진 모듈을 사용하고 종속성을 자동으로 로드하기 위해 어떤 다른 모듈이 있어야 하는지 파악하는 데 사용할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_4WkC7snvFx" href="#p_4WkC7snvFx" tabindex="-1" role="presentation"></a>그런 식으로 모듈을 분리하려면 각각 고유한 전용 범위가 필요합니다.</p>
+
+<p><a class="p_ident" id="p_bgQuCetNwq" href="#p_bgQuCetNwq" tabindex="-1" role="presentation"></a>JavaScript 코드를 다른 파일에 넣는 것만으로는 이러한 요구 사항을 충족할 수 없습니다. 파일은 여전히 동일한 전역 네임스페이스를 공유합니다. 의도적이든 우발적이든 서로의 바인딩을 방해할 수 있습니다. 그리고 종속성 구조는 여전히 불분명합니다.</p>
+
+<p><a class="p_ident" id="p_uf1CU70zfG" href="#p_uf1CU70zfG" tabindex="-1" role="presentation"></a>프로그램에 맞는 모듈 구조를 설계하는 것은 어려울 수 있습니다. 여전히 문제를 탐색하고 있는 단계에서 무엇이 효과가 있는지 확인하기 위해 다른 것을 시도하는 단계에서는 큰 주의를 산만하게 할 수 있으므로 너무 걱정하지 않는 것이 좋습니다. 일단 확고한 느낌이 들면 한 발 물러서서 정리하기에 좋은 때입니다.</p>
+
+<h2><a class="h_ident" id="h_CpmQEv+4ez" href="#h_CpmQEv+4ez" tabindex="-1" role="presentation"></a>Packages</h2>
+
+<p><a class="p_ident" id="p_g7o14y8ONd" href="#p_g7o14y8ONd" tabindex="-1" role="presentation"></a>별도의 조각으로 프로그램을 빌드하고 실제로 이러한 조각을 자체적으로 실행할 수 있는 이점 중 하나는 동일한 조각을 다른 프로그램에 적용할 수 있다는 것입니다.</p>
+
+<p><a class="p_ident" id="p_iBvlR95Pda" href="#p_iBvlR95Pda" tabindex="-1" role="presentation"></a>함수가 무엇에 의존하는지 명확하다면 필요한 모든 코드를 새 프로젝트에 복사하여 사용할 수 있습니다. 하지만 그 코드에서 실수를 발견하면 그 당시 작업하고 있는 어떤 프로그램에서든 수정하고 다른 프로그램에서도 수정하는 것을 잊어버릴 것입니다.</p>
+
+<p><a class="p_ident" id="p_TA/SfLJ50i" href="#p_TA/SfLJ50i" tabindex="-1" role="presentation"></a>코드 복제를 시작하면 복사본을 이리저리 옮기고 최신 상태로 유지하는 데 시간과 에너지를 낭비하게 됩니다.</p>
+
+<p><a class="p_ident" id="p_CNI2vOkPJp" href="#p_CNI2vOkPJp" tabindex="-1" role="presentation"></a>그것이 <em>packages</em>를 사용하는 이유입니다. 패키지는 배포(복사 및 설치)할 수 있는 코드 덩어리입니다. 여기에는 하나 이상의 모듈이 포함될 수 있으며 의존하는 다른 패키지에 대한 정보가 있습니다. 패키지는 일반적으로 패키지를 작성하지 않은 사람들이 여전히 사용할 수 있도록 패키지가 수행하는 작업을 설명하는 문서와 함께 제공됩니다.</p>
+
+<p><a class="p_ident" id="p_sZgcoPgtEe" href="#p_sZgcoPgtEe" tabindex="-1" role="presentation"></a>패키지에서 문제가 발견되거나 새로운 기능이 추가되면 패키지가 업데이트됩니다. 이제 이에 의존하는 프로그램(패키지일 수도 있음)을 새 버전으로 업그레이드할 수 있습니다.</p>
+
+<p id="modules_npm"><a class="p_ident" id="p_oiLHr3lvbw" href="#p_oiLHr3lvbw" tabindex="-1" role="presentation"></a>이러한 방식으로 작업하려면 인프라가 필요합니다. 패키지를 저장하고 찾을 장소와 패키지를 설치하고 업그레이드할 편리한 방법이 필요합니다. JavaScript 세계에서 이 인프라는 NPM(<a href="https://npmjs.org"><em>https://npmjs.org</em></a>)에서 제공합니다.</p>
+
+<p><a class="p_ident" id="p_WUPNc5b7D2" href="#p_WUPNc5b7D2" tabindex="-1" role="presentation"></a>NPM은 패키지를 다운로드(및 업로드)할 수 있는 온라인 서비스와 패키지를 설치하고 관리하는 데 도움이 되는 프로그램(Node.js와 함께 제공됨)을 제공합니다.</p>
+
+<p><a class="p_ident" id="p_kcXuOxm8Rl" href="#p_kcXuOxm8Rl" tabindex="-1" role="presentation"></a>현재 NPM에는 50만 개 이상의 다양한 패키지가 있습니다. 여기에서 거의 유용하고 공개적으로 사용 가능한 패키지를 찾을 수 있습니다. 예를 들어, 9장에서 만든 것과 유사한 INI 파일 파서는 패키지 이름 아래에서 사용할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_irXmhzBaaT" href="#p_irXmhzBaaT" tabindex="-1" role="presentation"></a><a href="20_node.html">20</a>에서는 <code>npm</code> 명령 라인 프로그램을 사용하여 이러한 패키지를 로컬로 설치하는 방법을 나타냅니다.</p>
+
+<p><a class="p_ident" id="p_D/2FJ7Crwg" href="#p_D/2FJ7Crwg" tabindex="-1" role="presentation"></a>다운로드 가능한 고품질 패키지를 갖는 것은 매우 의미가 있습니다. 이는 이전에 작성한 프로그램을 재창조하는 것을 피할 수 있고 몇 개의 키를 눌러 견고하고 잘 테스트된 구현을 얻을 수 있음을 의미합니다.</p>
+
+<p><a class="p_ident" id="p_4hMCknNFh+" href="#p_4hMCknNFh+" tabindex="-1" role="presentation"></a>소프트웨어는 복사 비용이 저렴하므로 누군가 작성하면 다른 사람에게 배포하는 것이 효율적인 프로세스입니다. 그러나 처음에 작성하는 것이 작업이며 코드에서 문제를 발견했거나 새로운 기능을 제안하려는 사람들에게 응답하는 것은 훨씬 더 많은 작업입니다.</p>
+
+<h2><a class="h_ident" id="h_QQ/m+TRmqd" href="#h_QQ/m+TRmqd" tabindex="-1" role="presentation"></a>즉석 모듈</h2>
+
+<p><a class="p_ident" id="p_VhfSheFY3t" href="#p_VhfSheFY3t" tabindex="-1" role="presentation"></a>2015년까지 JavaScript 언어에는 내장 모듈 시스템이 없었습니다. 그러나 사람들이 10년 이상 JavaScript로 대규모 시스템을 구축한 관계로 모듈이 필요합니다.</p>
+
+<p><a class="p_ident" id="p_EThAZWj4TA" href="#p_EThAZWj4TA" tabindex="-1" role="presentation"></a>JavaScript 함수를 사용하여 모듈 인터페이스를 나타내는 로컬 범위 및 객체를 만들 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_3jjByT+Dg0" href="#p_3jjByT+Dg0" tabindex="-1" role="presentation"></a>다음은 요일 이름과 숫자 사이를 이동하기 위한 모듈입니다(<code>Date</code>의 <code>getDay</code> 메서드에 의한 반환). 인터페이스는 <code>weekDay.name</code>과 <code>weekDay.number</code>로 구성되며 즉시 호출되는 함수 표현식 범위 내에서 로컬 바인딩 <code>names</code>을 은닉합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_m+yRMF5NXw" href="#c_m+yRMF5NXw" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">weekDay</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">const</span> <span class="cm-def">names</span> <span class="cm-operator">=</span> [<span class="cm-string">&quot;Sunday&quot;</span>, <span class="cm-string">&quot;Monday&quot;</span>, <span class="cm-string">&quot;Tuesday&quot;</span>, <span class="cm-string">&quot;Wednesday&quot;</span>,
+                 <span class="cm-string">&quot;Thursday&quot;</span>, <span class="cm-string">&quot;Friday&quot;</span>, <span class="cm-string">&quot;Saturday&quot;</span>];
+  <span class="cm-keyword">return</span> {
+    <span class="cm-property">name</span>(<span class="cm-def">number</span>) { <span class="cm-keyword">return</span> <span class="cm-variable-2">names</span>[<span class="cm-variable-2">number</span>]; },
+    <span class="cm-property">number</span>(<span class="cm-def">name</span>) { <span class="cm-keyword">return</span> <span class="cm-variable-2">names</span>.<span class="cm-property">indexOf</span>(<span class="cm-variable-2">name</span>); }
+  };
+}();
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">weekDay</span>.<span class="cm-property">name</span>(<span class="cm-variable">weekDay</span>.<span class="cm-property">number</span>(<span class="cm-string">&quot;Sunday&quot;</span>)));
+<span class="cm-comment">// → Sunday</span></pre>
+
+<p><a class="p_ident" id="p_uv8xnuw95L" href="#p_uv8xnuw95L" tabindex="-1" role="presentation"></a>이러한 스타일의 모듈은 어느 정도 격리를 제공하지만 종속성을 선언하지는 않습니다. 대신 인터페이스를 전역 범위에 넣고 종속성이 있는 경우 해당 종속성이 동일한 작업을 수행할 것으로 기대합니다. 오랫동안 이것은 웹 프로그래밍에서 사용되는 주요 접근 방식이었지만 지금은 대부분 쓸모가 없습니다.</p>
+
+<p><a class="p_ident" id="p_i8xxHMuJw+" href="#p_i8xxHMuJw+" tabindex="-1" role="presentation"></a>종속 관계를 코드의 일부로 만들려면 종속성 로드를 제어해야 합니다. 그렇게 하려면 문자열을 코드로 실행할 수 있어야 합니다. 자바스크립트로 이러한 작업이 가능합니다.</p>
+
+<h2 id="eval"><a class="h_ident" id="h_oeOkEDaadU" href="#h_oeOkEDaadU" tabindex="-1" role="presentation"></a>코드로 데이터 평가</h2>
+
+<p><a class="p_ident" id="p_jvij1au4eP" href="#p_jvij1au4eP" tabindex="-1" role="presentation"></a>데이터(코드 문자열)를 가져와 현재 프로그램의 일부로 실행하는 방법에는 여러 가지가 있습니다.</p>
+
+<p><a class="p_ident" id="p_8T3Py6Zkwc" href="#p_8T3Py6Zkwc" tabindex="-1" role="presentation"></a>가장 확실한 방법은 현재 범위 eval에서 문자열을 실행하는 특수 연산자 <code>eval</code>입니다. 이것은 주어진 이름이 참조하는 바인딩을 쉽게 예측할 수 있는 것과 같이 일반적으로 범위가 갖는 속성 중 일부를 손상시키기 때문에 일반적으로 잘못된 것입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_14x3bOXX9G" href="#c_14x3bOXX9G" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">x</span> <span class="cm-operator">=</span> <span class="cm-number">1</span>;
+<span class="cm-keyword">function</span> <span class="cm-def">evalAndReturnX</span>(<span class="cm-def">code</span>) {
+  <span class="cm-variable">eval</span>(<span class="cm-variable-2">code</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable">x</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">evalAndReturnX</span>(<span class="cm-string">&quot;var x = 2&quot;</span>));
+<span class="cm-comment">// → 2</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">x</span>);
+<span class="cm-comment">// → 1</span></pre>
+
+<p><a class="p_ident" id="p_wzjzmC3uLa" href="#p_wzjzmC3uLa" tabindex="-1" role="presentation"></a>데이터를 코드로 해석하기 위해 <code>Function</code> 생성자를 사용할 수 있습니다. 쉼표로 구분된 인수 이름 목록을 포함하는 문자열과 함수 본문이 포함된 문자열의 두 인수를 취합니다. 자체 범위를 가져오고 다른 범위와 이상한 일을 하지 않도록 코드를 함수 값으로 래핑합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Mc9BAi4AVK" href="#c_Mc9BAi4AVK" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">plusOne</span> <span class="cm-operator">=</span> <span class="cm-variable">Function</span>(<span class="cm-string">&quot;n&quot;</span>, <span class="cm-string">&quot;return n + 1;&quot;</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">plusOne</span>(<span class="cm-number">4</span>));
+<span class="cm-comment">// → 5</span></pre>
+
+<p><a class="p_ident" id="p_vgKeYBfC4h" href="#p_vgKeYBfC4h" tabindex="-1" role="presentation"></a>이것이 바로 모듈 시스템에 필요한 것입니다. 모듈의 코드를 함수로 래핑하고 해당 함수의 범위를 모듈 범위로 사용할 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_N33QHgUxbG" href="#h_N33QHgUxbG" tabindex="-1" role="presentation"></a>CommonJS</h2>
+
+<p id="commonjs"><a class="p_ident" id="p_kAtCGxNjIq" href="#p_kAtCGxNjIq" tabindex="-1" role="presentation"></a>고정된 JavaScript 모듈에 대해 가장 널리 사용되는 접근 방식으로 <em>CommonJS modules</em>을 들 수 있습니다. Node.js는 이를 사용하며 NPM의 대부분의 패키지에서 사용하는 시스템입니다.</p>
+
+<p><a class="p_ident" id="p_NM2zfHqLcE" href="#p_NM2zfHqLcE" tabindex="-1" role="presentation"></a>CommonJS 모듈의 주요 개념은 <code>require</code>라는 함수입니다. 종속성의 모듈 이름으로 이것을 호출하면 모듈이 로드되고 해당 인터페이스가 반환되는지 확인할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_CNeZtts3Cz" href="#p_CNeZtts3Cz" tabindex="-1" role="presentation"></a>로더가 모듈 코드를 함수로 래핑하기 때문에 모듈은 자동으로 자체 로컬 범위를 갖습니다. 그것들이 하는 일은 종속성에 접근하기 위해 <code>require</code>를 호출하고 <code>exports</code>로 바인딩된 객체에 인터페이스를 넣는 것입니다.</p>
+
+<p><a class="p_ident" id="p_ew2dDAURuM" href="#p_ew2dDAURuM" tabindex="-1" role="presentation"></a>다음 예의 모듈은 날짜 형식 지정 함수를 제공합니다. 그것은 NPM에서 요일 및 월에 관한 영어식 이름을 취하기 위해 <code>&quot;1st&quot;</code>와 <code>&quot;2nd&quot;</code> 및 <code>date-names</code>와 같은 문자열로 수들을 변환하기 위해 두 가지 패키지를 사용합니다. 그것은 단일 함수 <code>formatDate</code>를 내보냅니다(<code>Date</code>와 템플릿 문자열을 취함).</p>
+
+<p><a class="p_ident" id="p_fH0b3BN1Fp" href="#p_fH0b3BN1Fp" tabindex="-1" role="presentation"></a>템플릿 문자열에는 전체 연도 및 해당 달의 서열과 같은 형식을 지정하는 코드가 포함될 수 있습니다. "November 22nd 2017"과 같은 출력을 얻기 위해 <code>&quot;MMMM Do YYYY&quot;</code>와 같은 문자열을 제공할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_hEFnba6fud" href="#c_hEFnba6fud" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">ordinal</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">&quot;ordinal&quot;</span>);
+<span class="cm-keyword">const</span> {<span class="cm-def">days</span>, <span class="cm-def">months</span>} <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">&quot;date-names&quot;</span>);
+
+<span class="cm-variable">exports</span>.<span class="cm-property">formatDate</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">date</span>, <span class="cm-def">format</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">format</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/YYYY|M(MMM)?|Do?|dddd/g</span>, <span class="cm-def">tag</span> <span class="cm-operator">=&gt;</span> {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">tag</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;YYYY&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-variable-2">date</span>.<span class="cm-property">getFullYear</span>();
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">tag</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;M&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-variable-2">date</span>.<span class="cm-property">getMonth</span>();
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">tag</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;MMMM&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-variable">months</span>[<span class="cm-variable-2">date</span>.<span class="cm-property">getMonth</span>()];
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">tag</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;D&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-variable-2">date</span>.<span class="cm-property">getDate</span>();
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">tag</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;Do&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-variable">ordinal</span>(<span class="cm-variable-2">date</span>.<span class="cm-property">getDate</span>());
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">tag</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;dddd&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-variable">days</span>[<span class="cm-variable-2">date</span>.<span class="cm-property">getDay</span>()];
+  });
+};</pre>
+
+<p><a class="p_ident" id="p_jvrgfRxGB4" href="#p_jvrgfRxGB4" tabindex="-1" role="presentation"></a><code>ordinal</code>의 인터페이스는 단일 함수인 반면에 <code>date-names</code>는 여러 가지 것들을 포함하는(<code>days</code> 및 <code>months</code>는 배열명) 객체를 내보냅니다. Destructuring은 가져온 인터페이스에 관한 바인딩 생성 시에 아주 편리합니다.</p>
+
+<p><a class="p_ident" id="p_cHv4rZkvfj" href="#p_cHv4rZkvfj" tabindex="-1" role="presentation"></a>모듈은 그것이 갖는 인터페이스에 <code>exports</code>를 포함시켜 그것에 종속되는 모듈이 접근될 수 있도록 합니다. 다음과 같이 모듈을 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_pWURcHuHTt" href="#c_pWURcHuHTt" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> {<span class="cm-def">formatDate</span>} <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">&quot;./format-date&quot;</span>);
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">formatDate</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Date</span>(<span class="cm-number">2017</span>, <span class="cm-number">9</span>, <span class="cm-number">13</span>),
+                       <span class="cm-string">&quot;dddd the Do&quot;</span>));
+<span class="cm-comment">// → Friday the 13th</span></pre>
+
+<p id="require"><a class="p_ident" id="p_vmJrDleGRH" href="#p_vmJrDleGRH" tabindex="-1" role="presentation"></a>다음과 같이 거의 명목적인 형태로 <code>require</code>를 정의할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="require"><a class="c_ident" id="c_CSMfqoYOzp" href="#c_CSMfqoYOzp" tabindex="-1" role="presentation"></a><span class="cm-variable">require</span>.<span class="cm-property">cache</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+
+<span class="cm-keyword">function</span> <span class="cm-def">require</span>(<span class="cm-def">name</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span>(<span class="cm-variable-2">name</span> <span class="cm-keyword">in</span> <span class="cm-variable">require</span>.<span class="cm-property">cache</span>)) {
+    <span class="cm-keyword">let</span> <span class="cm-def">code</span> <span class="cm-operator">=</span> <span class="cm-variable">readFile</span>(<span class="cm-variable-2">name</span>);
+    <span class="cm-keyword">let</span> <span class="cm-def">module</span> <span class="cm-operator">=</span> {<span class="cm-property">exports</span>: {}};
+    <span class="cm-variable">require</span>.<span class="cm-property">cache</span>[<span class="cm-variable-2">name</span>] <span class="cm-operator">=</span> <span class="cm-variable-2">module</span>;
+    <span class="cm-keyword">let</span> <span class="cm-def">wrapper</span> <span class="cm-operator">=</span> <span class="cm-variable">Function</span>(<span class="cm-string">&quot;require, exports, module&quot;</span>, <span class="cm-variable-2">code</span>);
+    <span class="cm-variable-2">wrapper</span>(<span class="cm-variable">require</span>, <span class="cm-variable-2">module</span>.<span class="cm-property">exports</span>, <span class="cm-variable-2">module</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable">require</span>.<span class="cm-property">cache</span>[<span class="cm-variable-2">name</span>].<span class="cm-property">exports</span>;
+}</pre>
+
+<p><a class="p_ident" id="p_sc1VEkBDCY" href="#p_sc1VEkBDCY" tabindex="-1" role="presentation"></a>이 코드에서 <code>readFile</code>은 파일을 읽고 그 내용을 문자열로 반환하는 구성된 함수입니다. 표준 JavaScript는 이러한 기능을 제공하지 않지만 브라우저 및 Node.js와 같은 다른 JavaScript 환경은 파일에 액세스하는 고유한 방법을 제공합니다. 예는 마치 <code>readFile</code>이 존재하는 것과 같습니다.</p>
+
+<p><a class="p_ident" id="p_DxNIETFONd" href="#p_DxNIETFONd" tabindex="-1" role="presentation"></a>동일한 모듈을 여러 번 로드하지 않기 위해 <code>require</code>는 이미 로드된 모듈의 저장소(캐시)를 유지합니다. 호출되면 먼저 요청된 모듈이 로드 되었는지 확인하고 로드되지 않은 경우 로드합니다. 여기에는 모듈의 코드를 읽고 함수로 래핑하고 호출하는 작업이 포함됩니다.</p>
+
+<p><a class="p_ident" id="p_tI7DzFSLjM" href="#p_tI7DzFSLjM" tabindex="-1" role="presentation"></a>앞에 나타낸 <code>ordinal</code> 패키지의 인터페이스는 객체가 아닌 함수입니다. CommonJS 모듈의 특이한 점은 모듈 시스템이 빈 인터페이스 객체를 생성하지만(<code>exports</code>에 결합된) <code>module.exports</code>에 덮어써서 이를 임의의 값으로 바꿀 수 있다는 것입니다. 이것은 인터페이스 객체 대신 단일 값을 내보내는 많은 모듈에 의해 수행됩니다.</p>
+
+<p><a class="p_ident" id="p_1en0vUqbeI" href="#p_1en0vUqbeI" tabindex="-1" role="presentation"></a>생성된 레퍼 함수에 관해 매개변수들로 <code>require</code>, <code>exports</code> 및 <code>module</code>을 정의함으로써(호출 시에 적절한 값들이 전달되는) 로더는 모듈 범위에서 이러한 결합들이 이용 가능할 수 있도록 합니다.</p>
+
+<p><a class="p_ident" id="p_xriS0EN27o" href="#p_xriS0EN27o" tabindex="-1" role="presentation"></a><code>require</code>에 주어진 문자열이 실제 파일 이름이나 웹 주소로 변환 되는 방식은 시스템마다 다릅니다. 그것이 <code>&quot;./&quot;</code> 또는 <code>&quot;../&quot;</code>로 시작하면 일반적으로 현재 모듈의 파일 이름에 상대적인 것으로 해석됩니다. 그래서 <code>&quot;./<wbr>format-date&quot;</code>는 <code>format-date.js</code>라는 이름의 파일은 같은 디렉토리에 있게 됩니다.</p>
+
+<p><a class="p_ident" id="p_L5+LG67XHa" href="#p_L5+LG67XHa" tabindex="-1" role="presentation"></a>이름이 상대적이지 않으면 Node.js는 해당 이름으로 설치된 패키지를 찾습니다. 이 페이지의 예 코드에서는 이러한 이름을 NPM 패키지를 참조하는 것으로 해석합니다. NPM 모듈을 설치하고 사용하는 방법은 20장에서 자세히 나타냅니다.</p>
+
+<p id="modules_ini"><a class="p_ident" id="p_B5bzWP/zEC" href="#p_B5bzWP/zEC" tabindex="-1" role="presentation"></a>이제 자체 INI 파일 파서를 작성하는 대신 NPM의 파서를 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_LfcCXOMZGr" href="#c_LfcCXOMZGr" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> {<span class="cm-def">parse</span>} <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">&quot;ini&quot;</span>);
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">parse</span>(<span class="cm-string">&quot;x = 10\ny = 20&quot;</span>));
+<span class="cm-comment">// → {x: &quot;10&quot;, y: &quot;20&quot;}</span></pre>
+
+<h2><a class="h_ident" id="h_hF2FmOVxw7" href="#h_hF2FmOVxw7" tabindex="-1" role="presentation"></a>ECMAScript 모듈</h2>
+
+<p><a class="p_ident" id="p_ZB3AF/XP4y" href="#p_ZB3AF/XP4y" tabindex="-1" role="presentation"></a>CommonJS 모듈은 매우 잘 작동하며 NPM과 함께 JavaScript 커뮤니티에서 대규모 코드 공유를 시작할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_yy6++k1U8b" href="#p_yy6++k1U8b" tabindex="-1" role="presentation"></a>그러나 그것들은 약간의 덕트 테이프 해킹으로 남아 있습니다. 표기법은 약간 어색합니다. <code>exports</code>에 추가되는 항목은 로컬 범위에서 사용할 수 없습니다. 그리고 <code>require</code>는 문자열 리터럴뿐만 아니라 모든 종류의 인수를 취하는 일반 함수 호출이기 때문에 코드를 실행하지 않고 모듈의 종속성을 결정하기 어려울 수 있습니다.</p>
+
+<p id="es"><a class="p_ident" id="p_fGE1JkAJHH" href="#p_fGE1JkAJHH" tabindex="-1" role="presentation"></a>이것이 2015년부터 JavaScript 표준이 자체적으로 다른 모듈 시스템을 도입한 이유입니다. 일반적으로 <em>ES modules</em>이라고 하며 여기서 <em>ES</em>는 ECMAScript를 나타냅니다. 종속성과 인터페이스의 주요 개념은 동일하게 유지되지만 세부 사항은 다릅니다. 우선 표기법이 이제 언어에 통합되었습니다. 종속성에 액세스하기 위해 함수를 호출하는 대신 특수 <code>import</code> 키워드를 사용합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_EpiH8qOAcJ" href="#c_EpiH8qOAcJ" tabindex="-1" role="presentation"></a><span class="cm-keyword">import</span> <span class="cm-def">ordinal</span> <span class="cm-keyword">from</span> <span class="cm-string">&quot;ordinal&quot;</span>;
+<span class="cm-keyword">import</span> {<span class="cm-def">days</span>, <span class="cm-def">months</span>} <span class="cm-keyword">from</span> <span class="cm-string">&quot;date-names&quot;</span>;
+
+<span class="cm-keyword">export</span> <span class="cm-keyword">function</span> <span class="cm-def">formatDate</span>(<span class="cm-def">date</span>, <span class="cm-def">format</span>) { <span class="cm-comment">/* ... */</span> }</pre>
+
+<p><a class="p_ident" id="p_Md0hUIO/t1" href="#p_Md0hUIO/t1" tabindex="-1" role="presentation"></a>마찬가지로 <code>export</code> 키워드는 항목을 내보내는 데 사용됩니다. 함수, 클래스 또는 바인딩 정의(<code>let</code>, <code>const</code> 또는 <code>var</code>) 앞에 나타날 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_2XcNI5i8RP" href="#p_2XcNI5i8RP" tabindex="-1" role="presentation"></a>ES 모듈의 인터페이스는 단일 값이 아니라 명명된 바인딩 집합입니다. 앞의 모듈은 <code>formatDate</code> 함수에 바인딩 됩니다. 다른 모듈에서 가져올 때 값이 아닌 바인딩 을 가져옵니다. 즉, 내보내는 모듈이 언제든지 바인딩 값을 변경할 수 있으며 이를 가져오는 모듈에 새 값이 표시됩니다.</p>
+
+<p><a class="p_ident" id="p_H96aQvDt7C" href="#p_H96aQvDt7C" tabindex="-1" role="presentation"></a><code>default</code>라는 바인딩이 있으면 모듈의 기본 내보낸 값으로 처리됩니다. 만일 <code>ordinal</code>과 같은 예에서 가져오면, 바인딩 이름을 둘러싼 괄호 없이 <code>default</code>을 취할 수 있습니다. 이러한 모듈은 <code>default</code> 내보내기와 함께 다른 이름으로 다른 바인딩을 계속 내보낼 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_C4XHB0ByrT" href="#p_C4XHB0ByrT" tabindex="-1" role="presentation"></a>기본 내보내기를 만들려면 표현식, 함수 선언 또는 클래스 선언 앞에 <code>export default</code>를 작성합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Y6Wnu9X+/W" href="#c_Y6Wnu9X+/W" tabindex="-1" role="presentation"></a><span class="cm-keyword">export</span> <span class="cm-keyword">default</span> [<span class="cm-string">&quot;Winter&quot;</span>, <span class="cm-string">&quot;Spring&quot;</span>, <span class="cm-string">&quot;Summer&quot;</span>, <span class="cm-string">&quot;Autumn&quot;</span>];</pre>
+
+<p><a class="p_ident" id="p_XbHIrV+nuJ" href="#p_XbHIrV+nuJ" tabindex="-1" role="presentation"></a><code>as</code>라는 단어를 사용하여 가져온 바인딩의 이름을 바꿀 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_I7jPaQvsXj" href="#c_I7jPaQvsXj" tabindex="-1" role="presentation"></a><span class="cm-keyword">import</span> {<span class="cm-def">days</span> <span class="cm-keyword">as</span> <span class="cm-def">dayNames</span>} <span class="cm-keyword">from</span> <span class="cm-string">&quot;date-names&quot;</span>;
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">dayNames</span>.<span class="cm-property">length</span>);
+<span class="cm-comment">// → 7</span></pre>
+
+<p><a class="p_ident" id="p_oqym70c7ZR" href="#p_oqym70c7ZR" tabindex="-1" role="presentation"></a>또 다른 중요한 차이점은 ES 모듈 가져오기가 모듈의 스크립트 실행을 시작하기 전에 발생한다는 것입니다. 즉, <code>import</code> 선언은 함수 또는 블록 내부에 나타나지 않을 수 있으며 종속성의 이름은 임의의 표현식이 아닌 인용 문자열이어야 합니다.</p>
+
+<p><a class="p_ident" id="p_UEipP/dEjR" href="#p_UEipP/dEjR" tabindex="-1" role="presentation"></a>많은 프로젝트가 ES 모듈을 사용하여 작성된 다음 게시될 때 자동으로 다른 형식으로 변환됩니다.</p>
+
+<h2><a class="h_ident" id="h_P8pyzbI9vO" href="#h_P8pyzbI9vO" tabindex="-1" role="presentation"></a>모듈 설계</h2>
+
+<p><a class="p_ident" id="p_8K2T8s7itK" href="#p_8K2T8s7itK" tabindex="-1" role="presentation"></a>프로그램을 구조화하는 것은 프로그래밍의 미묘한 측면 중 하나입니다. 중요하지 않은 기능은 다양한 방식으로 모델링할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_98c2qP5s8p" href="#p_98c2qP5s8p" tabindex="-1" role="presentation"></a>좋은 프로그램 디자인은 주관적입니다. 관련된 절충안과 취향의 문제가 있습니다. 잘 구조화된 디자인의 가치를 배우는 가장 좋은 방법은 많은 프로그램을 읽거나 작업하고 작동하는 것과 작동하지 않는 것을 확인하는 것입니다.</p>
+
+<p><a class="p_ident" id="p_AF7qUrMoR4" href="#p_AF7qUrMoR4" tabindex="-1" role="presentation"></a>모듈 설계의 한 측면은 사용 용이성입니다. 여러 사람이 사용하도록 의도된 무언가를 디자인하는 경우 인터페이스가 단순하고 예측 가능하면 도움이 됩니다.</p>
+
+<p><a class="p_ident" id="p_hHDSnM2Orb" href="#p_hHDSnM2Orb" tabindex="-1" role="presentation"></a>이는 기존 규칙을 따르는 것을 의미할 수 있습니다. 좋은 예가 <code>ini</code> 패키지입니다. 이 모듈은 <code>parse</code> 및 <code>stringify</code> (INI 파일을 작성하기 위해) 함수를 제공하여 표준 <code>JSON</code> 객체를 모방하고, <code>JSON</code>과 같이 문자열과 일반 객체 간에 변환합니다. 따라서 인터페이스가 작고 친숙하며 한 번 사용하고 나면 사용 방법을 기억할 가능성이 큽니다.</p>
+
+<p><a class="p_ident" id="p_uS+as91Giv" href="#p_uS+as91Giv" tabindex="-1" role="presentation"></a>모방할 표준 기능이나 널리 사용되는 패키지가 없더라도 간단한 데이터 구조를 사용하고 집중된 단일 작업을 수행하여 모듈을 예측 가능하게 유지할 수 있습니다. 예를 들어 NPM의 많은 INI 파일 구문 분석 모듈은 하드 디스크에서 이러한 파일을 직접 읽고 구문 분석하는 기능을 제공합니다. 이것은 직접 파일 시스템에 접근할 수 없는 브라우저에서 그러한 모듈을 사용하는 것을 불가능하게 하고, 일부 파일 읽기 기능으로 모듈을 구성함으로써 더 잘 처리되었을 복잡성을 추가 합니다.</p>
+
+<p><a class="p_ident" id="p_JYcq/PgjlO" href="#p_JYcq/PgjlO" tabindex="-1" role="presentation"></a>이것은 모듈 설계의 또 다른 유용한 측면, 즉 다른 코드로 무언가를 쉽게 구성할 수 있음을 나타냅니다. 값을 계산하는 집중 모듈은 부작용이 있는 복잡한 작업을 수행하는 더 큰 모듈보다 더 넓은 범위의 프로그램에 적용할 수 있습니다. 디스크에서 파일을 읽어야 한다고 주장하는 INI 파일 판독기는 파일의 내용이 다른 소스에서 오는 시나리오에서는 쓸모가 없습니다.</p>
+
+<p><a class="p_ident" id="p_6cqySeVoki" href="#p_6cqySeVoki" tabindex="-1" role="presentation"></a>이와 관련하여 상태 저장 객체는 때때로 유용하거나 심지어 필요하기도 하지만 함수로 무언가를 수행할 수 있다면 함수를 사용하십시오. NPM의 여러 INI 파일 판독기는 먼저 개체를 만든 다음 파일을 개체에 로드하고 마지막으로 특수 메서드를 사용하여 결과를 얻어야 하는 인터페이스 스타일을 제공합니다. 이러한 유형의 것은 객체 지향 전통에서 일반적이며 끔찍합니다. 단일 함수 호출을 수행하고 계속 진행하는 대신 다양한 상태를 통해 개체를 이동하는 의식을 수행해야 합니다. 그리고 이제 데이터가 특수 개체 유형으로 래핑되기 때문에 데이터와 상호 작용하는 모든 코드는 해당 유형에 대해 알아야 하므로 불필요한 상호 종속성을 생성합니다.</p>
+
+<p><a class="p_ident" id="p_uR7iWbgBIy" href="#p_uR7iWbgBIy" tabindex="-1" role="presentation"></a>종종 새로운 데이터 구조를 정의하는 것은 피할 수 없습니다. 언어 표준에서는 몇 가지 기본 구조만 제공하고 많은 유형의 데이터는 배열이나 맵보다 더 복잡해야 합니다. 그러나 배열이 충분하면 배열을 사용하십시오.</p>
+
+<p><a class="p_ident" id="p_gE7WoNX7+Z" href="#p_gE7WoNX7+Z" tabindex="-1" role="presentation"></a>약간 더 복잡한 데이터 구조의 예는 7장의 그래프입니다. JavaScript에서 그래프를 표현하는 확실한 방법은 없습니다. 그 장에서 속성이 문자열 배열을 포함하는 객체를 사용했습니다. 다른 노드는 해당 노드에서 도달할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_17Fkotj+nV" href="#p_17Fkotj+nV" tabindex="-1" role="presentation"></a>NPM에는 여러 가지 다른 경로 찾기 패키지가 있지만 그 중 어느 것도 이 그래프 형식을 사용하지 않습니다. 일반적으로 그래프의 가장자리에 관련 비용 또는 거리인 가중치를 부여합니다. 그것은 여기 표현에서 가능하지 않습니다.</p>
+
+<p><a class="p_ident" id="p_d3wpFXYEjN" href="#p_d3wpFXYEjN" tabindex="-1" role="presentation"></a>예를 들어 <code>dijkstrajs</code> 패키지가 있습니다. <code>findRoute</code> 함수와 매우 유사한 경로 찾기에 대한 잘 알려진 접근 방식은 처음으로 작성한 Edsger Dijkstra의 이름을 따서 <em>Dijkstra</em> 알고리즘이라고 합니다. <code>js</code> 접미사는 종종 자바 스크립트로 작성된 사실을 나타내기 위해 패키지 이름에 추가됩니다. 이 <code>dijkstrajs</code> 패키지는 유사한 그래프 형식을 사용하지만 배열 대신 속성 값이 숫자(가장자리의 가중치)인 객체를 사용합니다.</p>
+
+<p><a class="p_ident" id="p_3iug1e4kQG" href="#p_3iug1e4kQG" tabindex="-1" role="presentation"></a>따라서 해당 패키지를 사용하려면 그래프가 예상하는 형식으로 저장되었는지 확인해야 합니다. 단순화된 모델이 각 도로를 동일한 비용으로 취급하기 때문에 모든 간선은 동일한 가중치를 갖습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_NyRXVpwPYN" href="#c_NyRXVpwPYN" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> {<span class="cm-def">find_path</span>} <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">&quot;dijkstrajs&quot;</span>);
+
+<span class="cm-keyword">let</span> <span class="cm-def">graph</span> <span class="cm-operator">=</span> {};
+<span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">node</span> <span class="cm-keyword">of</span> <span class="cm-variable">Object</span>.<span class="cm-property">keys</span>(<span class="cm-variable">roadGraph</span>)) {
+  <span class="cm-keyword">let</span> <span class="cm-def">edges</span> <span class="cm-operator">=</span> <span class="cm-variable">graph</span>[<span class="cm-variable">node</span>] <span class="cm-operator">=</span> {};
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">dest</span> <span class="cm-keyword">of</span> <span class="cm-variable">roadGraph</span>[<span class="cm-variable">node</span>]) {
+    <span class="cm-variable">edges</span>[<span class="cm-variable">dest</span>] <span class="cm-operator">=</span> <span class="cm-number">1</span>;
+  }
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">find_path</span>(<span class="cm-variable">graph</span>, <span class="cm-string">&quot;Post Office&quot;</span>, <span class="cm-string">&quot;Cabin&quot;</span>));
+<span class="cm-comment">// → [&quot;Post Office&quot;, &quot;Alice's House&quot;, &quot;Cabin&quot;]</span></pre>
+
+
+<h2><a class="h_ident" id="h_ErccPg/l98" href="#h_ErccPg/l98" tabindex="-1" role="presentation"></a>요약</h2>
+
+<p><a class="p_ident" id="p_OX2jY0nGFw" href="#p_OX2jY0nGFw" tabindex="-1" role="presentation"></a>모듈은 명확한 인터페이스와 종속성을 가진 조각으로 코드를 분리하여 더 큰 프로그램에 구조를 제공합니다. 인터페이스는 다른 모듈에서 볼 수 있는 모듈의 일부이고 종속성은 사용하는 다른 모듈입니다.</p>
+
+<p><a class="p_ident" id="p_sYCJxIhCEI" href="#p_sYCJxIhCEI" tabindex="-1" role="presentation"></a>JavaScript는 역사적으로 모듈 시스템을 제공하지 않았기 때문에 CommonJS 시스템이 그 위에 구축되었습니다.</p>
+
+<p><a class="p_ident" id="p_wDM2Q8HBcB" href="#p_wDM2Q8HBcB" tabindex="-1" role="presentation"></a>패키지는 자체적으로 배포할 수 있는 코드 덩어리입니다. NPM은 JavaScript 패키지의 저장소입니다. 모든 종류의 유용한(그리고 쓸모없는) 패키지를 다운로드할 수 있습니다.</p>
+
+
+</div></div>
+
+
+<nav><a href="09_regexp.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="11_async.html" title="next chapter">▶</a></nav>
+</article>

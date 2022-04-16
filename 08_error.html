@@ -1,0 +1,473 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>버그 및 오류</title>
+  <link rel=stylesheet href="js/node_modules/codemirror/lib/codemirror.css">
+  <script src="js/acorn_codemirror.js"></script>
+  <link rel=stylesheet href="css/ejs.css">
+  <script src="js/sandbox.js"></script>
+  <script src="js/ejs.js"></script><script>var chapNum = 8;var sandboxLoadFiles = ["code/chapter/08_error.js"];</script></head>
+
+<article>
+<nav><a href="07_robot.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="09_regexp.html" title="next chapter">▶</a></nav>
+
+<h1><span class=chap_num>8장</span>버그 및 오류</h1>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_tsWlII94Rs" href="#p_tsWlII94Rs" tabindex="-1" role="presentation"></a>디버깅은 처음에 코드를 작성하는 것보다 두 배 더 어렵습니다. 따라서 코드를 가능한 영리하게 작성하면 정의상 디버그할 만큼 똑똑하지 않은 것입니다.</p>
+
+<footer>Brian Kernighan와 P.J. Plauger, <cite>프로그래밍 스타일의 요소</cite></footer>
+
+</blockquote><figure class="chapter framed"><img src="img/chapter_picture_8.jpg" alt="Picture of a collection of bugs"></figure>
+
+<p><a class="p_ident" id="p_O+MttnhYVC" href="#p_O+MttnhYVC" tabindex="-1" role="presentation"></a>컴퓨터 프로그램의 결함은 일반적으로 <em>bugs</em>라 합니다. 프로그래머는 작업에 우연히 들어 오는 작은 일을 상상하는 것이 좋습니다. 물론 실제로는 직접 배치합니다.</p>
+
+<p><a class="p_ident" id="p_bcWk0EwGpY" href="#p_bcWk0EwGpY" tabindex="-1" role="presentation"></a>프로그램이 생각이 구체화된 것이라면 버그는 생각이 혼돈되어 생긴 버그와 생각을 코드로 변환하는 과정에서 도입된 실수로 인한 버그로 크게 나눌 수 있습니다. 전자는 일반적으로 후자보다 진단 및 수정이 더 어렵습니다.</p>
+
+<h2><a class="h_ident" id="h_ibhqsOZvUn" href="#h_ibhqsOZvUn" tabindex="-1" role="presentation"></a>언어</h2>
+
+<p><a class="p_ident" id="p_ye1ml09vBV" href="#p_ye1ml09vBV" tabindex="-1" role="presentation"></a>컴퓨터가 하려고 하는 것에 대해 충분히 알고 있다면 많은 실수를 자동으로 지적할 수 있습니다. 그러나 여기서 JavaScript의 느슨함은 장애물입니다. 바인딩 및 속성의 개념은 프로그램을 실제로 실행하기 전에 오타를 거의 잡지 못할 정도로 모호합니다. 그리고 그럴 때에도 컴퓨팅과 같이 불만 없이 명확하게 무의미한 일을 할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_EcSg7P4I9E" href="#p_EcSg7P4I9E" tabindex="-1" role="presentation"></a>JavaScript가 불평하는 몇 가지 사항이 있습니다. 언어의 문법을 따르지 않는 프로그램을 작성하면 즉시 컴퓨터가 불평할 것입니다. 함수가 아닌 것을 호출하거나 정의되지 않은 값에서 속성을 찾는 것과 같은 다른 것들은 프로그램이 작업을 수행하려고 할 때 오류가 보고되도록 합니다.</p>
+
+<p><a class="p_ident" id="p_LaAYmHSV12" href="#p_LaAYmHSV12" tabindex="-1" role="presentation"></a>프로그램에서 실수(버그)를 찾는 과정을 <em>debugging</em>이라고 합니다.</p>
+
+<h2><a class="h_ident" id="h_u1jlTq3i42" href="#h_u1jlTq3i42" tabindex="-1" role="presentation"></a>엄격한(Strict) 모드</h2>
+
+<p><a class="p_ident" id="p_WJCaiNx5iy" href="#p_WJCaiNx5iy" tabindex="-1" role="presentation"></a>JavaScript는 <em>strict mode</em>를 활성화 하여 좀 더 엄격하게 만들 수 있습니다. 이것은 파일 또는 함수 본문의 맨 위에 문자열 <code>&quot;use strict&quot;</code>을 넣어 수행됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_tKCBneE0vw" href="#c_tKCBneE0vw" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">canYouSpotTheProblem</span>() {
+  <span class="cm-string">&quot;use strict&quot;</span>;
+  <span class="cm-keyword">for</span> (<span class="cm-variable">counter</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable">counter</span> <span class="cm-operator">&lt;</span> <span class="cm-number">10</span>; <span class="cm-variable">counter</span><span class="cm-operator">++</span>) {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Happy happy&quot;</span>);
+  }
+}
+
+<span class="cm-variable">canYouSpotTheProblem</span>();
+<span class="cm-comment">// → ReferenceError: counter is not defined</span></pre>
+
+<p><a class="p_ident" id="p_9RL+1s9Y4+" href="#p_9RL+1s9Y4+" tabindex="-1" role="presentation"></a>일반적으로 바인딩 앞에 <code>let</code>를 넣는 것을 잊었을 때 JavaScript는 조용히 전역 바인딩을 생성하고 그것을 사용합니다. 엄격 모드에서는 대신 오류가 보고됩니다. 이것은 매우 도움이 됩니다. 그러나 문제의 바인딩이 이미 전역 바인딩으로 존재하는 경우에는 작동하지 않는다는 점에 유의해야 합니다. 이 경우 루프는 여전히 바인딩 값을 조용히 덮어씁니다.</p>
+
+<p><a class="p_ident" id="p_WqXHKWNRd1" href="#p_WqXHKWNRd1" tabindex="-1" role="presentation"></a>엄격 모드의 또 다른 변경 사항은 <code>this</code> 바인딩이 메서드로 호출되지 않는 함수에서 <code>undefined</code> 값을 포함하는 것입니다. 엄격 모드 외부에서 이러한 호출을 수행할 때 <code>this</code>는 속성이 전역 바인딩인 객체인 전역 범위 객체를 나타냅니다. 따라서 엄격 모드에서 실수로 메서드나 생성자를 잘못 호출하면 JavaScript는 전역 범위로 작성하기 보다는 <code>this</code>로부터 무언가를 읽으려고 하는 오류를 생성합니다.</p>
+
+<p><a class="p_ident" id="p_eZSU5aTSD4" href="#p_eZSU5aTSD4" tabindex="-1" role="presentation"></a><code>new</code> 키워드가 없는 생성자 함수를 호출하는 다음 예는 <code>this</code>가 새로 생성된 객체를 참조하지 않습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_FPKrb2F1C3" href="#c_FPKrb2F1C3" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">Person</span>(<span class="cm-def">name</span>) { <span class="cm-keyword">this</span>.<span class="cm-property">name</span> <span class="cm-operator">=</span> <span class="cm-variable-2">name</span>; }
+<span class="cm-keyword">let</span> <span class="cm-def">ferdinand</span> <span class="cm-operator">=</span> <span class="cm-variable">Person</span>(<span class="cm-string">&quot;Ferdinand&quot;</span>); <span class="cm-comment">// oops</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">name</span>);
+<span class="cm-comment">// → Ferdinand</span></pre>
+
+<p><a class="p_ident" id="p_Tv3LlrrZaj" href="#p_Tv3LlrrZaj" tabindex="-1" role="presentation"></a>따라서 <code>Person</code>에 대한 가짜 호출은 성공했지만 정의되지 않은 값을 반환하고 전역 바인딩 <code>name</code>을 만들었습니다. 엄격 모드에서는 결과가 다릅니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_HFy5dGOOh4" href="#c_HFy5dGOOh4" tabindex="-1" role="presentation"></a><span class="cm-string">&quot;use strict&quot;</span>;
+<span class="cm-keyword">function</span> <span class="cm-def">Person</span>(<span class="cm-def">name</span>) { <span class="cm-keyword">this</span>.<span class="cm-property">name</span> <span class="cm-operator">=</span> <span class="cm-variable-2">name</span>; }
+<span class="cm-keyword">let</span> <span class="cm-def">ferdinand</span> <span class="cm-operator">=</span> <span class="cm-variable">Person</span>(<span class="cm-string">&quot;Ferdinand&quot;</span>); <span class="cm-comment">// forgot new</span>
+<span class="cm-comment">// → TypeError: Cannot set property 'name' of undefined</span></pre>
+
+<p><a class="p_ident" id="p_0eYPyoGi1l" href="#p_0eYPyoGi1l" tabindex="-1" role="presentation"></a>즉시 뭔가 잘못되었다는 말을 듣게 되는데, 이것은 도움이 됩니다.</p>
+
+<p><a class="p_ident" id="p_WGJIyAOZ/i" href="#p_WGJIyAOZ/i" tabindex="-1" role="presentation"></a>다행히도 <code>class</code> 표기법을 사용하여 생성된 생성자는 <code>new</code>가 없이 호출하면 항상 불평하므로 비엄격 모드에서도 문제가 되지 않습니다.</p>
+
+<p><a class="p_ident" id="p_qlYTT6nRD4" href="#p_qlYTT6nRD4" tabindex="-1" role="presentation"></a>엄격 모드는 몇 가지 더 많은 작업을 수행합니다. 그것은 함수에 동일한 이름을 가진 여러 매개변수를 제공하는 것을 허용하지 않으며 특정 문제가 있는 언어 기능을 완전히 제거합니다.</p>
+
+<p><a class="p_ident" id="p_kIUErMqROW" href="#p_kIUErMqROW" tabindex="-1" role="presentation"></a>요컨대, <code>&quot;use strict&quot;</code>을 프로그램의 맨 위에 놓는 것은 거의 문제가 되지 않으며 문제를 발견하는 데 도움이 될 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_k7niieKEJG" href="#h_k7niieKEJG" tabindex="-1" role="presentation"></a>타입</h2>
+
+<p><a class="p_ident" id="p_YhTIyNZyz8" href="#p_YhTIyNZyz8" tabindex="-1" role="presentation"></a>일부 언어는 프로그램을 실행하기 전에 모든 바인딩 및 표현식의 타입을 알고 싶어합니다. 타입이 일관되지 않은 방식으로 사용되면 즉시 알려줍니다. 자바스크립트는 실제로 프로그램을 실행할 때만 타입을 고려하고, 심지어 거기에서도 암시적으로 값을 예상하는 타입으로 변환하려고 시도하기 때문에 별로 도움이 되지 않습니다.</p>
+
+<p><a class="p_ident" id="p_YdtQydcPrv" href="#p_YdtQydcPrv" tabindex="-1" role="presentation"></a>그래도 타입은 프로그램에 대해 이야기하는 데 유용한 프레임워크를 제공합니다. 많은 실수는 함수에 들어가거나 나오는 값의 종류에 대해 혼란스럽게 합니다. 해당 정보를 기록해두면 혼동될 가능성이 줄어듭니다.</p>
+
+<p><a class="p_ident" id="p_YSuG1qtqyR" href="#p_YSuG1qtqyR" tabindex="-1" role="presentation"></a>타입을 상술하기 위해 앞 장에서 소개된 <code>goalOrientedRobot</code> 함수 앞에 다음과 같은 타입 관련 주석을 추가할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_30eJTz3eQP" href="#c_30eJTz3eQP" tabindex="-1" role="presentation"></a><span class="cm-comment">// (VillageState, Array) → {direction: string, memory: Array}</span>
+<span class="cm-keyword">function</span> <span class="cm-def">goalOrientedRobot</span>(<span class="cm-def">state</span>, <span class="cm-def">memory</span>) {
+  <span class="cm-comment">// ...</span>
+}</pre>
+
+<p><a class="p_ident" id="p_wRx2hJtLds" href="#p_wRx2hJtLds" tabindex="-1" role="presentation"></a>타입과 관련하여 JavaScript 프로그램에 주석을 달기 위한 다양한 규칙이 있습니다.</p>
+
+<p><a class="p_ident" id="p_K+Rg+L+z0T" href="#p_K+Rg+L+z0T" tabindex="-1" role="presentation"></a>타입과 관련해서 하나는 충분히 유용한 코드를 기술할 수 있도록 고유한 복잡성을 도입해야 한다는 것입니다. 배열에서 임의의 요소를 반환하는 함수 <code>randomPick</code>의 타입은 무엇인가? <em>타입 변수</em>인 <em>T</em>를 도입하여 어떤 타입을 나타내 <code>randomPick</code>에 <code>([T]) → T</code>와 같은 타입을 (<em>T</em>들의 배열에서 <em>T</em>의 함수) 줄 수 있습니다.</p>
+
+<p id="typing"><a class="p_ident" id="p_eztjw3zFDU" href="#p_eztjw3zFDU" tabindex="-1" role="presentation"></a>프로그램 타입이 알려지면 컴퓨터가 프로그램을 실행하기 전에 실수를 지적하여 사용자를 대신하여 검사할 수 있습니다. 언어에 타입을 추가하고 확인하는 여러 JavaScript 방언이 있습니다. 가장 인기 있는 것은 <a href="https://www.typescriptlang.org/">TypeScript</a>입니다. 프로그램에 더 많은 엄격함을 추가하는 데 관심이 있다면 시도해 볼 것을 권장합니다.</p>
+
+<p><a class="p_ident" id="p_t8esQrTIP9" href="#p_t8esQrTIP9" tabindex="-1" role="presentation"></a>여기에서는 위험하고 형식이 지정되지 않은 원시 JavaScript 코드를 계속 사용할 것입니다.</p>
+
+<h2><a class="h_ident" id="h_CCCzKyBrc1" href="#h_CCCzKyBrc1" tabindex="-1" role="presentation"></a>테스팅</h2>
+
+<p><a class="p_ident" id="p_cfHj2WfM1O" href="#p_cfHj2WfM1O" tabindex="-1" role="presentation"></a>언어가 실수를 찾는 데 많은 도움이 되지 않는다면, 그것을 어려운 방법으로 찾아야 할 것입니다. 프로그램을 실행하고 그것이 올바른 일을 하는지 확인하는 것입니다.</p>
+
+<p><a class="p_ident" id="p_8W1dLTf8k6" href="#p_8W1dLTf8k6" tabindex="-1" role="presentation"></a>이것을 손으로 계속해서 반복하는 것은 정말 나쁜 생각입니다. 성가실 뿐만 아니라 변경할 때마다 모든 것을 철저하게 테스트하는 데 너무 많은 시간이 걸리기 때문에 비효율적인 경향이 있습니다.</p>
+
+<p><a class="p_ident" id="p_ngk+1LWoAU" href="#p_ngk+1LWoAU" tabindex="-1" role="presentation"></a>컴퓨터는 반복 작업을 잘하며 테스트는 이상적인 반복 작업입니다. 자동화된 테스트는 다른 프로그램을 테스트하는 프로그램을 작성하는 과정입니다. 테스트를 작성하는 것은 수동으로 테스트하는 것보다 약간 더 많은 작업이지만 일단 수행하면 일종의 초능력을 얻게 됩니다. 테스트를 작성한 모든 상황에서 프로그램이 여전히 올바르게 작동하는지 확인하는 데 몇 초 밖에 걸리지 않습니다. 무언가를 부수면 나중에 무작위로 실행되지 않고 즉시 알아차릴 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_S/z0iwnHlS" href="#p_S/z0iwnHlS" tabindex="-1" role="presentation"></a>테스트는 일반적으로 코드의 일부 측면을 확인하는 작은 라벨이 지정된 프로그램의 형태를 취합니다. 예를 들어, 다른 사람이 이미 테스트 한 메서드에 대한 테스트 집합은 다음과 같을 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_WrGyqyPbp3" href="#c_WrGyqyPbp3" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">test</span>(<span class="cm-def">label</span>, <span class="cm-def">body</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">body</span>()) <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`Failed: ${</span><span class="cm-variable-2">label</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+}
+
+<span class="cm-variable">test</span>(<span class="cm-string">&quot;convert Latin text to uppercase&quot;</span>, () <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">return</span> <span class="cm-string">&quot;hello&quot;</span>.<span class="cm-property">toUpperCase</span>() <span class="cm-operator">==</span> <span class="cm-string">&quot;HELLO&quot;</span>;
+});
+<span class="cm-variable">test</span>(<span class="cm-string">&quot;convert Greek text to uppercase&quot;</span>, () <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">return</span> <span class="cm-string">&quot;Χαίρετε&quot;</span>.<span class="cm-property">toUpperCase</span>() <span class="cm-operator">==</span> <span class="cm-string">&quot;ΧΑΊΡΕΤΕ&quot;</span>;
+});
+<span class="cm-variable">test</span>(<span class="cm-string">&quot;don't convert case-less characters&quot;</span>, () <span class="cm-operator">=&gt;</span> {
+  <span class="cm-keyword">return</span> <span class="cm-string">&quot;مرحبا&quot;</span>.<span class="cm-property">toUpperCase</span>() <span class="cm-operator">==</span> <span class="cm-string">&quot;مرحبا&quot;</span>;
+});</pre>
+
+<p><a class="p_ident" id="p_Gyas+RfY6l" href="#p_Gyas+RfY6l" tabindex="-1" role="presentation"></a>이와 같은 테스트를 작성하면 다소 반복적이고 어색한 코드가 생성되는 경향이 있습니다. 다행히도 테스트를 표현하는 데 적합한 언어(함수 및 메서드의 형태로)를 제공하고 테스트가 실패할 때 유익한 정보를 출력함으로써 테스트 모음을 (<em>test suites</em>) 구축하고 실행하는 데 도움이 되는 소프트웨어가 있는데, 일반적으로 <em>test runners</em>라고 합니다.</p>
+
+<p><a class="p_ident" id="p_zmvP6RI0eK" href="#p_zmvP6RI0eK" tabindex="-1" role="presentation"></a>일부 코드는 다른 코드보다 테스트하기 쉽습니다. 일반적으로 코드가 상호 작용하는 외부 객체가 많을수록 코드를 테스트 할 컨텍스트를 설정하기가 더 어렵습니다. 객체를 변경하는 대신 자체 포함된 영구 값을 사용하는 이전 페이지에서 설명한 프로그래밍 스타일은 테스트하기 쉬운 경향이 있습니다.</p>
+
+<h2><a class="h_ident" id="h_iVsnyIAWUT" href="#h_iVsnyIAWUT" tabindex="-1" role="presentation"></a>디버깅</h2>
+
+<p><a class="p_ident" id="p_5mME8LB07m" href="#p_5mME8LB07m" tabindex="-1" role="presentation"></a>프로그램이 오작동하거나 오류를 생성하기 때문에 프로그램에 문제가 있음을 알게 되면 다음 단계는 문제가 무엇인지 파악하는 것입니다.</p>
+
+<p><a class="p_ident" id="p_CJKevweHV6" href="#p_CJKevweHV6" tabindex="-1" role="presentation"></a>때로는 분명합니다. 오류 메시지는 프로그램의 특정 라인을 가리키며 오류 설명과 해당 코드 줄을 보면 종종 문제를 볼 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_5SwXZX1qh1" href="#p_5SwXZX1qh1" tabindex="-1" role="presentation"></a>하지만 항상 그런 것은 아닙니다. 때때로 문제를 일으킨 라인은 다른 곳에서 생성된 비정상적인 값이 잘못된 방식으로 사용되는 첫 번째 장소입니다. 이전 페이지의 연습 문제를 해결했다면 이미 그러한 상황을 경험했을 것입니다.</p>
+
+<p><a class="p_ident" id="p_rsq5hJyXKX" href="#p_rsq5hJyXKX" tabindex="-1" role="presentation"></a>다음 예 프로그램은 마지막 숫자를 반복적으로 선택한 다음 이 숫자를 없애기 위해 숫자를 나누어서 정수를 주어진 기수(10진수, 2진수 등)의 문자열로 변환하려고 합니다. 그러나 현재 생성되는 이상한 출력은 버그가 있음을 나타냅니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_8tOR9x4PzT" href="#c_8tOR9x4PzT" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">numberToString</span>(<span class="cm-def">n</span>, <span class="cm-def">base</span> <span class="cm-operator">=</span> <span class="cm-number">10</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;&quot;</span>, <span class="cm-def">sign</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;&quot;</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">n</span> <span class="cm-operator">&lt;</span> <span class="cm-number">0</span>) {
+    <span class="cm-variable-2">sign</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;-&quot;</span>;
+    <span class="cm-variable-2">n</span> <span class="cm-operator">=</span> <span class="cm-operator">-</span><span class="cm-variable-2">n</span>;
+  }
+  <span class="cm-keyword">do</span> {
+    <span class="cm-variable-2">result</span> <span class="cm-operator">=</span> <span class="cm-variable">String</span>(<span class="cm-variable-2">n</span> <span class="cm-operator">%</span> <span class="cm-variable-2">base</span>) <span class="cm-operator">+</span> <span class="cm-variable-2">result</span>;
+    <span class="cm-variable-2">n</span> <span class="cm-operator">/=</span> <span class="cm-variable-2">base</span>;
+  } <span class="cm-keyword">while</span> (<span class="cm-variable-2">n</span> <span class="cm-operator">&gt;</span> <span class="cm-number">0</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">sign</span> <span class="cm-operator">+</span> <span class="cm-variable-2">result</span>;
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">numberToString</span>(<span class="cm-number">13</span>, <span class="cm-number">10</span>));
+<span class="cm-comment">// → 1.5e-3231.3e-3221.3e-3211.3e-3201.3e-3191.3e-3181.3…</span></pre>
+
+<p><a class="p_ident" id="p_KiDfjUS51F" href="#p_KiDfjUS51F" tabindex="-1" role="presentation"></a>이미 문제가 보이더라도 잠시 동안은 그렇지 않은 척하십시오. 프로그램이 오작동하고 있다는 것을 알고 있으며 그 이유를 알고 싶습니다.</p>
+
+<p><a class="p_ident" id="p_2OJsjnmKOW" href="#p_2OJsjnmKOW" tabindex="-1" role="presentation"></a>여기서 코드가 더 나은지 확인하기 위해 무작위로 코드를 변경하려는 충동을 억제해야 합니다. 대신 무슨 일이 일어나고 있는지 분석하고 그것이 일어날 수 있는 이유에 대한 이론을 제시합니다. 그런 다음 이 이론을 테스트하기 위해 추가 관찰을 수행합니다. 또는 아직 이론이 없는 경우 추가 관찰을 수행하여 이론을 도출하는 것은 도움이 됩니다.</p>
+
+<p><a class="p_ident" id="p_HuAniqpAd5" href="#p_HuAniqpAd5" tabindex="-1" role="presentation"></a>프로그램에 몇 가지 전략적 요청인 <code>console.log</code>을 넣는 것은 프로그램이 수행하는 작업에 대한 추가 정보를 얻을 수 있는 좋은 방법입니다. 이 경우에 원하는 값 <code>13</code>, <code>1</code> 및 <code>0</code>을 취하기 위한 <code>n</code>을 원합니다. 루프 시작 부분에 값을 작성하기로 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="null" ><a class="c_ident" id="c_nB/OeL8UNa" href="#c_nB/OeL8UNa" tabindex="-1" role="presentation"></a>13
+1.3
+0.13
+0.013
+…
+1.5e-323</pre>
+
+<p><a class="p_ident" id="p_I+PNN6aJ0e" href="#p_I+PNN6aJ0e" tabindex="-1" role="presentation"></a>13을 10으로 나누면 정수가 생성되지 않습니다. <code>n /= base</code> 대신에 실제로 원하는 것은 <code>n = Math.<wbr>floor(n /<wbr> base)</code>이기 때문에 숫자가 오른쪽으로 적절하게 이동되도록 하는 것입니다.</p>
+
+<p><a class="p_ident" id="p_0eFcPpir7M" href="#p_0eFcPpir7M" tabindex="-1" role="presentation"></a>프로그램의 동작을 엿보기 위해 <code>console.log</code>를 사용하는 것의 대안은 브라우저의 <em>debugger</em> 기능을 사용하는 것입니다. 브라우저에는 코드의 특정 줄에 중단점을 설정할 수 있는 기능이 있습니다. 프로그램 실행이 중단점이 있는 줄에 도달하면 일시 중지되고 해당 지점에서 바인딩 값을 검사할 수 있습니다. 디버거는 브라우저마다 다르기 때문에 자세히 설명하지 않겠지만 브라우저의 개발자 도구를 보거나 웹에서 자세한 정보를 검색합니다.</p>
+
+<p><a class="p_ident" id="p_h2R9jlfw7o" href="#p_h2R9jlfw7o" tabindex="-1" role="presentation"></a>중단점을 설정하는 또 다른 방법은 프로그램에 <code>debugger</code> 명령문(단순히 해당 키워드로 구성)을 포함하는 것입니다. 브라우저의 개발자 도구가 활성화되어 있으면 프로그램이 이러한 명령문에 도달할 때마다 일시 중지됩니다.</p>
+
+<h2><a class="h_ident" id="h_iwwPbaBjJD" href="#h_iwwPbaBjJD" tabindex="-1" role="presentation"></a>에러 전파</h2>
+
+<p><a class="p_ident" id="p_cHc7tL2ujS" href="#p_cHc7tL2ujS" tabindex="-1" role="presentation"></a>불행히도 프로그래머가 모든 문제를 예방할 수 있는 것은 아닙니다. 프로그램이 어떤 식으로든 외부 세계와 통신하는 경우 잘못된 입력을 받거나 작업에 과부하가 걸리거나 네트워크가 실패할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_zy372pQBzA" href="#p_zy372pQBzA" tabindex="-1" role="presentation"></a>자신만을 위해 프로그래밍하는 경우 이러한 문제가 발생할 때까지 이러한 문제를 무시할 수 있습니다. 그러나 다른 사람이 사용할 무언가를 빌드하는 경우 일반적으로 프로그램이 단순히 충돌하는 것보다 더 잘 작동하기를 원합니다. 때때로 올바른 일은 잘못된 입력을 보폭으로 받아들이고 계속 실행하는 것입니다. 다른 경우에는 사용자에게 무엇이 잘못되었는지 보고한 다음 포기하는 것이 좋습니다. 그러나 어떤 상황에서든 프로그램은 문제에 대한 응답으로 적극적으로 조치를 취해야 합니다.</p>
+
+<p><a class="p_ident" id="p_ZrDi3JVFsJ" href="#p_ZrDi3JVFsJ" tabindex="-1" role="presentation"></a>사용자에게 숫자를 요청하고 이를 반환하는 함수 <code>promptNumber</code>가 있다고 가정해 보겠습니다. 사용자가 "주황색"을 입력하면 무엇을 반환해야 합니까?</p>
+
+<p><a class="p_ident" id="p_ee4d/K1Bh5" href="#p_ee4d/K1Bh5" tabindex="-1" role="presentation"></a>한 가지 옵션은 특별한 값을 반환하도록 하는 것입니다. 이러한 값에 대한 일반적인 선택 사항은 <code>null</code>, <code>undefined</code> 또는 -1입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_ssOc2pf47/" href="#c_ssOc2pf47/" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">promptNumber</span>(<span class="cm-def">question</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable">Number</span>(<span class="cm-variable">prompt</span>(<span class="cm-variable-2">question</span>));
+  <span class="cm-keyword">if</span> (<span class="cm-variable">Number</span>.<span class="cm-property">isNaN</span>(<span class="cm-variable-2">result</span>)) <span class="cm-keyword">return</span> <span class="cm-atom">null</span>;
+  <span class="cm-keyword">else</span> <span class="cm-keyword">return</span> <span class="cm-variable-2">result</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">promptNumber</span>(<span class="cm-string">&quot;How many trees do you see?&quot;</span>));</pre>
+
+<p><a class="p_ident" id="p_8/CuHXN0/U" href="#p_8/CuHXN0/U" tabindex="-1" role="presentation"></a>이제 <code>promptNumber</code>를 호출하는 모든 코드는 실제 숫자를 읽었는지 여부를 확인해야 하며, 그렇지 않은 경우 다시 요청하거나 기본값을 입력하여 어떻게든 복구해야 합니다. 또는 요청한 작업을 수행하는 데 실패했음을 나타내기 위해 호출자에게 다시 특수 값을 반환할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_5MsTIzo4xf" href="#p_5MsTIzo4xf" tabindex="-1" role="presentation"></a>많은 상황에서 대부분 오류가 일반적이고 호출자가 오류를 명시적으로 고려해야 하는 경우 특수 값을 반환하는 것이 오류를 나타내는 좋은 방법입니다. 그러나 단점이 있습니다. 첫째, 함수가 이미 가능한 모든 종류의 값을 반환할 수 있다면 어떻게 될까요? 이러한 함수에서 성공과 실패를 구별할 수 있도록 결과를 객체에 래핑하는 것과 같은 작업을 수행해야 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_aQW8dfZcRx" href="#c_aQW8dfZcRx" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">lastElement</span>(<span class="cm-def">array</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">array</span>.<span class="cm-property">length</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>) {
+    <span class="cm-keyword">return</span> {<span class="cm-property">failed</span>: <span class="cm-atom">true</span>};
+  } <span class="cm-keyword">else</span> {
+    <span class="cm-keyword">return</span> {<span class="cm-property">element</span>: <span class="cm-variable-2">array</span>[<span class="cm-variable-2">array</span>.<span class="cm-property">length</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>]};
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_+E9fllIVBt" href="#p_+E9fllIVBt" tabindex="-1" role="presentation"></a>특수 값을 반환하는 두 번째 문제는 어색한 코드로 이어질 수 있다는 것입니다. 코드 조각이 <code>promptNumber</code>를 10번 호출하면 <code>null</code> 반환 여부를 10번 확인해야 합니다. 그리고 <code>null</code> 찾기에 대한 응답이 단순히 <code>null</code> 자체를 반환하는 것이라면 함수 호출자는 차례로 이를 확인해야 하는 형태로 진행됩니다.</p>
+
+<h2><a class="h_ident" id="h_zT3755/aOp" href="#h_zT3755/aOp" tabindex="-1" role="presentation"></a>예외(Exceptions)</h2>
+
+<p><a class="p_ident" id="p_ZBsTKhGA4i" href="#p_ZBsTKhGA4i" tabindex="-1" role="presentation"></a>함수가 정상적으로 진행되지 않을 때 그냥 하던 일을 멈추고 문제를 처리하는 방법을 알고 있는 곳으로 즉시 점프하는 것입니다. 이것이 예외 처리가 하는 일입니다.</p>
+
+<p><a class="p_ident" id="p_kjXcPy8jGf" href="#p_kjXcPy8jGf" tabindex="-1" role="presentation"></a>예외는 모든 값이 될 수 있습니다. 무엇인가 예외를 던지는 것은 함수로부터의 반환과 유사합니다. 현재 함수뿐만 아니라 호출자에서도 현재 실행을 시작한 첫 번째 호출까지 점프합니다. 이것을 스택 해제라고 합니다. 3장에서 언급한 함수 호출 스택을 기억할 수 있습니다 . 예외는 이 스택을 축소하여 발생하는 모든 호출 컨텍스트를 버립니다.</p>
+
+<p><a class="p_ident" id="p_giUX2OynLm" href="#p_giUX2OynLm" tabindex="-1" role="presentation"></a>예외가 항상 스택의 맨 아래까지 축소된다면 별로 쓸모가 없을 것입니다. 그것들은 단지 프로그램을 폭파시키는 새로운 방법을 제공할 것입니다. 그것들의 힘은 스택을 따라 장애물을 설정하여 축소할 때 예외를 포착할 수 있다는 사실에 있습니다. 예외를 포착하면 문제를 해결하기 위해 예외를 처리한 다음 프로그램을 계속 실행할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_DQmDywMub9" href="#p_DQmDywMub9" tabindex="-1" role="presentation"></a>다음은 예를 나타냅니다.</p>
+
+<pre id="look" class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_0VA94HjY2e" href="#c_0VA94HjY2e" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">promptDirection</span>(<span class="cm-def">question</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable">prompt</span>(<span class="cm-variable-2">question</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">result</span>.<span class="cm-property">toLowerCase</span>() <span class="cm-operator">==</span> <span class="cm-string">&quot;left&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-string">&quot;L&quot;</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">result</span>.<span class="cm-property">toLowerCase</span>() <span class="cm-operator">==</span> <span class="cm-string">&quot;right&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-string">&quot;R&quot;</span>;
+  <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">&quot;Invalid direction: &quot;</span> <span class="cm-operator">+</span> <span class="cm-variable-2">result</span>);
+}
+
+<span class="cm-keyword">function</span> <span class="cm-def">look</span>() {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">promptDirection</span>(<span class="cm-string">&quot;Which way?&quot;</span>) <span class="cm-operator">==</span> <span class="cm-string">&quot;L&quot;</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-string">&quot;a house&quot;</span>;
+  } <span class="cm-keyword">else</span> {
+    <span class="cm-keyword">return</span> <span class="cm-string">&quot;two angry bears&quot;</span>;
+  }
+}
+
+<span class="cm-keyword">try</span> {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;You see&quot;</span>, <span class="cm-variable">look</span>());
+} <span class="cm-keyword">catch</span> (<span class="cm-def">error</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Something went wrong: &quot;</span> <span class="cm-operator">+</span> <span class="cm-variable-2">error</span>);
+}</pre>
+
+<p><a class="p_ident" id="p_bbpj24fusK" href="#p_bbpj24fusK" tabindex="-1" role="presentation"></a><code>throw</code> 키워드는 예외를 발생하는 데 사용됩니다. 예외 포착은 <code>try</code> 블록으로 코드 조각을 래핑합니다(try 다음에 <code>catch</code>가 수반되는). <code>try</code> 블록의 코드로 인해 예외가 발생하면 <code>catch</code> 블록이 전개됩니다(괄호 안의 이름이 예외 값에 바인딩). <code>catch</code> 블록이 완료되거나 또는 <code>try</code> 블록이 문제 없이 완료되면 프로그램은 전체 <code>try/catch</code> 명령문 아래 부분으로 진행합니다.</p>
+
+<p><a class="p_ident" id="p_lP6PP0CCrB" href="#p_lP6PP0CCrB" tabindex="-1" role="presentation"></a>위의 경우 <code>Error</code> 생성자를 사용하여 예외 값을 생성했습니다. 이것은 <code>message</code> 속성이 있는 객체를 생성하는 표준 JavaScript 생성자입니다. 대부분의 JavaScript 환경에서 이 생성자의 인스턴스는 예외가 생성될 때 존재했던 호출 스택에 대한 정보도 수집합니다. 이를 <em>스택 추적(stack trace)</em>이라고 합니다. 이 정보는 <code>stack</code> 속성에 저장되며 문제를 디버그하려고 할 때 도움이 될 수 있습니다. 문제가 발생한 위치와 실패한 호출을 만든 함수를 알려줍니다.</p>
+
+<p><a class="p_ident" id="p_BYCPINQ0h5" href="#p_BYCPINQ0h5" tabindex="-1" role="presentation"></a><code>look</code> 함수는 <code>promptDirection</code>이 잘못될 가능성을 완전히 무시합니다. 이것은 예외의 큰 장점입니다. 오류 처리 코드는 오류가 발생한 지점과 처리 지점에서만 필요합니다. 그 사이의 기능은 모든 것을 무시할 수 있습니다.</p>
+
+
+<h2><a class="h_ident" id="h_cgoP7o2fe9" href="#h_cgoP7o2fe9" tabindex="-1" role="presentation"></a>예외 처리 후의 정리</h2>
+
+<p><a class="p_ident" id="p_lHGW1D9KYW" href="#p_lHGW1D9KYW" tabindex="-1" role="presentation"></a>예외의 효과는 또 다른 종류의 제어 흐름입니다. 거의 모든 함수 호출 및 속성 액세스인 예외를 유발할 수 있는 모든 작업으로 인해 제어가 갑자기 코드에서 벗어날 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_Mqr7VzgCYa" href="#p_Mqr7VzgCYa" tabindex="-1" role="presentation"></a>즉, 코드에 여러 부작용이 있을 때 일반 제어 흐름이 항상 발생하는 것처럼 보이더라도 예외로 인해 일부 부작용이 발생하지 않을 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_V7nPGHDnR1" href="#p_V7nPGHDnR1" tabindex="-1" role="presentation"></a>다음은 바람직하지 않은 금융 코드입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_e3XosnGG47" href="#c_e3XosnGG47" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">accounts</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">a</span>: <span class="cm-number">100</span>,
+  <span class="cm-property">b</span>: <span class="cm-number">0</span>,
+  <span class="cm-property">c</span>: <span class="cm-number">20</span>
+};
+
+<span class="cm-keyword">function</span> <span class="cm-def">getAccount</span>() {
+  <span class="cm-keyword">let</span> <span class="cm-def">accountName</span> <span class="cm-operator">=</span> <span class="cm-variable">prompt</span>(<span class="cm-string">&quot;Enter an account name&quot;</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable">accounts</span>.<span class="cm-property">hasOwnProperty</span>(<span class="cm-variable-2">accountName</span>)) {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string-2">`No such account: ${</span><span class="cm-variable-2">accountName</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">accountName</span>;
+}
+
+<span class="cm-keyword">function</span> <span class="cm-def">transfer</span>(<span class="cm-def">from</span>, <span class="cm-def">amount</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">accounts</span>[<span class="cm-variable-2">from</span>] <span class="cm-operator">&lt;</span> <span class="cm-variable-2">amount</span>) <span class="cm-keyword">return</span>;
+  <span class="cm-variable">accounts</span>[<span class="cm-variable-2">from</span>] <span class="cm-operator">-=</span> <span class="cm-variable-2">amount</span>;
+  <span class="cm-variable">accounts</span>[<span class="cm-variable">getAccount</span>()] <span class="cm-operator">+=</span> <span class="cm-variable-2">amount</span>;
+}</pre>
+
+<p><a class="p_ident" id="p_lj3bgLcO/p" href="#p_lj3bgLcO/p" tabindex="-1" role="presentation"></a><code>transfer</code> 함수는 주어진 계정에서 다른 계정으로 금액을 이체하고 프로세스에서 다른 계정의 이름을 요청합니다. 잘못된 계정 이름이 주어지면 <code>getAccount</code> 예외가 발생합니다.</p>
+
+<p><a class="p_ident" id="p_IvzAvOGwRo" href="#p_IvzAvOGwRo" tabindex="-1" role="presentation"></a>그러나 <code>transfer</code>는 먼저 계정에서 돈을 제거한 다음 다른 계정에 추가하기 전에 <code>getAccount</code>를 호출합니다. 그 시점에서 예외로 인해 끊어지면 돈이 사라집니다.</p>
+
+<p><a class="p_ident" id="p_vSkNwpOGmb" href="#p_vSkNwpOGmb" tabindex="-1" role="presentation"></a>이러한 코드는 예를 들어 돈이 움직이기 시작하기 전에 <code>getAccount</code>를 호출함으로써 좀 더 지능적으로 작성될 수 있습니다. 그러나 종종 이와 같은 문제는 보다 미묘한 방식으로 발생합니다. 예외를 던질 것 같지 않은 함수라도 예외적인 상황이나 프로그래머 실수가 포함된 경우 예외를 던질 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_6ijkWjygkN" href="#p_6ijkWjygkN" tabindex="-1" role="presentation"></a>이 문제를 해결하는 한 가지 방법은 측면 효과를 줄이는 것입니다. 다시 말하지만 기존 데이터를 변경하는 대신 새 값을 계산하는 프로그래밍 스타일이 도움이 됩니다. 새 값을 생성하는 도중에 코드의 일부가 실행을 멈추면 아무도 반쯤 완성된 값을 볼 수 없으며 문제가 없습니다.</p>
+
+<p><a class="p_ident" id="p_lhrnmP99dZ" href="#p_lhrnmP99dZ" tabindex="-1" role="presentation"></a>그러나 그것이 항상 실용적인 것은 아니기 때문에 <code>try</code>에는 또 다른 기능이 있습니다. <code>catch</code> 블록에 추가하여 <code>finally</code> 블록이 뒤따를 수 있습니다. <code>finally</code> 블록 코드는 <code>try</code> 블록 코드 수행 후에 무슨 일이 발생된 것인지의 여부에 관계 없이 수행된다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_brWpzDAy4+" href="#c_brWpzDAy4+" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">transfer</span>(<span class="cm-def">from</span>, <span class="cm-def">amount</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">accounts</span>[<span class="cm-variable-2">from</span>] <span class="cm-operator">&lt;</span> <span class="cm-variable-2">amount</span>) <span class="cm-keyword">return</span>;
+  <span class="cm-keyword">let</span> <span class="cm-def">progress</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>;
+  <span class="cm-keyword">try</span> {
+    <span class="cm-variable">accounts</span>[<span class="cm-variable-2">from</span>] <span class="cm-operator">-=</span> <span class="cm-variable-2">amount</span>;
+    <span class="cm-variable-2">progress</span> <span class="cm-operator">=</span> <span class="cm-number">1</span>;
+    <span class="cm-variable">accounts</span>[<span class="cm-variable">getAccount</span>()] <span class="cm-operator">+=</span> <span class="cm-variable-2">amount</span>;
+    <span class="cm-variable-2">progress</span> <span class="cm-operator">=</span> <span class="cm-number">2</span>;
+  } <span class="cm-keyword">finally</span> {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">progress</span> <span class="cm-operator">==</span> <span class="cm-number">1</span>) {
+      <span class="cm-variable">accounts</span>[<span class="cm-variable-2">from</span>] <span class="cm-operator">+=</span> <span class="cm-variable-2">amount</span>;
+    }
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_LvvK85Vh5F" href="#p_LvvK85Vh5F" tabindex="-1" role="presentation"></a>이 버전의 함수는 진행 상황을 추적하고, 나갈 때 일관되지 않은 프로그램 상태를 생성한 지점에서 중단되었음을 발견하면 손상을 복구합니다.</p>
+
+<p><a class="p_ident" id="p_Gs19OQg3TY" href="#p_Gs19OQg3TY" tabindex="-1" role="presentation"></a><code>try</code> 블록에서 예외가 발생되었을 때 <code>finally</code> 코드가 수행되더라도 예외를 방해하지 않습니다. <code>finally</code> 블록이 실행된 후 스택이 계속 해제됩니다.</p>
+
+<p><a class="p_ident" id="p_yZkXySCQHr" href="#p_yZkXySCQHr" tabindex="-1" role="presentation"></a>예상치 못한 곳에서 예외가 발생하더라도 안정적으로 작동하는 프로그램을 작성하는 것은 어렵습니다. 많은 사람들이 단순히 신경 쓰지 않고 예외는 일반적으로 예외적인 상황을 위해 예약되기 때문에 문제가 너무 드물게 발생하여 전혀 알아차리지 못할 수도 있습니다. 그것이 좋은 것인지 정말 나쁜 것인지는 소프트웨어가 실패했을 때 소프트웨어가 얼마나 많은 피해를 입힐 것인지에 달려 있습니다.</p>
+
+<h2><a class="h_ident" id="h_vfoJqEDazI" href="#h_vfoJqEDazI" tabindex="-1" role="presentation"></a>선택적 포착</h2>
+
+<p><a class="p_ident" id="p_HUJ9GRG1jC" href="#p_HUJ9GRG1jC" tabindex="-1" role="presentation"></a>예외가 잡히지 않고 스택의 맨 아래까지 도달하면 환경에 의해 처리됩니다. 이것이 의미하는 바는 환경마다 다릅니다. 브라우저에서 오류에 대한 설명은 일반적으로 JavaScript 콘솔에 작성됩니다(브라우저의 도구 또는 개발자 메뉴를 통해 접근 가능). 추후에 소개되는 브라우저가 없는 JavaScript 환경인 Node.js는 데이터 손상에 더 주의합니다. 처리되지 않은 예외가 발생하면 전체 프로세스를 중단합니다.</p>
+
+<p><a class="p_ident" id="p_9JOlpepKZE" href="#p_9JOlpepKZE" tabindex="-1" role="presentation"></a>프로그래머 실수의 경우 오류를 그냥 지나치도록 두는 것이 종종 할 수 있는 최선입니다. 처리되지 않은 예외는 깨진 프로그램에 신호를 보내는 합리적인 방법이며 최신 브라우저에서 JavaScript 콘솔은 문제가 발생했을 때 스택에 있던 함수 호출에 대한 정보를 제공합니다.</p>
+
+<p><a class="p_ident" id="p_KGWPPf4CcF" href="#p_KGWPPf4CcF" tabindex="-1" role="presentation"></a>일상적인 사용 중에 발생할 것으로 예상되는 문제의 경우 처리되지 않은 예외로 충돌하는 것은 잘못된 전략입니다.</p>
+
+<p><a class="p_ident" id="p_ZkwQ40b3to" href="#p_ZkwQ40b3to" tabindex="-1" role="presentation"></a>존재하지 않는 바인딩 참조, <code>null</code> 상태에서 속성 조회 또는 함수가 아닌 것을 호출하는 것과 같이 언어를 잘못 사용하는 경우에도 예외가 발생합니다. 이러한 예외도 잡을 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_3umLtBJgPo" href="#p_3umLtBJgPo" tabindex="-1" role="presentation"></a>JavaScript는 예외를 선택적으로 포착하기 위한 직접적인 지원을 제공하지 않습니다. 예외를 모두 포착하거나 포착하지 않습니다.</p>
+
+<p><a class="p_ident" id="p_O9bj9nd33p" href="#p_O9bj9nd33p" tabindex="-1" role="presentation"></a>다른 가정을 위반했거나 예외를 일으키는 버그를 도입했을 수 있습니다. 다음은 유효한 응답을 받을 때까지 계속 <code>promptDirection</code> 호출을 시도하는 예입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_ZxDKrGLCQ3" href="#c_ZxDKrGLCQ3" tabindex="-1" role="presentation"></a><span class="cm-keyword">for</span> (;;) {
+  <span class="cm-keyword">try</span> {
+    <span class="cm-keyword">let</span> <span class="cm-def">dir</span> <span class="cm-operator">=</span> <span class="cm-variable">promtDirection</span>(<span class="cm-string">&quot;Where?&quot;</span>); <span class="cm-comment">// ← typo!</span>
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;You chose &quot;</span>, <span class="cm-variable">dir</span>);
+    <span class="cm-keyword">break</span>;
+  } <span class="cm-keyword">catch</span> (<span class="cm-def">e</span>) {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Not a valid direction. Try again.&quot;</span>);
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_pdL8VKiwnf" href="#p_pdL8VKiwnf" tabindex="-1" role="presentation"></a><code>for (;;)</code> 구조는 의도적으로 종료되지 않는 루프를 작성하는 방법입니다. 유효한 방향이 주어졌을 때만 루프에서 벗어납니다. 그러나 <code>promptDirection</code>에 관한 철자를 잘못 입력하면 "정의되지 않은 변수" 오류가 발생합니다. <code>catch</code> 블록은 예외 값(<code>e</code>)을 완전히 무시하기 때문에 문제가 무엇인지 알고 있다면 바인딩 오류를 잘못된 입력을 나타내는 것으로 잘못 처리합니다. 이것은 무한 루프를 유발할 뿐만 아니라 철자가 틀린 바인딩에 대한 유용한 오류 메시지를 나타냅니다.</p>
+
+<p><a class="p_ident" id="p_hk/lwBIhah" href="#p_hk/lwBIhah" tabindex="-1" role="presentation"></a>일반적으로 예외를 어딘가로 보낼 목적이 아니면(예를 들어, 네트워크를 통해 다른 시스템에 프로그램이 충돌했음을 알리기 위한) 예외를 일괄 처리하지 마십시오. 그런 다음에도 정보를 숨기는 방법에 대해 신중하게 생각하십시오.</p>
+
+<p><a class="p_ident" id="p_o1E5pkUD5g" href="#p_o1E5pkUD5g" tabindex="-1" role="presentation"></a>이와 관련하여 특정한 종류의 예외를 잡아내고자 합니다. <code>catch</code> 블록에서 얻은 예외가 관심이 있는 예외인지 여부를 블록에서 확인하고 그렇지 않으면 다시 던져서 이를 수행할 수 있습니다. 그러나 예외를 어떻게 인식할 것인가?</p>
+
+<p><a class="p_ident" id="p_qurSIk3pjE" href="#p_qurSIk3pjE" tabindex="-1" role="presentation"></a>예상했던 오류 메시지와 <code>message</code> 속성을 비교할 수 있습니다. 그러나 그것은 코드를 작성하는 불안정한 방법입니다. 프로그래밍 방식의 결정을 내리기 위해 인간이 소비하도록 의도된 정보(메시지)를 사용합니다. 누군가가 메시지를 변경(또는 번역)하는 즉시 코드는 작동을 멈추도록 합니다.</p>
+
+<p><a class="p_ident" id="p_Pml4dAzuT1" href="#p_Pml4dAzuT1" tabindex="-1" role="presentation"></a>오히려 새로운 타입 오류를 정의하고 이를 식별하는데 <code>instanceof</code>를 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_miFD8lvrWj" href="#c_miFD8lvrWj" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">InputError</span> <span class="cm-keyword">extends</span> <span class="cm-variable">Error</span> {}
+
+<span class="cm-keyword">function</span> <span class="cm-def">promptDirection</span>(<span class="cm-def">question</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable">prompt</span>(<span class="cm-variable-2">question</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">result</span>.<span class="cm-property">toLowerCase</span>() <span class="cm-operator">==</span> <span class="cm-string">&quot;left&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-string">&quot;L&quot;</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">result</span>.<span class="cm-property">toLowerCase</span>() <span class="cm-operator">==</span> <span class="cm-string">&quot;right&quot;</span>) <span class="cm-keyword">return</span> <span class="cm-string">&quot;R&quot;</span>;
+  <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">InputError</span>(<span class="cm-string">&quot;Invalid direction: &quot;</span> <span class="cm-operator">+</span> <span class="cm-variable-2">result</span>);
+}</pre>
+
+<p><a class="p_ident" id="p_/YM4ZmoOGt" href="#p_/YM4ZmoOGt" tabindex="-1" role="presentation"></a>새로운 오류 클래스는 <code>Error</code>를 확장합니다. 자체 생성자를 정의하지 않습니다. 즉, 문자열 메시지를 인수로 예상하는 <code>Error</code> 생성자를 상속합니다. 사실 그것은 아무 것도 정의하지 않습니다. 클래스는 비어 있습니다. <code>InputError</code> 객체는 인식할 수 있는 다른 클래스가 있다는 점을 제외하고는 <code>Error</code> 객체처럼 동작합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_ab/mR1C1nr" href="#c_ab/mR1C1nr" tabindex="-1" role="presentation"></a><span class="cm-keyword">for</span> (;;) {
+  <span class="cm-keyword">try</span> {
+    <span class="cm-keyword">let</span> <span class="cm-def">dir</span> <span class="cm-operator">=</span> <span class="cm-variable">promptDirection</span>(<span class="cm-string">&quot;Where?&quot;</span>);
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;You chose &quot;</span>, <span class="cm-variable">dir</span>);
+    <span class="cm-keyword">break</span>;
+  } <span class="cm-keyword">catch</span> (<span class="cm-def">e</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">e</span> <span class="cm-keyword">instanceof</span> <span class="cm-variable">InputError</span>) {
+      <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Not a valid direction. Try again.&quot;</span>);
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">throw</span> <span class="cm-variable-2">e</span>;
+    }
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_N4ExnmZrQ/" href="#p_N4ExnmZrQ/" tabindex="-1" role="presentation"></a>이것은 <code>InputError</code>의 인스턴스만 잡아내고 관련 없는 예외를 통과시킵니다. 오타를 재도입하면 정의되지 않은 바인딩 오류가 제대로 보고됩니다.</p>
+
+<h2><a class="h_ident" id="h_Sb9V3BEus1" href="#h_Sb9V3BEus1" tabindex="-1" role="presentation"></a>Assertions</h2>
+
+<p><a class="p_ident" id="p_Is9Zkz2o9G" href="#p_Is9Zkz2o9G" tabindex="-1" role="presentation"></a><em>Assertions</em>는 프로그램 내에서 무언가가 원래대로 되어 있는지 확인하는 검사입니다. 정상 작동에서 발생할 수 있는 상황을 처리하는 것이 아니라 프로그래머의 실수를 찾는 데 사용됩니다.</p>
+
+<p><a class="p_ident" id="p_uMhd4mC7ZW" href="#p_uMhd4mC7ZW" tabindex="-1" role="presentation"></a>예를 들어, <code>firstElement</code>가 빈 배열에서 호출되어서는 안 되는 함수로 설명되어 있으면 다음과 같이 작성할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_gRlHo3tyh8" href="#c_gRlHo3tyh8" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">firstElement</span>(<span class="cm-def">array</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">array</span>.<span class="cm-property">length</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>) {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">&quot;firstElement called with []&quot;</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">array</span>[<span class="cm-number">0</span>];
+}</pre>
+
+<p><a class="p_ident" id="p_MOw81C4a4b" href="#p_MOw81C4a4b" tabindex="-1" role="presentation"></a>이제 존재하지 않는 배열 속성을 읽을 때 얻게 되는 undefined를 자동으로 반환하는 대신 프로그램을 오용하자마자 크게 폭발합니다. 이렇게 하면 그러한 실수가 눈에 띄지 않게 될 가능성이 줄어들고 발생했을 때 원인을 쉽게 찾을 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_bFN2bXWxAz" href="#p_bFN2bXWxAz" tabindex="-1" role="presentation"></a>가능한 모든 종류의 잘못된 입력에 대해 assertions를 작성하는 것은 권장하지 않습니다. 그것은 많은 일이 될 것이고 매우 시끄러운 코드로 이어질 것입니다. 저지르기 쉬운(또는 스스로 저지르고 있는) 실수를 위해 그것들을 남겨두고 싶을 것입니다.</p>
+
+<h2><a class="h_ident" id="h_ErccPg/l98" href="#h_ErccPg/l98" tabindex="-1" role="presentation"></a>요약</h2>
+
+<p><a class="p_ident" id="p_rD8/ab0/w4" href="#p_rD8/ab0/w4" tabindex="-1" role="presentation"></a>실수와 잘못된 입력은 삶의 사실입니다. 프로그래밍의 중요한 부분은 버그를 찾고 진단하고 수정하는 것입니다. 자동화된 테스트 스위트가 있거나 프로그램에 어설션을 추가하면 문제를 더 쉽게 알아차릴 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_8tal4BvCRU" href="#p_8tal4BvCRU" tabindex="-1" role="presentation"></a>프로그램이 제어할 수 없는 요인으로 인해 발생하는 문제는 일반적으로 적절하게 처리되어야 합니다. 때때로 문제를 로컬에서 처리할 수 있는 경우 특수 반환 값이 문제를 추적하는 좋은 방법입니다. 그렇지 않으면 예외가 바람직할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_ZJkq9NFh8W" href="#p_ZJkq9NFh8W" tabindex="-1" role="presentation"></a>예외를 던지는 것은 다음 <code>try/catch</code> 블록까지 또는 스택의 맨 아래까지 호출 스택이 해제됩니다. 예외 값은 그것을 잡는 <code>catch</code> 블록에 주어질 것이고, 이것은 그것이 실제로 예상되는 예외인지 확인하고 그것에 대해 뭔가를 해야 합니다. 예외로 인한 예측할 수 없는 제어 흐름을 해결하기 위해 <code>finally</code> 블록을 사용하여 블록이 완료될 때 코드 조각이 항상 실행되도록 할 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="#h_TcUD2vzyMe" tabindex="-1" role="presentation"></a>연습 문제</h2>
+
+<h3><a class="i_ident" id="i_n1zYouiAfX" href="#i_n1zYouiAfX" tabindex="-1" role="presentation"></a>다시 시도</h3>
+
+<p><a class="p_ident" id="p_oAuWXajIJA" href="#p_oAuWXajIJA" tabindex="-1" role="presentation"></a><code>primitiveMultiply</code> 함수에 관해 경우의 20%는 두 수를 곱하고 80%는 <code>MultiplicatorUnitFailure</code> 타입의 예외를 던지도록 합니다. 처리하려는 예외만 작성합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_E1Acr2VS8k" href="#c_E1Acr2VS8k" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">MultiplicatorUnitFailure</span> <span class="cm-keyword">extends</span> <span class="cm-variable">Error</span> {}
+
+<span class="cm-keyword">function</span> <span class="cm-def">primitiveMultiply</span>(<span class="cm-def">a</span>, <span class="cm-def">b</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">Math</span>.<span class="cm-property">random</span>() <span class="cm-operator">&lt;</span> <span class="cm-number">0.2</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">a</span> <span class="cm-operator">*</span> <span class="cm-variable-2">b</span>;
+  } <span class="cm-keyword">else</span> {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">MultiplicatorUnitFailure</span>(<span class="cm-string">&quot;Klunk&quot;</span>);
+  }
+}
+
+<span class="cm-keyword">function</span> <span class="cm-def">reliableMultiply</span>(<span class="cm-def">a</span>, <span class="cm-def">b</span>) {
+  <span class="cm-comment">// 여기에 코드 작성</span>
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">reliableMultiply</span>(<span class="cm-number">8</span>, <span class="cm-number">8</span>));
+<span class="cm-comment">// → 64</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_ChowJFeR1F" href="#p_ChowJFeR1F" tabindex="-1" role="presentation"></a><code>primitiveMultiply</code>에 대한 호출은 반드시 try 블록에서 발생해야 합니다. 해당 catch 블록은 <code>MultiplicatorUnitFailure</code>의 인스턴스가 아닐 때 예외를 다시 던져야 하고 인스턴스일 경우에는 호출이 재시도 되도록 해야 합니다.</p>
+
+<p><a class="p_ident" id="p_2LqwPbYM+K" href="#p_2LqwPbYM+K" tabindex="-1" role="presentation"></a>재시도를 하려면 호출이 성공할 때만 중지하는 루프를 사용하거나(이 페이지의 앞 부분 예에서와 같이) 재귀를 사용하고 스택을 오버플로할 정도로 오랫동안 실패 문자열을 얻지 않기를 바랍니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_iGlwnUbkRs" href="#i_iGlwnUbkRs" tabindex="-1" role="presentation"></a>잠긴 상자</h3>
+
+<p><a class="p_ident" id="p_uGznOGuYh8" href="#p_uGznOGuYh8" tabindex="-1" role="presentation"></a>다음과 같은 객체를 고려합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_X963W9SHCK" href="#c_X963W9SHCK" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">box</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">locked</span>: <span class="cm-atom">true</span>,
+  <span class="cm-property">unlock</span>() { <span class="cm-keyword">this</span>.<span class="cm-property">locked</span> <span class="cm-operator">=</span> <span class="cm-atom">false</span>; },
+  <span class="cm-property">lock</span>() { <span class="cm-keyword">this</span>.<span class="cm-property">locked</span> <span class="cm-operator">=</span> <span class="cm-atom">true</span>;  },
+  <span class="cm-property">_content</span>: [],
+  <span class="cm-property">get</span> <span class="cm-property">content</span>() {
+    <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">locked</span>) <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">&quot;Locked!&quot;</span>);
+    <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">_content</span>;
+  }
+};</pre>
+
+<p><a class="p_ident" id="p_PPjq8MDhzp" href="#p_PPjq8MDhzp" tabindex="-1" role="presentation"></a>자물쇠가 달린 상자입니다. 상자 안에 배열이 있지만 상자가 잠금 해제되어 있을 때만 얻을 수 있습니다. 전용 <code>_content</code>에 대한 직접 접근은 금지되어 있습니다.</p>
+
+<p><a class="p_ident" id="p_KI+tJ+amDX" href="#p_KI+tJ+amDX" tabindex="-1" role="presentation"></a>인수로 함수 값을 받아 상자를 해제하고 함수를 수행하는 <code>withBoxUnlocked</code>를 작성합니다. 인수 함수가 정상 반환되거나 예외 처리 여부에 관계 없이 반환 전에 상자는 다시 잠겨야 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_EPN4Aey63n" href="#c_EPN4Aey63n" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">box</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">locked</span>: <span class="cm-atom">true</span>,
+  <span class="cm-property">unlock</span>() { <span class="cm-keyword">this</span>.<span class="cm-property">locked</span> <span class="cm-operator">=</span> <span class="cm-atom">false</span>; },
+  <span class="cm-property">lock</span>() { <span class="cm-keyword">this</span>.<span class="cm-property">locked</span> <span class="cm-operator">=</span> <span class="cm-atom">true</span>;  },
+  <span class="cm-property">_content</span>: [],
+  <span class="cm-property">get</span> <span class="cm-property">content</span>() {
+    <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">locked</span>) <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">&quot;Locked!&quot;</span>);
+    <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">_content</span>;
+  }
+};
+
+<span class="cm-keyword">function</span> <span class="cm-def">withBoxUnlocked</span>(<span class="cm-def">body</span>) {
+  <span class="cm-comment">// 여기에 코드 작성</span>
+}
+
+<span class="cm-variable">withBoxUnlocked</span>(<span class="cm-keyword">function</span>() {
+  <span class="cm-variable">box</span>.<span class="cm-property">content</span>.<span class="cm-property">push</span>(<span class="cm-string">&quot;gold piece&quot;</span>);
+});
+
+<span class="cm-keyword">try</span> {
+  <span class="cm-variable">withBoxUnlocked</span>(<span class="cm-keyword">function</span>() {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">&quot;Pirates on the horizon! Abort!&quot;</span>);
+  });
+} <span class="cm-keyword">catch</span> (<span class="cm-def">e</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Error raised: &quot;</span> <span class="cm-operator">+</span> <span class="cm-variable-2">e</span>);
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">box</span>.<span class="cm-property">locked</span>);
+<span class="cm-comment">// → true</span></pre>
+
+<p><a class="p_ident" id="p_X5dxXtnN4l" href="#p_X5dxXtnN4l" tabindex="-1" role="presentation"></a>상자가 이미 잠금 해제되어 있을 때 <code>withBoxUnlocked</code>를 호출하면 상자가 잠금 해제 상태로 유지되는지 확인하십시오.</p>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_4MxgD1VcbV" href="#p_4MxgD1VcbV" tabindex="-1" role="presentation"></a>이 연습은 <code>finally</code> 블록을 요구합니다. 함수는 먼저 상자의 잠금을 해제한 다음 <code>try</code> 본문 내부에서 인수 함수를 호출해야 합니다. 그런 다음에 <code>finally</code> 블록은 상자를 다시 잠가야 합니다.</p>
+
+<p><a class="p_ident" id="p_PvZL0oQnMG" href="#p_PvZL0oQnMG" tabindex="-1" role="presentation"></a>상자가 아직 잠겨 있지 않을 때 잠그지 않도록 하려면 함수 시작 시 잠금을 확인하고 잠긴 상태에서 시작할 때만 잠금을 해제하고 잠급니다.</p>
+
+</div></div><nav><a href="07_robot.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="09_regexp.html" title="next chapter">▶</a></nav>
+</article>

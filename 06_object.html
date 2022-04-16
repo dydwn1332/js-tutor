@@ -1,0 +1,660 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>객체들의 비밀스런 삶</title>
+  <link rel=stylesheet href="js/node_modules/codemirror/lib/codemirror.css">
+  <script src="js/acorn_codemirror.js"></script>
+  <link rel=stylesheet href="css/ejs.css">
+  <script src="js/sandbox.js"></script>
+  <script src="js/ejs.js"></script><script>var chapNum = 6;var sandboxLoadFiles = ["code/chapter/06_object.js"];</script></head>
+
+<article>
+<nav><a href="05_higher_order.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="07_robot.html" title="next chapter">▶</a></nav>
+
+<h1><span class=chap_num>6장</span>객체들의 비밀스런 삶</h1>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_gDFRhOpA5B" href="#p_gDFRhOpA5B" tabindex="-1" role="presentation"></a>추상 데이터 타입은 수행할 수 있는 작업의 관점에서 타입을 정의하는 특별한 종류의 프로그램 [...]을 작성하여 실현됩니다.</p>
+
+<footer>Barbara Liskov, <cite>추상 데이터 타입을 사용한 프로그래밍</cite></footer>
+
+</blockquote><figure class="chapter framed"><img src="img/chapter_picture_6.jpg" alt="Picture of a rabbit with its proto-rabbit"></figure>
+
+<p><a class="p_ident" id="p_KkunxYMaeO" href="#p_KkunxYMaeO" tabindex="-1" role="presentation"></a><a href="04_data.html">4장</a>에서 이미 JavaScript의 객체를 소개했습니다. 프로그래밍 문화에는 <em>객체 지행 프로그래밍</em>이라는 것이 있습니다. 객체 지행 프로그래밍은 객체(및 관련 개념)를 프로그램 구성의 중심 원칙으로 사용하는 기술 집합입니다.</p>
+
+<p><a class="p_ident" id="p_iS8mjYhuYY" href="#p_iS8mjYhuYY" tabindex="-1" role="presentation"></a>정확한 정의는 아니지만 객체 지향 프로그래밍은 JavaScript를 비롯한 많은 프로그래밍 언어의 설계 부문을 형성했습니다. 이 페이지에서는 이러한 개념을 JavaScript에 적용할 수 있는 방법을 설명합니다.</p>
+
+<h2><a class="h_ident" id="h_hn18MBjoh2" href="#h_hn18MBjoh2" tabindex="-1" role="presentation"></a>캡슐화(Encapsulation)</h2>
+
+<p><a class="p_ident" id="p_76wqEvwMj/" href="#p_76wqEvwMj/" tabindex="-1" role="presentation"></a>객체 지향 프로그래밍의 핵심 개념은 프로그램을 더 작은 조각으로 나누고 각 조각이 자체 상태를 관리하도록 하는 것입니다.</p>
+
+<p><a class="p_ident" id="p_Ww3ymqEfW3" href="#p_Ww3ymqEfW3" tabindex="-1" role="presentation"></a>이렇게 하면 프로그램의 일부가 작동하는 방식에 대한 일부 지식이 해당 부분에 대해 로컬로 유지될 수 있습니다. 프로그램의 나머지 부분에서 작업하는 사람은 해당 지식을 기억하거나 인식할 필요가 없습니다. 이러한 로컬 세부 정보가 변경될 때마다 바로 주변의 코드만 업데이트하면 됩니다.</p>
+
+<p id="interface"><a class="p_ident" id="p_m1XIFUcUIg" href="#p_m1XIFUcUIg" tabindex="-1" role="presentation"></a>이러한 프로그램의 색다른 부분은 <em>interfaces</em>, 즉, 제한된 함수 집합 또는 보다 추상적인 수준에서 유용한 기능을 제공하는 바인딩을 통해 서로 상호 작용하고 정확한 구현을 숨깁니다.</p>
+
+<p><a class="p_ident" id="p_n3o8Ctd3cn" href="#p_n3o8Ctd3cn" tabindex="-1" role="presentation"></a>이러한 프로그램 조각은 객체를 사용하여 모델링됩니다. 해당 인터페이스는 특정 메서드 및 속성 집합으로 구성됩니다. 인터페이스의 일부인 속성을 <em>public</em>이라고 합니다. 외부 코드가 건드리지 못하는 나머지는 <em>private</em>라고 합니다.</p>
+
+<p><a class="p_ident" id="p_RExXHtzJn1" href="#p_RExXHtzJn1" tabindex="-1" role="presentation"></a>많은 언어가 공개(public) 및 비공개(private) 속성을 구별하고 외부 코드가 비공개 속성에 완전히 액세스하는 것을 방지하는 방법을 제공합니다. minimalist 접근 방식을 취하는 JavaScript는 적어도 아직까지는 그렇지 않습니다. 이것을 언어에 추가하는 작업이 진행 중입니다.</p>
+
+<p><a class="p_ident" id="p_h9lEzfGlTT" href="#p_h9lEzfGlTT" tabindex="-1" role="presentation"></a>언어에는 이러한 구분이 내장되어 있지 않지만 JavaScript 프로그래머는 이러한 개념을 성공적으로 사용하고 있습니다. 일반적으로 사용 가능한 인터페이스는 설명서 또는 주석에 설명되어 있습니다. 속성 이름의 시작 부분에 밑줄(<code>_</code>) 문자를 넣어 해당 속성이 비공개임을 나타내는 것도 일반적입니다.</p>
+
+<p><a class="p_ident" id="p_ysFjuxKxY0" href="#p_ysFjuxKxY0" tabindex="-1" role="presentation"></a>구현에서 인터페이스를 분리하는 것이 바람직합니다. 일반적으로 <em>캡슐화(encapsulation)</em>라고 합니다.</p>
+
+<h2 id="obj_methods"><a class="h_ident" id="h_fkrGgDyRWc" href="#h_fkrGgDyRWc" tabindex="-1" role="presentation"></a>Methods</h2>
+
+<p><a class="p_ident" id="p_DKj01h8Gzf" href="#p_DKj01h8Gzf" tabindex="-1" role="presentation"></a>메서드는 함수 값을 보유하는 속성에 불과합니다. 다음은 간단한 메서드입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_BYfVVcFY2P" href="#c_BYfVVcFY2P" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">rabbit</span> <span class="cm-operator">=</span> {};
+<span class="cm-variable">rabbit</span>.<span class="cm-property">speak</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">line</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`The rabbit says '${</span><span class="cm-variable-2">line</span><span class="cm-string-2">}</span><span class="cm-string-2">'`</span>);
+};
+
+<span class="cm-variable">rabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">&quot;I'm alive.&quot;</span>);
+<span class="cm-comment">// → The rabbit says 'I'm alive.'</span></pre>
+
+<p><a class="p_ident" id="p_N+6e0UGvFo" href="#p_N+6e0UGvFo" tabindex="-1" role="presentation"></a>일반적으로 메서드는 호출된 객체로 작업을 수행해야 합니다. 함수가 메서드로 호출되면(속성으로 조회되고 <code>object.method()</code>와 같이 즉시 호출) 해당 본문에서 <code>this</code>라는 바인딩은 자동으로 호출된 객체를 가리킵니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_cXuIwPt+3C" href="#c_cXuIwPt+3C" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">speak</span>(<span class="cm-def">line</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`The ${</span><span class="cm-keyword">this</span>.<span class="cm-property">type</span><span class="cm-string-2">}</span> <span class="cm-string-2">rabbit says '${</span><span class="cm-variable-2">line</span><span class="cm-string-2">}</span><span class="cm-string-2">'`</span>);
+}
+<span class="cm-keyword">let</span> <span class="cm-def">whiteRabbit</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">&quot;white&quot;</span>, <span class="cm-property">speak</span>};
+<span class="cm-keyword">let</span> <span class="cm-def">hungryRabbit</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">&quot;hungry&quot;</span>, <span class="cm-property">speak</span>};
+
+<span class="cm-variable">whiteRabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">&quot;Oh my ears and whiskers, &quot;</span> <span class="cm-operator">+</span>
+                  <span class="cm-string">&quot;how late it's getting!&quot;</span>);
+<span class="cm-comment">// → The white rabbit says 'Oh my ears and whiskers, how</span>
+<span class="cm-comment">//   late it's getting!'</span>
+<span class="cm-variable">hungryRabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">&quot;I could use a carrot right now.&quot;</span>);
+<span class="cm-comment">// → The hungry rabbit says 'I could use a carrot right now.'</span></pre>
+
+<p id="call_method"><a class="p_ident" id="p_llBwR5t6LB" href="#p_llBwR5t6LB" tabindex="-1" role="presentation"></a><code>this</code>는 다른 방식으로 전달되는 추가 매개 변수로 간주할 수 있습니다. 명시적으로 전달하려면 함수의 <code>call</code> 메서드를 사용할 수 있는데, 이것은 첫 번째 인수로 <code>this</code>를 취하고 정규 매개 변수들로서 추가 인수로 취급됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_9lDr0S2nEw" href="#c_9lDr0S2nEw" tabindex="-1" role="presentation"></a><span class="cm-variable">speak</span>.<span class="cm-property">call</span>(<span class="cm-variable">hungryRabbit</span>, <span class="cm-string">&quot;Burp!&quot;</span>);
+<span class="cm-comment">// → The hungry rabbit says 'Burp!'</span></pre>
+
+<p><a class="p_ident" id="p_8ZeOAlGKXe" href="#p_8ZeOAlGKXe" tabindex="-1" role="presentation"></a>각 함수는 자체 <code>this</code> 바인딩을 갖기 때문에(값이 호출되는 방식에 종속되는) <code>function</code> 키워드로 정의된 일반 함수에서 래핑 범위로 <code>this</code>를 참조할 수 없습니다.</p>
+
+<p><a class="p_ident" id="p_C4AqzW0fAV" href="#p_C4AqzW0fAV" tabindex="-1" role="presentation"></a>화살표 함수는 다릅니다. 자체적으로 <code>this</code>를 바인딩하지 않지만 주변 범위에서 <code>this</code> 바인딩이 가능합니다. 따라서 로컬 함수 내부에서 <code>this</code>를 참조하는 다음 코드와 같은 작업을 수행할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_wg++tcauWw" href="#c_wg++tcauWw" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">normalize</span>() {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">this</span>.<span class="cm-property">coords</span>.<span class="cm-property">map</span>(<span class="cm-def">n</span> <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">n</span> <span class="cm-operator">/</span> <span class="cm-keyword">this</span>.<span class="cm-property">length</span>));
+}
+<span class="cm-variable">normalize</span>.<span class="cm-property">call</span>({<span class="cm-property">coords</span>: [<span class="cm-number">0</span>, <span class="cm-number">2</span>, <span class="cm-number">3</span>], <span class="cm-property">length</span>: <span class="cm-number">5</span>});
+<span class="cm-comment">// → [0, 0.4, 0.6]</span></pre>
+
+<p><a class="p_ident" id="p_YkWiHcMuVP" href="#p_YkWiHcMuVP" tabindex="-1" role="presentation"></a><code>function</code> 키워드를 사용하여 <code>map</code>에 대한 인수를 작성하면 코드는 작동되지 않습니다.</p>
+
+<h2 id="prototypes"><a class="h_ident" id="h_SumMlRB7yn" href="#h_SumMlRB7yn" tabindex="-1" role="presentation"></a>프로토타입(Prototypes)</h2>
+
+<p><a class="p_ident" id="p_hi1TWnD/2p" href="#p_hi1TWnD/2p" tabindex="-1" role="presentation"></a>주의 깊게 관찰합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_P0GVdA5c8J" href="#c_P0GVdA5c8J" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">empty</span> <span class="cm-operator">=</span> {};
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">empty</span>.<span class="cm-property">toString</span>);
+<span class="cm-comment">// → function toString(){…}</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">empty</span>.<span class="cm-property">toString</span>());
+<span class="cm-comment">// → [object Object]</span></pre>
+
+<p><a class="p_ident" id="p_NUxqIXvg/G" href="#p_NUxqIXvg/G" tabindex="-1" role="presentation"></a>빈 객체로부터 속성을 가져온 것입니다.</p>
+
+<p><a class="p_ident" id="p_bJubL+gx0p" href="#p_bJubL+gx0p" tabindex="-1" role="presentation"></a>단순히 JavaScript 객체가 작동하는 방식에 대한 정보는 보류합니다. 속성 집합 외에도 대부분의 객체에는 <em>prototype</em>도 있습니다. 프로토타입은 속성의 대체 소스로 사용되는 또 다른 객체입니다. 객체가 갖고 있지 않은 속성에 대한 요청을 받으면 해당 프로토타입은 속성을 검색한 다음 프로토타입의 프로토타입 등을 검색합니다.</p>
+
+<p><a class="p_ident" id="p_XPuG8mFwbT" href="#p_XPuG8mFwbT" tabindex="-1" role="presentation"></a>빈 객체의 원형은 거의 모든 객체의 배후에 있는 실체인 <code>Object.prototype</code>입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_7Q/HaNra3M" href="#c_7Q/HaNra3M" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>({}) <span class="cm-operator">==</span>
+            <span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>(<span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>));
+<span class="cm-comment">// → null</span></pre>
+
+<p><a class="p_ident" id="p_GfVMu4b4D+" href="#p_GfVMu4b4D+" tabindex="-1" role="presentation"></a><code>Object.<wbr>getPrototypeOf</code>은 객체의 프로토타입을 반환합니다.</p>
+
+<p><a class="p_ident" id="p_4S0XbM8aBm" href="#p_4S0XbM8aBm" tabindex="-1" role="presentation"></a>JavaScript 객체의 프로토타입 관계는 나무 모양의 구조를 형성하고 이 구조의 루트에는 <code>Object.prototype</code>이 있습니다. 객체를 문자열 표현으로 변환하는 <code>toString</code>과 같이 모든 객체에 표시되는 몇 가지 메서드를 제공합니다.</p>
+
+<p><a class="p_ident" id="p_j+MLWf3JXr" href="#p_j+MLWf3JXr" tabindex="-1" role="presentation"></a>대부분의 객체는 프로토타입으로 <code>Object.prototype</code>을 직접 가지고 있지 않지만 대신 다른 기본 속성 집합을 제공하는 또 다른 객체를 가지고 있습니다. 함수는 <code>Function.<wbr>prototype</code>에서 파생되고 배열은 <code>Array.prototype</code>에서 파생됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_NgntUaXZ1S" href="#c_NgntUaXZ1S" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>(<span class="cm-variable">Math</span>.<span class="cm-property">max</span>) <span class="cm-operator">==</span>
+            <span class="cm-variable">Function</span>.<span class="cm-property">prototype</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>([]) <span class="cm-operator">==</span>
+            <span class="cm-variable">Array</span>.<span class="cm-property">prototype</span>);
+<span class="cm-comment">// → true</span></pre>
+
+<p><a class="p_ident" id="p_1fIXMD62Nu" href="#p_1fIXMD62Nu" tabindex="-1" role="presentation"></a>그러한 프로토타입 객체는 종종 <code>Object.prototype</code>과 같은 프로토타입을 가지므로 여전히 간접적으로 <code>toString</code>와 같은 메서드를 제공합니다.</p>
+
+<p><a class="p_ident" id="p_H2XhzSHHJP" href="#p_H2XhzSHHJP" tabindex="-1" role="presentation"></a>특정 프로토타입으로 객체를 생성하는 데 <code>Object.create</code>를 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_gSGrvGTpkW" href="#c_gSGrvGTpkW" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">protoRabbit</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">speak</span>(<span class="cm-def">line</span>) {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`The ${</span><span class="cm-keyword">this</span>.<span class="cm-property">type</span><span class="cm-string-2">}</span> <span class="cm-string-2">rabbit says '${</span><span class="cm-variable-2">line</span><span class="cm-string-2">}</span><span class="cm-string-2">'`</span>);
+  }
+};
+<span class="cm-keyword">let</span> <span class="cm-def">killerRabbit</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">protoRabbit</span>);
+<span class="cm-variable">killerRabbit</span>.<span class="cm-property">type</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;killer&quot;</span>;
+<span class="cm-variable">killerRabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">&quot;SKREEEE!&quot;</span>);
+<span class="cm-comment">// → The killer rabbit says 'SKREEEE!'</span></pre>
+
+<p><a class="p_ident" id="p_eBm7AuQUBb" href="#p_eBm7AuQUBb" tabindex="-1" role="presentation"></a>객체 식에서 <code>speak(line)</code>과 같은 속성은 메서드를 정의하는 약식 방법입니다. <code>speak</code>라는 속성을 만들고 값으로 함수를 제공합니다.</p>
+
+<p><a class="p_ident" id="p_y8kzFoQw1W" href="#p_y8kzFoQw1W" tabindex="-1" role="presentation"></a>"proto" 토끼는 모든 토끼가 공유하는 속성의 컨테이너 역할을 합니다. 킬러 토끼와 같은 개별 토끼 객체에는 자신에게만 적용되는 속성(이 경우에는 해당 타입)이 포함되어 있으며 프로토타입에서 공유 속성을 파생합니다.</p>
+
+<h2 id="classes"><a class="h_ident" id="h_7RhGr+474h" href="#h_7RhGr+474h" tabindex="-1" role="presentation"></a>Classes</h2>
+
+<p><a class="p_ident" id="p_iYbDLfqSFW" href="#p_iYbDLfqSFW" tabindex="-1" role="presentation"></a>JavaScript의 프로토타입 시스템은 <em>class</em>라고 하는 객체 지향 개념에 대한 다소 비공식적인 해석으로 간주될 수 있습니다. 클래스는 객체 타입의 모양, 즉 객체에 있는 메서드와 속성을 정의합니다. 이러한 객체를 클래스의 <em>instance</em>라고 합니다.</p>
+
+<p><a class="p_ident" id="p_GhnffIpINq" href="#p_GhnffIpINq" tabindex="-1" role="presentation"></a>프로토타입은 메서드와 같이 클래스의 모든 인스턴스가 동일한 값을 공유하는 속성을 정의하는 데 유용합니다. 토끼의 <code>type</code> 속성과 같이 인스턴스마다 다른 속성은 객체 자체에 직접 저장해야 합니다.</p>
+
+<p id="constructors"><a class="p_ident" id="p_hflVCtYTKN" href="#p_hflVCtYTKN" tabindex="-1" role="presentation"></a>주어진 클래스의 인스턴스를 만들려면 적절한 프로토타입에서 유래하지만, 그 객체 또한 현재 클래스의 인스턴스들이 가져야 하는 속성들을 갖는지 확인해야 합니다. 이것이 <em>constructor</em> 함수가 하는 일입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_oOKUeIzSVa" href="#c_oOKUeIzSVa" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">makeRabbit</span>(<span class="cm-def">type</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">rabbit</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">protoRabbit</span>);
+  <span class="cm-variable-2">rabbit</span>.<span class="cm-property">type</span> <span class="cm-operator">=</span> <span class="cm-variable-2">type</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">rabbit</span>;
+}</pre>
+
+<p><a class="p_ident" id="p_j8irpNziDb" href="#p_j8irpNziDb" tabindex="-1" role="presentation"></a>JavaScript는 이러한 타입의 함수를 더 쉽게 정의할 수 있는 방법을 제공합니다. 함수 호출 앞에 <code>new</code> 키워드를 넣으면 함수는 생성자로 처리됩니다. 이것은 올바른 프로토타입을 가진 객체가 자동으로 생성되고 함수에서 <code>this</code>와 결합되어 함수의 끝에서 반환됨을 의미합니다.</p>
+
+<p><a class="p_ident" id="p_svyxVljkeg" href="#p_svyxVljkeg" tabindex="-1" role="presentation"></a>객체를 생성할 때 사용하는 프로토타입 객체는 생성자 함수 <code>prototype</code>의 속성을 취하여 찾습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_p+u3OtMv8K" href="#c_p+u3OtMv8K" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">Rabbit</span>(<span class="cm-def">type</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">type</span> <span class="cm-operator">=</span> <span class="cm-variable-2">type</span>;
+}
+<span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>.<span class="cm-property">speak</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">line</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`The ${</span><span class="cm-keyword">this</span>.<span class="cm-property">type</span><span class="cm-string-2">}</span> <span class="cm-string-2">rabbit says '${</span><span class="cm-variable-2">line</span><span class="cm-string-2">}</span><span class="cm-string-2">'`</span>);
+};
+
+<span class="cm-keyword">let</span> <span class="cm-def">weirdRabbit</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Rabbit</span>(<span class="cm-string">&quot;weird&quot;</span>);</pre>
+
+<p><a class="p_ident" id="p_IZA8w6crnz" href="#p_IZA8w6crnz" tabindex="-1" role="presentation"></a>생성자(사실 모든 함수)는 기본적으로 <code>Object.prototype</code>에서 파생된 일반 빈 객체를 보유하는 <code>prototype</code>이라는 속성을 자동으로 가져옵니다. 원하는 경우 새 객체로 덮어쓸 수 있고 또는 예와 같이 기존 객체에 속성을 추가할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_DJG7BO1oTU" href="#p_DJG7BO1oTU" tabindex="-1" role="presentation"></a>규칙에 따라 생성자의 이름은 다른 함수와 쉽게 구분할 수 있도록 대문자로 표시됩니다.</p>
+
+<p><a class="p_ident" id="p_9bg1buEAma" href="#p_9bg1buEAma" tabindex="-1" role="presentation"></a>프로토타입이 생성자와 연결되는 방식(<code>prototype</code> 속성을 통한)과 객체가 프로토타입을 갖는 방식(<code>Object.<wbr>getPrototypeOf</code>로 찾을 수 있음) 간의 차이점을 이해하는 것이 중요합니다. 생성자의 실제 프로토타입은 생성자가 함수이기 때문에 <code>Function.<wbr>prototype</code>입니다. 그것의 <code>prototype</code> <em>속성</em>은 이를 통해 생성된 인스턴스에 사용되는 프로토타입을 보유합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_KDYP9dCWfS" href="#c_KDYP9dCWfS" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>(<span class="cm-variable">Rabbit</span>) <span class="cm-operator">==</span>
+            <span class="cm-variable">Function</span>.<span class="cm-property">prototype</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>(<span class="cm-variable">weirdRabbit</span>) <span class="cm-operator">==</span>
+            <span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>);
+<span class="cm-comment">// → true</span></pre>
+
+<h2><a class="h_ident" id="h_hPv1gHC33s" href="#h_hPv1gHC33s" tabindex="-1" role="presentation"></a>클래스 표기</h2>
+
+<p><a class="p_ident" id="p_T5Ghz5me/w" href="#p_T5Ghz5me/w" tabindex="-1" role="presentation"></a>JavaScript 클래스는 프로토타입 속성이 있는 생성자 함수입니다. 그것이 그것들이 작동하는 방식이며 2015년까지는 그렇게 작성해야 했지만, 요즘에는 덜 어색한 표기법이 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_kqKA+SZ6vS" href="#c_kqKA+SZ6vS" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">Rabbit</span> {
+  <span class="cm-property">constructor</span>(<span class="cm-def">type</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">type</span> <span class="cm-operator">=</span> <span class="cm-variable-2">type</span>;
+  }
+  <span class="cm-property">speak</span>(<span class="cm-def">line</span>) {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`The ${</span><span class="cm-keyword">this</span>.<span class="cm-property">type</span><span class="cm-string-2">}</span> <span class="cm-string-2">rabbit says '${</span><span class="cm-variable-2">line</span><span class="cm-string-2">}</span><span class="cm-string-2">'`</span>);
+  }
+}
+
+<span class="cm-keyword">let</span> <span class="cm-def">killerRabbit</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Rabbit</span>(<span class="cm-string">&quot;killer&quot;</span>);
+<span class="cm-keyword">let</span> <span class="cm-def">blackRabbit</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Rabbit</span>(<span class="cm-string">&quot;black&quot;</span>);</pre>
+
+<p><a class="p_ident" id="p_wpM2aH78Jp" href="#p_wpM2aH78Jp" tabindex="-1" role="presentation"></a>위 <code>class</code> 키워드는 클래스 선언을 시작하는데, 그것은 생성자와 메서드 집합을 모두 한 곳에서 정의할 수 있습니다. 선언의 중괄호 안에 여러 메서드를 작성할 수 있습니다. <code>constructor</code>라는 명칭은 특별히 취급됩니다. 그것은 실제 생성자 함수로 <code>Rabbit</code>라는 이름으로 결합됩니다. 나머지는 해당 생성자의 프로토타입에 패키징됩니다. 따라서 이전 클래스 선언은 이전 섹션의 생성자 정의와 동일합니다.</p>
+
+<p><a class="p_ident" id="p_rJ0WbDXCuo" href="#p_rJ0WbDXCuo" tabindex="-1" role="presentation"></a>클래스 선언은 현재 프로토타입에 추가할 수 있는 메서드(함수를 포함하는 속성) 만 허용합니다. 함수가 아닌 값을 거기에 저장하려는 경우 다소 불편할 수 있습니다. 추후 이러한 사항은 개선될 것입니다. 지금은 클래스를 정의한 후 프로토타입을 직접 조작하여 이러한 속성을 만들 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_pp17mMu8If" href="#p_pp17mMu8If" tabindex="-1" role="presentation"></a><code>function</code>과 마찬가지로 <code>class</code>는 문장과 표현에 모두 사용할 수 있습니다. 표현식으로 사용할 때 바인딩을 정의하지 않고 생성자를 값으로 생성합니다. 클래스 표현식에서 클래스 이름을 생략할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_79re+GWcTJ" href="#c_79re+GWcTJ" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">object</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-keyword">class</span> { <span class="cm-property">getWord</span>() { <span class="cm-keyword">return</span> <span class="cm-string">&quot;hello&quot;</span>; } };
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">object</span>.<span class="cm-property">getWord</span>());
+<span class="cm-comment">// → hello</span></pre>
+
+<h2><a class="h_ident" id="h_oUlUep3Os8" href="#h_oUlUep3Os8" tabindex="-1" role="presentation"></a>파생 속성의 재정의</h2>
+
+<p><a class="p_ident" id="p_Xbxf2Ooo0z" href="#p_Xbxf2Ooo0z" tabindex="-1" role="presentation"></a>객체에 속성을 추가하면 프로토타입에 있는지 여부에 관계없이 해당 속성이 객체 자체에 추가됩니다. 프로토타입에 이미 같은 이름의 속성이 있는 경우 이 속성은 이제 객체 자체 속성 뒤에 숨겨져 있으므로 더 이상 객체에 영향을 주지 않습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_vja6JbO0si" href="#c_vja6JbO0si" tabindex="-1" role="presentation"></a><span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>.<span class="cm-property">teeth</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;small&quot;</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">killerRabbit</span>.<span class="cm-property">teeth</span>);
+<span class="cm-comment">// → small</span>
+<span class="cm-variable">killerRabbit</span>.<span class="cm-property">teeth</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;long, sharp, and bloody&quot;</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">killerRabbit</span>.<span class="cm-property">teeth</span>);
+<span class="cm-comment">// → long, sharp, and bloody</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">blackRabbit</span>.<span class="cm-property">teeth</span>);
+<span class="cm-comment">// → small</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>.<span class="cm-property">teeth</span>);
+<span class="cm-comment">// → small</span></pre>
+
+<p><a class="p_ident" id="p_HM5YtS3KgJ" href="#p_HM5YtS3KgJ" tabindex="-1" role="presentation"></a>다음 다이어그램은 위 코드가 실행된 후의 상황을 보여줍니다. <code>Rabbit</code> 및 <code>Object</code> 프로토타입은 일종의 backdrop처럼 <code>killerRabbit</code> 뒤에 놓입니다. 여기서 객체 자체에 없는 속성들이 조회될 수 있습니다.</p>
+
+<figure><img src="img/rabbits.svg" alt="Rabbit object prototype schema"></figure>
+
+<p><a class="p_ident" id="p_or3/lz1DV8" href="#p_or3/lz1DV8" tabindex="-1" role="presentation"></a>프로토타입에 있는 속성을 재정의하면 유용한 작업이 될 수 있습니다. 토끼 이빨 예에서 볼 수 있듯이 재정의를 사용하여 더 일반적인 개체 클래스의 인스턴스에서 예외적인 속성을 표현하는 동시에 예외가 아닌 개체는 프로토타입에서 표준 값을 사용하도록 할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_GIhnbh3MdO" href="#p_GIhnbh3MdO" tabindex="-1" role="presentation"></a>재정의는 또한 표준 함수 및 배열 프로토타입에 또 다른 <code>toString</code> 메서드를 제공하는데 사용됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_DrIRvUgeOD" href="#c_DrIRvUgeOD" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Array</span>.<span class="cm-property">prototype</span>.<span class="cm-property">toString</span> <span class="cm-operator">==</span>
+            <span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>.<span class="cm-property">toString</span>);
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>].<span class="cm-property">toString</span>());
+<span class="cm-comment">// → 1,2</span></pre>
+
+<p><a class="p_ident" id="p_FYf2A2jS65" href="#p_FYf2A2jS65" tabindex="-1" role="presentation"></a>배열에서 <code>toString</code>을 호출하는 것은 <code>.<wbr>join(&quot;,&quot;)</code>으로 호출하는 것과 유사한 결과가 나타납니다. 배열의 값 사이에 쉼표를 넣습니다. 배열에서 <code>Object.<wbr>prototype.<wbr>toString</code>로 직접 호출하면 다른 문자열이 생성됩니다. 그 함수는 배열에 대해 알지 못하므로 단어 <em>object</em>와 대괄호 사이에 객체 타입의 이름을 넣습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_XpqFUrDFJE" href="#c_XpqFUrDFJE" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>.<span class="cm-property">toString</span>.<span class="cm-property">call</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>]));
+<span class="cm-comment">// → [object Array]</span></pre>
+
+<h2><a class="h_ident" id="h_gAcc11EHzV" href="#h_gAcc11EHzV" tabindex="-1" role="presentation"></a>Maps</h2>
+
+<p><a class="p_ident" id="p_5v6QzULS7C" href="#p_5v6QzULS7C" tabindex="-1" role="presentation"></a>앞 페이지에서 요소에 함수를 적용하여 데이터 구조를 변환하는 작업에 대해 사용된 <em>map</em>이 있었습니다. 혼란스러운 것은 프로그래밍에서 같은 단어가 관련이 있지만 오히려 다른 것에 사용되기도 합니다.</p>
+
+<p><a class="p_ident" id="p_++bw9zDmtH" href="#p_++bw9zDmtH" tabindex="-1" role="presentation"></a><em>map</em>은 키와 값이 연관되는 데이터 구조입니다. 예를 들어, 이름을 연령에 매핑할 수 있습니다. 이를 위해 객체를 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Wu6a8ObZI0" href="#c_Wu6a8ObZI0" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">ages</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">Boris</span>: <span class="cm-number">39</span>,
+  <span class="cm-property">Liang</span>: <span class="cm-number">22</span>,
+  <span class="cm-property">Júlia</span>: <span class="cm-number">62</span>
+};
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`Júlia is ${</span><span class="cm-variable">ages</span>[<span class="cm-string">&quot;Júlia&quot;</span>]<span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+<span class="cm-comment">// → Júlia is 62</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Is Jack's age known?&quot;</span>, <span class="cm-string">&quot;Jack&quot;</span> <span class="cm-keyword">in</span> <span class="cm-variable">ages</span>);
+<span class="cm-comment">// → Is Jack's age known? false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Is toString's age known?&quot;</span>, <span class="cm-string">&quot;toString&quot;</span> <span class="cm-keyword">in</span> <span class="cm-variable">ages</span>);
+<span class="cm-comment">// → Is toString's age known? true</span></pre>
+
+<p><a class="p_ident" id="p_EQqc7pcOKT" href="#p_EQqc7pcOKT" tabindex="-1" role="presentation"></a>여기서 객체의 속성 이름은 사람의 이름이고 속성 값은 연령입니다. 그러나 맵에 toString이라는 이름을 가진 사람을 나열하지 않았습니다. 그러나 일반 객체는 <code>Object.prototype</code>에서 파생되기 때문에 Object.prototype 속성이 있게 됩니다.</p>
+
+<p><a class="p_ident" id="p_enf1/9ItBM" href="#p_enf1/9ItBM" tabindex="-1" role="presentation"></a>따라서 일반 객체를 맵으로 사용하는 것은 위험합니다. 이 문제를 방지할 수 있는 몇 가지 가능한 방법이 있습니다. 첫째, 프로토타입 없이 객체를 생성하는 것이 가능합니다. <code>Object.create</code>에 <code>null</code>을 전달하는 경우 결과 객체는 <code>Object.prototype</code>에서 파생되지 않기 때문에 안전하게 맵으로 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_AkRQLQc4AG" href="#c_AkRQLQc4AG" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;toString&quot;</span> <span class="cm-keyword">in</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>));
+<span class="cm-comment">// → false</span></pre>
+
+<p><a class="p_ident" id="p_jGC2iO9E1x" href="#p_jGC2iO9E1x" tabindex="-1" role="presentation"></a>객체 속성 이름은 문자열이어야 합니다. 객체와 같이 키를 문자열로 쉽게 변환할 수 없는 맵이 필요한 경우 객체를 맵으로 사용할 수 없습니다.</p>
+
+<p><a class="p_ident" id="p_nIsq9E5wmZ" href="#p_nIsq9E5wmZ" tabindex="-1" role="presentation"></a>다행스럽게도 JavaScript에는 정확한 목적을 위해 작성된 클래스 <code>Map</code>이 있습니다. 매핑을 저장하고 모든 유형의 키를 허용합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_dd6KsGgAGP" href="#c_dd6KsGgAGP" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">ages</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Map</span>();
+<span class="cm-variable">ages</span>.<span class="cm-property">set</span>(<span class="cm-string">&quot;Boris&quot;</span>, <span class="cm-number">39</span>);
+<span class="cm-variable">ages</span>.<span class="cm-property">set</span>(<span class="cm-string">&quot;Liang&quot;</span>, <span class="cm-number">22</span>);
+<span class="cm-variable">ages</span>.<span class="cm-property">set</span>(<span class="cm-string">&quot;Júlia&quot;</span>, <span class="cm-number">62</span>);
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">`Júlia is ${</span><span class="cm-variable">ages</span>.<span class="cm-property">get</span>(<span class="cm-string">&quot;Júlia&quot;</span>)<span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+<span class="cm-comment">// → Júlia is 62</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">&quot;Is Jack's age known?&quot;</span>, <span class="cm-variable">ages</span>.<span class="cm-property">has</span>(<span class="cm-string">&quot;Jack&quot;</span>));
+<span class="cm-comment">// → Is Jack's age known? false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">ages</span>.<span class="cm-property">has</span>(<span class="cm-string">&quot;toString&quot;</span>));
+<span class="cm-comment">// → false</span></pre>
+
+<p><a class="p_ident" id="p_iIdp+mGl3Y" href="#p_iIdp+mGl3Y" tabindex="-1" role="presentation"></a>메서드 <code>set</code>, <code>get</code>, <code>has</code>는 <code>Map</code> 객체 인터페이스의 일부입니다. 많은 값을 빠르게 업데이트하고 검색할 수 있는 데이터 구조를 작성하는 것은 쉽지 않지만 그것에 대해 걱정할 필요가 없습니다. 다른 누군가가 그것을 작성했기 때문에 이 간단한 인터페이스를 통해 작업을 할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_tx3xnowcEp" href="#p_tx3xnowcEp" tabindex="-1" role="presentation"></a>어떤 이유로 맵으로 처리해야 하는 일반 객체가 있는 경우 <code>Object.keys</code>는 프로토타입의 키가 아닌 객체 자체의 키만 반환합니다. <code>in</code> 연산자의 대안으로 <code>hasOwnProperty</code>를 사용할 수 있는데, 그것은 객체의 프로토타입을 무시합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_qBrd35Qiln" href="#c_qBrd35Qiln" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>({<span class="cm-property">x</span>: <span class="cm-number">1</span>}.<span class="cm-property">hasOwnProperty</span>(<span class="cm-string">&quot;x&quot;</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>({<span class="cm-property">x</span>: <span class="cm-number">1</span>}.<span class="cm-property">hasOwnProperty</span>(<span class="cm-string">&quot;toString&quot;</span>));
+<span class="cm-comment">// → false</span></pre>
+
+<h2><a class="h_ident" id="h_mJ/JHQRHg9" href="#h_mJ/JHQRHg9" tabindex="-1" role="presentation"></a>다형성(Polymorphism)</h2>
+
+<p><a class="p_ident" id="p_ozkqUookhO" href="#p_ozkqUookhO" tabindex="-1" role="presentation"></a>객체에서 <code>String</code> 함수를 호출하면(값을 문자열로 변환하는 함수), 해당 객체의 <code>toString</code> 메서드를 호출하여 의미 있는 문자열을 만들 수 있습니다. 표준 프로토타입 중 일부는 자체 버전의 <code>toString</code>을 정의하므로 <code>&quot;[object Object]&quot;</code>보다 더 유용한 정보를 포함하는 문자열을 생성할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_V+CBn0VJnW" href="#c_V+CBn0VJnW" tabindex="-1" role="presentation"></a><span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>.<span class="cm-property">toString</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">return</span> <span class="cm-string-2">`a ${</span><span class="cm-keyword">this</span>.<span class="cm-property">type</span><span class="cm-string-2">}</span> <span class="cm-string-2">rabbit`</span>;
+};
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">String</span>(<span class="cm-variable">blackRabbit</span>));
+<span class="cm-comment">// → a black rabbit</span></pre>
+
+<p><a class="p_ident" id="p_HgUFdFB6vM" href="#p_HgUFdFB6vM" tabindex="-1" role="presentation"></a>다음 예는 특정 인터페이스가 있는(이 경우에 <code>toString</code> 메서드) 객체와 함께 작동하도록 코드가 작성되면 이 인터페이스를 지원하는 모든 종류의 객체를 코드에 연결할 수 있으며 제대로 작동합니다.</p>
+
+<p><a class="p_ident" id="p_qNZih5k+vu" href="#p_qNZih5k+vu" tabindex="-1" role="presentation"></a>이러한 기법을 <em>polymorphism</em>이라고 합니다. 다형성 코드는 예상되는 인터페이스를 지원하는 한 다양한 모양의 값으로 작업할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_g9W26O8p4+" href="#p_g9W26O8p4+" tabindex="-1" role="presentation"></a>4장의 <code>for</code>/<code>of</code> 루프는 여러 종류의 데이터 구조를 반복할 수 있습니다. 이것은 다형성의 또 다른 경우입니다. 이러한 루프는 데이터 구조가 배열과 문자열이 하는 특정 인터페이스를 노출할 것으로 예상합니다. 그리고 이 인터페이스를 자신의 객체에 추가할 수도 있습니다! 그러나 그렇게 하기 전에 symbol이 무엇인지 알아야 합니다.</p>
+
+<h2><a class="h_ident" id="h_Iq1mTp65i3" href="#h_Iq1mTp65i3" tabindex="-1" role="presentation"></a>Symbols</h2>
+
+<p><a class="p_ident" id="p_9VjlXGAIAM" href="#p_9VjlXGAIAM" tabindex="-1" role="presentation"></a>여러 인터페이스에서 다른 항목에 대해 동일한 속성 이름을 사용할 수 있습니다. 예를 들어, <code>toString</code> 메서드가 객체를 원사로 변환해야 하는 인터페이스를 정의할 수 있습니다. 객체가 해당 인터페이스와 <code>toString</code>의 표준 사용을 모두 준수하는 것은 불가능합니다.</p>
+
+<p><a class="p_ident" id="p_7p+O+Qr4bN" href="#p_7p+O+Qr4bN" tabindex="-1" role="presentation"></a>속성 이름이 문자열인 것은 아닙니다. <em>기호(symbols)</em>일 수도 있습니다. 기호는 <code>Symbol</code> 함수로 생성된 값입니다. 문자열과 달리 새로 만든 기호는 고유하므로 같은 기호를 두 번 만들 수 없습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_/KAipM77Y+" href="#c_/KAipM77Y+" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">sym</span> <span class="cm-operator">=</span> <span class="cm-variable">Symbol</span>(<span class="cm-string">&quot;name&quot;</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">sym</span> <span class="cm-operator">==</span> <span class="cm-variable">Symbol</span>(<span class="cm-string">&quot;name&quot;</span>));
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>[<span class="cm-variable">sym</span>] <span class="cm-operator">=</span> <span class="cm-number">55</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">blackRabbit</span>[<span class="cm-variable">sym</span>]);
+<span class="cm-comment">// → 55</span></pre>
+
+<p><a class="p_ident" id="p_PBxnKMHKqV" href="#p_PBxnKMHKqV" tabindex="-1" role="presentation"></a>전달한 문자열은 문자열 <code>Symbol</code>로 변환할 때 포함되며 예를 들어 콘솔에 표시할 때 기호를 더 쉽게 인식할 수 있습니다. 그러나 그 이상의 의미는 없습니다. 여러 기호가 같은 이름을 가질 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_n90pM44NAN" href="#p_n90pM44NAN" tabindex="-1" role="presentation"></a>고유한 속성 이름으로 사용 가능하기 때문에 기호는 이름에 관계없이 다른 속성과 함께 평화롭게 공존할 수 있는 인터페이스를 정의하는 데 적합합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_I6uO/ojWit" href="#c_I6uO/ojWit" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">toStringSymbol</span> <span class="cm-operator">=</span> <span class="cm-variable">Symbol</span>(<span class="cm-string">&quot;toString&quot;</span>);
+<span class="cm-variable">Array</span>.<span class="cm-property">prototype</span>[<span class="cm-variable">toStringSymbol</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">return</span> <span class="cm-string-2">`${</span><span class="cm-keyword">this</span>.<span class="cm-property">length</span><span class="cm-string-2">}</span> <span class="cm-string-2">cm of blue yarn`</span>;
+};
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>].<span class="cm-property">toString</span>());
+<span class="cm-comment">// → 1,2</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>][<span class="cm-variable">toStringSymbol</span>]());
+<span class="cm-comment">// → 2 cm of blue yarn</span></pre>
+
+<p><a class="p_ident" id="p_VJSo/GYvCc" href="#p_VJSo/GYvCc" tabindex="-1" role="presentation"></a>속성 이름 주위에 대괄호를 사용하여 객체 표현식 및 클래스에 기호 속성을 포함할 수 있습니다. 그러면 대괄호 속성 액세스 표기법과 마찬가지로 속성 이름이 평가되어 기호가 포함된 바인딩을 참조할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_aZAdJfdSRz" href="#c_aZAdJfdSRz" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">stringObject</span> <span class="cm-operator">=</span> {
+  [<span class="cm-variable">toStringSymbol</span>]() { <span class="cm-keyword">return</span> <span class="cm-string">&quot;a jute rope&quot;</span>; }
+};
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">stringObject</span>[<span class="cm-variable">toStringSymbol</span>]());
+<span class="cm-comment">// → a jute rope</span></pre>
+
+<h2><a class="h_ident" id="h_z2tOOXM8qO" href="#h_z2tOOXM8qO" tabindex="-1" role="presentation"></a>iterator 인터페이스</h2>
+
+<p><a class="p_ident" id="p_gtFNFSvSrt" href="#p_gtFNFSvSrt" tabindex="-1" role="presentation"></a><code>for</code>/<code>of</code> 루프에 주어진 객체는 반복 가능해야 합니다. 이것은 <code>Symbol.iterator</code> 기호로 명명된 메서드가 있음을 의미합니다(언어에 의해 정의된 기호 값으로 <code>Symbol</code> 함수의 속성으로 저장됨).</p>
+
+<p><a class="p_ident" id="p_gs0GMX9PA7" href="#p_gs0GMX9PA7" tabindex="-1" role="presentation"></a>호출되면 해당 메서드는 두 번째 인터페이스인 <em>iterator</em>를 제공하는 객체를 반환해야 합니다. 이것은 반복되는 실제의 것입니다. 그것은 다음 결과가 존재하는 경우에 그것을 반환하는 <code>next</code> 메서드가 있습니다. 그 결과는 다음 값이 있는 경우 다음 값을 제공하는 <code>value</code> 속성이 있는 객체와 더 이상 결과가 없으면 true이고 그렇지 않으면 false인 속성 <code>done</code>이 있어야 합니다.</p>
+
+<p><a class="p_ident" id="p_a9jQxjOo3t" href="#p_a9jQxjOo3t" tabindex="-1" role="presentation"></a>참고로 <code>next</code>, <code>value</code> 및 <code>done</code> 속성 이름은 단순 문자열이고 기호는 아닙니다. <code>Symbol.iterator</code>는 많은 상이한 객체들의 추가에 사용되고 그거은 기호입니다.</p>
+
+<p><a class="p_ident" id="p_wSWGcm7dId" href="#p_wSWGcm7dId" tabindex="-1" role="presentation"></a>이러한 인터페이스는 직접 사용할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_CKTaBW3WjJ" href="#c_CKTaBW3WjJ" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">okIterator</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;OK&quot;</span>[<span class="cm-variable">Symbol</span>.<span class="cm-property">iterator</span>]();
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">okIterator</span>.<span class="cm-property">next</span>());
+<span class="cm-comment">// → {value: &quot;O&quot;, done: false}</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">okIterator</span>.<span class="cm-property">next</span>());
+<span class="cm-comment">// → {value: &quot;K&quot;, done: false}</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">okIterator</span>.<span class="cm-property">next</span>());
+<span class="cm-comment">// → {value: undefined, done: true}</span></pre>
+
+<p id="matrix"><a class="p_ident" id="p_rqXAzunzIi" href="#p_rqXAzunzIi" tabindex="-1" role="presentation"></a>반복 가능한 데이터 구조를 구현해 보겠습니다. 2차원 배열로 작동하는 <em>matrix</em> 클래스를 만듭니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Q128qlROKi" href="#c_Q128qlROKi" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">Matrix</span> {
+  <span class="cm-property">constructor</span>(<span class="cm-def">width</span>, <span class="cm-def">height</span>, <span class="cm-def">element</span> <span class="cm-operator">=</span> (<span class="cm-def">x</span>, <span class="cm-def">y</span>) <span class="cm-operator">=&gt;</span> <span class="cm-atom">undefined</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">width</span> <span class="cm-operator">=</span> <span class="cm-variable-2">width</span>;
+    <span class="cm-keyword">this</span>.<span class="cm-property">height</span> <span class="cm-operator">=</span> <span class="cm-variable-2">height</span>;
+    <span class="cm-keyword">this</span>.<span class="cm-property">content</span> <span class="cm-operator">=</span> [];
+
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">y</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">y</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">height</span>; <span class="cm-variable-2">y</span><span class="cm-operator">++</span>) {
+      <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">x</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">x</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">width</span>; <span class="cm-variable-2">x</span><span class="cm-operator">++</span>) {
+        <span class="cm-keyword">this</span>.<span class="cm-property">content</span>[<span class="cm-variable-2">y</span> <span class="cm-operator">*</span> <span class="cm-variable-2">width</span> <span class="cm-operator">+</span> <span class="cm-variable-2">x</span>] <span class="cm-operator">=</span> <span class="cm-variable-2">element</span>(<span class="cm-variable-2">x</span>, <span class="cm-variable-2">y</span>);
+      }
+    }
+  }
+
+  <span class="cm-property">get</span>(<span class="cm-def">x</span>, <span class="cm-def">y</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">content</span>[<span class="cm-variable-2">y</span> <span class="cm-operator">*</span> <span class="cm-keyword">this</span>.<span class="cm-property">width</span> <span class="cm-operator">+</span> <span class="cm-variable-2">x</span>];
+  }
+  <span class="cm-property">set</span>(<span class="cm-def">x</span>, <span class="cm-def">y</span>, <span class="cm-def">value</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">content</span>[<span class="cm-variable-2">y</span> <span class="cm-operator">*</span> <span class="cm-keyword">this</span>.<span class="cm-property">width</span> <span class="cm-operator">+</span> <span class="cm-variable-2">x</span>] <span class="cm-operator">=</span> <span class="cm-variable-2">value</span>;
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_I/q+okK5mh" href="#p_I/q+okK5mh" tabindex="-1" role="presentation"></a>클래스는 <em>width</em>×<em>height</em> 요소의 단일 배열에 내용을 저장합니다. 요소는 행별로 저장되므로 예를 들어 다섯 번째 행의 세 번째 요소는 (0부터 시작하는 인덱싱을 사용하여) 위치 4 × <em>width</em> + 2에 저장됩니다.</p>
+
+<p><a class="p_ident" id="p_RlDQ7yqK2c" href="#p_RlDQ7yqK2c" tabindex="-1" role="presentation"></a>생성자 함수는 너비, 높이 및 선택적인 <code>element</code> 함수를 (초기 값을 채우는 데 사용되는) 사용합니다. 행렬에서 검색 및 갱신을 위한 <code>get</code> 및 <code>set</code> 메서드가 존재합니다.</p>
+
+<p><a class="p_ident" id="p_DHPUGxvFrD" href="#p_DHPUGxvFrD" tabindex="-1" role="presentation"></a>iterator는 행렬을 통해 반복할 때 원소 자체 뿐만 아니라 원소 위치 또한 관심이 있기 때문에 <code>x</code>, <code>y</code> 및 <code>value</code> 속성을 가진 객체를 가져야 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_LtbqF2pl4c" href="#c_LtbqF2pl4c" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">MatrixIterator</span> {
+  <span class="cm-property">constructor</span>(<span class="cm-def">matrix</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">x</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>;
+    <span class="cm-keyword">this</span>.<span class="cm-property">y</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>;
+    <span class="cm-keyword">this</span>.<span class="cm-property">matrix</span> <span class="cm-operator">=</span> <span class="cm-variable-2">matrix</span>;
+  }
+
+  <span class="cm-property">next</span>() {
+    <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">y</span> <span class="cm-operator">==</span> <span class="cm-keyword">this</span>.<span class="cm-property">matrix</span>.<span class="cm-property">height</span>) <span class="cm-keyword">return</span> {<span class="cm-property">done</span>: <span class="cm-atom">true</span>};
+
+    <span class="cm-keyword">let</span> <span class="cm-def">value</span> <span class="cm-operator">=</span> {<span class="cm-property">x</span>: <span class="cm-keyword">this</span>.<span class="cm-property">x</span>,
+                 <span class="cm-property">y</span>: <span class="cm-keyword">this</span>.<span class="cm-property">y</span>,
+                 <span class="cm-property">value</span>: <span class="cm-keyword">this</span>.<span class="cm-property">matrix</span>.<span class="cm-property">get</span>(<span class="cm-keyword">this</span>.<span class="cm-property">x</span>, <span class="cm-keyword">this</span>.<span class="cm-property">y</span>)};
+    <span class="cm-keyword">this</span>.<span class="cm-property">x</span><span class="cm-operator">++</span>;
+    <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">x</span> <span class="cm-operator">==</span> <span class="cm-keyword">this</span>.<span class="cm-property">matrix</span>.<span class="cm-property">width</span>) {
+      <span class="cm-keyword">this</span>.<span class="cm-property">x</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>;
+      <span class="cm-keyword">this</span>.<span class="cm-property">y</span><span class="cm-operator">++</span>;
+    }
+    <span class="cm-keyword">return</span> {<span class="cm-property">value</span>, <span class="cm-property">done</span>: <span class="cm-atom">false</span>};
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_yBJg8/BmDJ" href="#p_yBJg8/BmDJ" tabindex="-1" role="presentation"></a>클래스는 <code>x</code> 및 <code>y</code> 속성에서 행렬을 반복하는 진행 상황을 추적합니다. <code>next</code> 메서드는 행렬의 맨 아래에 도달했는지 확인하는 것으로 시작합니다. 그렇지 않은 경우 먼저 현재 값을 보유하는 객체를 만든 다음 위치를 업데이트하고 필요한 경우 다음 행으로 이동합니다.</p>
+
+<p><a class="p_ident" id="p_Iu3bFayPkp" href="#p_Iu3bFayPkp" tabindex="-1" role="presentation"></a><code>Matrix</code> 클래스를 iterable로 설정합니다. 이 과정의 전반에 걸쳐 때때로 개별 코드 조각이 작고 독립적인 상태를 유지하도록 클래스에 메서드를 추가하기 위해 사후 프로토타입 처리를 하게 될 것입니다. 코드를 작은 조각으로 나눌 필요가 없는 일반 프로그램에서는 대신 이러한 메서드를 클래스에서 직접 선언합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_BmOLk4O5HN" href="#c_BmOLk4O5HN" tabindex="-1" role="presentation"></a><span class="cm-variable">Matrix</span>.<span class="cm-property">prototype</span>[<span class="cm-variable">Symbol</span>.<span class="cm-property">iterator</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">MatrixIterator</span>(<span class="cm-keyword">this</span>);
+};</pre>
+
+<p><a class="p_ident" id="p_+6FbIloB5k" href="#p_+6FbIloB5k" tabindex="-1" role="presentation"></a>이제 <code>for</code>/<code>of</code>를 사용하여 행렬 순회를 할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_ek9pXBwNMJ" href="#c_ek9pXBwNMJ" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">matrix</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Matrix</span>(<span class="cm-number">2</span>, <span class="cm-number">2</span>, (<span class="cm-def">x</span>, <span class="cm-def">y</span>) <span class="cm-operator">=&gt;</span> <span class="cm-string-2">`value ${</span><span class="cm-variable-2">x</span><span class="cm-string-2">}</span><span class="cm-string-2">,${</span><span class="cm-variable-2">y</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+<span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> {<span class="cm-def">x</span>, <span class="cm-def">y</span>, <span class="cm-def">value</span>} <span class="cm-keyword">of</span> <span class="cm-variable">matrix</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">x</span>, <span class="cm-variable">y</span>, <span class="cm-variable">value</span>);
+}
+<span class="cm-comment">// → 0 0 value 0,0</span>
+<span class="cm-comment">// → 1 0 value 1,0</span>
+<span class="cm-comment">// → 0 1 value 0,1</span>
+<span class="cm-comment">// → 1 1 value 1,1</span></pre>
+
+<h2><a class="h_ident" id="h_3vwredi8nD" href="#h_3vwredi8nD" tabindex="-1" role="presentation"></a>Getters, setters 및 statics</h2>
+
+<p><a class="p_ident" id="p_6oukozZJBx" href="#p_6oukozZJBx" tabindex="-1" role="presentation"></a>인터페이스는 대부분 메서드로 구성되는 경우가 많지만 함수가 아닌 값을 보유하는 속성을 포함하는 것도 괜찮습니다. 예를 들어, <code>Map</code> 객체에는 몇 개의 키가 저장되어 있는지 알려주는 <code>size</code> 속성이 있습니다.</p>
+
+<p><a class="p_ident" id="p_SdyGtj5JbS" href="#p_SdyGtj5JbS" tabindex="-1" role="presentation"></a>그러한 객체가 인스턴스에서 직접 그러한 속성을 계산하고 저장할 필요조차 없습니다. 직접 액세스하는 속성도 메서드 호출을 숨길 수 있습니다. 이러한 메서드를 <em>getters</em>라고 하며 객체 표현식이나 클래스 선언에서 메소드 이름 앞에 <code>get</code>을 작성하여 정의합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_Np05mJ4GVO" href="#c_Np05mJ4GVO" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">varyingSize</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">get</span> <span class="cm-property">size</span>() {
+    <span class="cm-keyword">return</span> <span class="cm-variable">Math</span>.<span class="cm-property">floor</span>(<span class="cm-variable">Math</span>.<span class="cm-property">random</span>() <span class="cm-operator">*</span> <span class="cm-number">100</span>);
+  }
+};
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">varyingSize</span>.<span class="cm-property">size</span>);
+<span class="cm-comment">// → 73</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">varyingSize</span>.<span class="cm-property">size</span>);
+<span class="cm-comment">// → 49</span></pre>
+
+<p><a class="p_ident" id="p_QwpqNIZOsS" href="#p_QwpqNIZOsS" tabindex="-1" role="presentation"></a>누군가 이 객체의 <code>size</code> 속성을 읽을 때마다 연결된 메서드가 호출됩니다. <em>setter</em>를 사용하여 속성을 쓸 때 비슷한 작업을 수행할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_7LQG88c1BA" href="#c_7LQG88c1BA" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">Temperature</span> {
+  <span class="cm-property">constructor</span>(<span class="cm-def">celsius</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">celsius</span> <span class="cm-operator">=</span> <span class="cm-variable-2">celsius</span>;
+  }
+  <span class="cm-keyword">get</span> <span class="cm-property">fahrenheit</span>() {
+    <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">celsius</span> <span class="cm-operator">*</span> <span class="cm-number">1.8</span> <span class="cm-operator">+</span> <span class="cm-number">32</span>;
+  }
+  <span class="cm-keyword">set</span> <span class="cm-property">fahrenheit</span>(<span class="cm-def">value</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">celsius</span> <span class="cm-operator">=</span> (<span class="cm-variable-2">value</span> <span class="cm-operator">-</span> <span class="cm-number">32</span>) <span class="cm-operator">/</span> <span class="cm-number">1.8</span>;
+  }
+
+  <span class="cm-keyword">static</span> <span class="cm-property">fromFahrenheit</span>(<span class="cm-def">value</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">Temperature</span>((<span class="cm-variable-2">value</span> <span class="cm-operator">-</span> <span class="cm-number">32</span>) <span class="cm-operator">/</span> <span class="cm-number">1.8</span>);
+  }
+}
+
+<span class="cm-keyword">let</span> <span class="cm-def">temp</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Temperature</span>(<span class="cm-number">22</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">temp</span>.<span class="cm-property">fahrenheit</span>);
+<span class="cm-comment">// → 71.6</span>
+<span class="cm-variable">temp</span>.<span class="cm-property">fahrenheit</span> <span class="cm-operator">=</span> <span class="cm-number">86</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">temp</span>.<span class="cm-property">celsius</span>);
+<span class="cm-comment">// → 30</span></pre>
+
+<p><a class="p_ident" id="p_Hf3p+suFR+" href="#p_Hf3p+suFR+" tabindex="-1" role="presentation"></a><code>Temperature</code> 클래스를 사용하면 섭씨 또는 화씨 온도를 읽고 쓸 수 있지만 내부적으로는 섭씨만 저장하고 <code>fahrenheit</code>의 getter 및 setter에서 섭씨로 자동 변환됩니다.</p>
+
+<p><a class="p_ident" id="p_MwIs1kR0mD" href="#p_MwIs1kR0mD" tabindex="-1" role="presentation"></a>때로는 프로토타입이 아닌 생성자 함수에 일부 속성을 직접 연결하고 싶을 때가 있습니다. 이러한 메서드는 클래스 인스턴스에 액세스할 수 없지만 예를 들어 인스턴스를 만드는 추가 방법을 제공하는 데 사용할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_zLJ2u9mlXs" href="#p_zLJ2u9mlXs" tabindex="-1" role="presentation"></a>클래스 선언 내에서 이름이 생성자에 저장되기 전에 <code>static</code>로 작성된 메서드들이 있습니다. <code>Temperature</code> 클래스는 <code>Temperature.<wbr>fromFahrenheit(100)</code>를 통해 화씨를 사용하여 온도를 생성하도록 작성할 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_/a3bnONnws" href="#h_/a3bnONnws" tabindex="-1" role="presentation"></a>상속(Inheritance)</h2>
+
+<p><a class="p_ident" id="p_seSalQnLZd" href="#p_seSalQnLZd" tabindex="-1" role="presentation"></a>일부 행렬은 <em>symmetric</em>로 알려져 있는데, 왼쪽 위에서 오른쪽 아래 대각선을 중심으로 대칭 행렬을 미러링하면 그대로 유지됩니다. 즉, <em>x</em>,<em>y</em>에 저장된 값은 항상 <em>y</em>,<em>x</em>의 값과 동일합니다.</p>
+
+<p><a class="p_ident" id="p_InrSr2m6Kl" href="#p_InrSr2m6Kl" tabindex="-1" role="presentation"></a><code>Matrix</code>와 같은 데이터 구조가 필요하지만, 행렬이고 그것이 대칭일 필요가 있는 경우에 처음부터 작성할 수도 있지만 이미 작성한 것과 매우 유사한 일부 코드를 반복할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_kRtvgxF67W" href="#p_kRtvgxF67W" tabindex="-1" role="presentation"></a>JavaScript의 프로토타입 시스템을 사용하면 이전 클래스와 매우 유사하지만 일부 속성에 대한 새로운 정의가 있는 새 클래스를 생성할 수 있습니다. 새 클래스의 프로토타입은 이전 프로토타입에서 파생되지만 <code>set</code> 메서드에 대한 새 정의를 추가합니다.</p>
+
+<p><a class="p_ident" id="p_a3GMshNFYT" href="#p_a3GMshNFYT" tabindex="-1" role="presentation"></a>객체 지향 프로그래밍 용어로 이것을 상속이라고 합니다. 새 클래스는 이전 클래스의 속성과 동작을 상속합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_uuBcsDdS7D" href="#c_uuBcsDdS7D" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">SymmetricMatrix</span> <span class="cm-keyword">extends</span> <span class="cm-variable">Matrix</span> {
+  <span class="cm-property">constructor</span>(<span class="cm-def">size</span>, <span class="cm-def">element</span> <span class="cm-operator">=</span> (<span class="cm-def">x</span>, <span class="cm-def">y</span>) <span class="cm-operator">=&gt;</span> <span class="cm-atom">undefined</span>) {
+    <span class="cm-keyword">super</span>(<span class="cm-variable-2">size</span>, <span class="cm-variable-2">size</span>, (<span class="cm-def">x</span>, <span class="cm-def">y</span>) <span class="cm-operator">=&gt;</span> {
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">x</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">y</span>) <span class="cm-keyword">return</span> <span class="cm-variable-2">element</span>(<span class="cm-variable-2">y</span>, <span class="cm-variable-2">x</span>);
+      <span class="cm-keyword">else</span> <span class="cm-keyword">return</span> <span class="cm-variable-2">element</span>(<span class="cm-variable-2">x</span>, <span class="cm-variable-2">y</span>);
+    });
+  }
+
+  <span class="cm-property">set</span>(<span class="cm-def">x</span>, <span class="cm-def">y</span>, <span class="cm-def">value</span>) {
+    <span class="cm-keyword">super</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">x</span>, <span class="cm-variable-2">y</span>, <span class="cm-variable-2">value</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">x</span> <span class="cm-operator">!=</span> <span class="cm-variable-2">y</span>) {
+      <span class="cm-keyword">super</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">y</span>, <span class="cm-variable-2">x</span>, <span class="cm-variable-2">value</span>);
+    }
+  }
+}
+
+<span class="cm-keyword">let</span> <span class="cm-def">matrix</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">SymmetricMatrix</span>(<span class="cm-number">5</span>, (<span class="cm-def">x</span>, <span class="cm-def">y</span>) <span class="cm-operator">=&gt;</span> <span class="cm-string-2">`${</span><span class="cm-variable-2">x</span><span class="cm-string-2">}</span><span class="cm-string-2">,${</span><span class="cm-variable-2">y</span><span class="cm-string-2">}</span><span class="cm-string-2">`</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">matrix</span>.<span class="cm-property">get</span>(<span class="cm-number">2</span>, <span class="cm-number">3</span>));
+<span class="cm-comment">// → 3,2</span></pre>
+
+<p><a class="p_ident" id="p_RZZzYHZ3d6" href="#p_RZZzYHZ3d6" tabindex="-1" role="presentation"></a><code>extends</code>라는 단어의 사용은 이 클래스가 기본 <code>Object</code> 프로토타입이 아니라 다른 클래스를 직접 기반으로 해야 함을 나타냅니다. 이것을 상위클래스 라고 합니다. 파생 클래스는 하위 클래스입니다.</p>
+
+<p><a class="p_ident" id="p_mss/w8sDfy" href="#p_mss/w8sDfy" tabindex="-1" role="presentation"></a><code>SymmetricMatrix</code> 인스턴스를 초기화 하기 위해 생성자는 <code>super</code> 키워드를 통해 상위 클래스의 생성자를 호출합니다. 이것은 이 새로운 객체가 대략 <code>Matrix</code>처럼 행동하려면 행렬에 있는 인스턴스 속성이 필요하기 때문에 필요합니다. 행렬이 대칭이 되도록 하기 위해 생성자는 <code>element</code> 함수를 래핑하여 대각선 아래 값의 좌표를 교환합니다.</p>
+
+<p><a class="p_ident" id="p_9XrYhhYXI8" href="#p_9XrYhhYXI8" tabindex="-1" role="presentation"></a><code>set</code> 메서드는 다시 <code>super</code>를 사용하지만 이번에는 생성자를 호출하지 않고 상위 클래스의 메서드 집합에서 특정 메서드를 호출합니다. <code>set</code>을 재정의하지만 원래 동작을 사용하고자 합니다. <code>this.set</code>은 <em>new</em> <code>set</code> 메서드를 참조하기 때문에 호출하면 작동하지 않습니다. 클래스 메서드 내부에서 <code>super</code>는 상위 클래스에 정의된 대로 메서드를 호출하는 방법을 제공합니다.</p>
+
+<p><a class="p_ident" id="p_apvJjMYcsg" href="#p_apvJjMYcsg" tabindex="-1" role="presentation"></a>상속을 통해 비교적 적은 작업으로 기존 데이터 타입과 약간 다른 데이터 타입을 구축할 수 있습니다. 캡슐화 및 다형성과 함께 객체 지향 전통의 기본적인 부분입니다. 그러나 후자의 두 가지는 이제 일반적으로 훌륭한 개념으로 간주되지만 상속은 여러 논쟁의 여지가 있습니다.</p>
+
+<p><a class="p_ident" id="p_CWDhzksvzb" href="#p_CWDhzksvzb" tabindex="-1" role="presentation"></a>캡슐화와 다형성을 사용하여 코드 조각을 서로 분리하여 전체 프로그램의 얽힘을 줄일 수 있는 반면 상속은 기본적으로 클래스를 함께 묶어 더 많은 얽힘을 생성합니다. 클래스에서 상속할 때 일반적으로 단순히 사용할 때보다 작동 방식에 대해 더 많이 알아야 합니다. 상속은 유용한 도구가 될 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_Fdk67dJHwg" href="#h_Fdk67dJHwg" tabindex="-1" role="presentation"></a>instanceof 연산자</h2>
+
+<p><a class="p_ident" id="p_wnmK5D9foe" href="#p_wnmK5D9foe" tabindex="-1" role="presentation"></a>객체가 특정 클래스에서 파생되었는지 여부를 아는 것이 때때로 유용합니다. 이를 위해 JavaScript는 <code>instanceof</code>이라는 이항 연산자를 제공합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_1/4hH+dV3k" href="#c_1/4hH+dV3k" tabindex="-1" role="presentation"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(
+  <span class="cm-keyword">new</span> <span class="cm-variable">SymmetricMatrix</span>(<span class="cm-number">2</span>) <span class="cm-keyword">instanceof</span> <span class="cm-variable">SymmetricMatrix</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">SymmetricMatrix</span>(<span class="cm-number">2</span>) <span class="cm-keyword">instanceof</span> <span class="cm-variable">Matrix</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Matrix</span>(<span class="cm-number">2</span>, <span class="cm-number">2</span>) <span class="cm-keyword">instanceof</span> <span class="cm-variable">SymmetricMatrix</span>);
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>([<span class="cm-number">1</span>] <span class="cm-keyword">instanceof</span> <span class="cm-variable">Array</span>);
+<span class="cm-comment">// → true</span></pre>
+
+<p><a class="p_ident" id="p_VtvmEyRrv+" href="#p_VtvmEyRrv+" tabindex="-1" role="presentation"></a>연산자는 상속된 타입을 볼 수 있으므로 <code>SymmetricMatrix</code>는 <code>Matrix</code>의 인스턴스입니다. 연산자는 <code>Array</code>와 같은 표준 생성자에도 적용할 수 있습니다. 거의 모든 객체는 <code>Object</code>의 인스턴스입니다.</p>
+
+<h2><a class="h_ident" id="h_ErccPg/l98" href="#h_ErccPg/l98" tabindex="-1" role="presentation"></a>요약</h2>
+
+<p><a class="p_ident" id="p_VPlYPbumD2" href="#p_VPlYPbumD2" tabindex="-1" role="presentation"></a>객체는 자체 속성을 보유하는 것 이상의 역할을 합니다. 그것들은 다른 객체에 속하는 프로토타입을 가지고 있습니다. 프로토타입에 해당 속성이 있는 한 갖지 않은 속성이 있는 것처럼 작동합니다. 단순한 객체는 프로토타입으로 <code>Object.prototype</code>을 가집니다.</p>
+
+<p><a class="p_ident" id="p_A+dQsxCVz8" href="#p_A+dQsxCVz8" tabindex="-1" role="presentation"></a>이름이 일반적으로 대문자로 시작하는 함수인 생성자는 <code>new</code> 연산자와 함께 사용하여 새 객체를 만들 수 있습니다. 새 객체의 프로토타입은 생성자의 <code>prototype</code> 속성에서 발견되는 객체입니다. 주어진 타입의 모든 값이 공유되는 속성을 프로토타입에 넣어 이를 잘 활용할 수 있습니다. 생성자와 그것의 프로토타입을 정의하는 명확한 방법을 제공하는 <code>class</code> 표기법이 있습니다.</p>
+
+<p><a class="p_ident" id="p_AFyYjRH+5G" href="#p_AFyYjRH+5G" tabindex="-1" role="presentation"></a>객체의 속성에 액세스할 때마다 비밀리에 메서드를 호출하도록 getter 및 setter를 정의할 수 있습니다. 정적 메서드는 프로토타입이 아니라 클래스의 생성자에 저장된 메서드입니다.</p>
+
+<p><a class="p_ident" id="p_U1iTgKNfyX" href="#p_U1iTgKNfyX" tabindex="-1" role="presentation"></a><code>instanceof</code> 연산자는 해당 객체가 생성자의 인스턴스 여부를 알려 객체와 생성자를 제공할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_zzr1L1PppY" href="#p_zzr1L1PppY" tabindex="-1" role="presentation"></a>개체와 관련하여 유용한 한 가지 방법은 객체에 대한 인터페이스를 지정하고 모든 사람에게 해당 인터페이스를 통해서만 객체와 대화해야 한다고 말하는 것입니다. 객체를 구성하는 나머지 세부 사항은 이제 캡슐화 되어 인터페이스 뒤에 숨겨집니다.</p>
+
+<p><a class="p_ident" id="p_NWmKpeeGiT" href="#p_NWmKpeeGiT" tabindex="-1" role="presentation"></a>두 가지 이상의 타입이 동일한 인터페이스를 구현할 수 있습니다. 인터페이스를 사용하도록 작성된 코드는 인터페이스를 제공하는 다양한 객체로 작업하는 방법을 자동으로 알고 있습니다. 이것을 다형성 이라고 합니다.</p>
+
+<p><a class="p_ident" id="p_fg/ZL+fqD3" href="#p_fg/ZL+fqD3" tabindex="-1" role="presentation"></a>몇 가지 세부 사항만 다른 여러 클래스를 구현할 때 새 클래스를 기존 클래스의 하위 클래스로 작성하여 동작의 일부를 상속하는 것이 도움이 될 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="#h_TcUD2vzyMe" tabindex="-1" role="presentation"></a>연습 문제</h2>
+
+<h3 id="exercise_vector"><a class="i_ident" id="i_zO8FRQBMAy" href="#i_zO8FRQBMAy" tabindex="-1" role="presentation"></a>vector 타입</h3>
+
+<p><a class="p_ident" id="p_YtkHcQdZSH" href="#p_YtkHcQdZSH" tabindex="-1" role="presentation"></a>2차원 공간에 속하는 벡터를 나타내기 위한 클래스 <code>Vec</code>를 작성합니다. 그것은 <code>x</code>와 <code>y</code>의 매개 변수들을 포함해야 하고(numbers), 같은 이름의 속성들을 가져야 합니다.</p>
+
+<p><a class="p_ident" id="p_8DOrtO0lbU" href="#p_8DOrtO0lbU" tabindex="-1" role="presentation"></a><code>Vec</code> 프로토타입의 두 메서드 <code>plus</code>와 <code>minus</code>를 나타냅니다. 그것은 또 다른 벡터를 매개 변수로 취해 두 벡터의 (<code>this</code>와 매개 변수) <em>x</em> 및 <em>y</em> 값들의 합 또는 차를 갖는 벡터를 반환합니다.</p>
+
+<p><a class="p_ident" id="p_F5nP+jpza3" href="#p_F5nP+jpza3" tabindex="-1" role="presentation"></a>벡터의 길이를 계산하는 프로토타입에 getter 속성 <code>length</code>를 추가합니다(즉, 원점 (0, 0)에서 점 (<em>x</em>, <em>y</em>)에 이르는 거리).</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_f3P62tUJWH" href="#c_f3P62tUJWH" tabindex="-1" role="presentation"></a><span class="cm-comment">// 여기에 코드 작성</span>
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vec</span>(<span class="cm-number">1</span>, <span class="cm-number">2</span>).<span class="cm-property">plus</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vec</span>(<span class="cm-number">2</span>, <span class="cm-number">3</span>)));
+<span class="cm-comment">// → Vec{x: 3, y: 5}</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vec</span>(<span class="cm-number">1</span>, <span class="cm-number">2</span>).<span class="cm-property">minus</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vec</span>(<span class="cm-number">2</span>, <span class="cm-number">3</span>)));
+<span class="cm-comment">// → Vec{x: -1, y: -1}</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vec</span>(<span class="cm-number">3</span>, <span class="cm-number">4</span>).<span class="cm-property">length</span>);
+<span class="cm-comment">// → 5</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_jRIa414Yh5" href="#p_jRIa414Yh5" tabindex="-1" role="presentation"></a><code>class</code> 선언에 아직 익숙하지 않으면 <code>Rabbit</code> 클래스 예를 살펴보도록 합니다.</p>
+
+<p><a class="p_ident" id="p_uZnm2ZSaRd" href="#p_uZnm2ZSaRd" tabindex="-1" role="presentation"></a>생성자에 getter 속성 추가는 메서드 이름 앞에 단어 <code>get</code>을 넣는 방식으로 행해질 수 있습니다. (0, 0)에서 (x, y)까지 거리 계산을 위해 피타고라스 정리를 사용합니다. √(x<sup>2</sup> + y<sup>2</sup>)가 원하는 수이고 <code>Math.sqrt</code>는 제곱근을 취하는 방식입니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_rpYp9Ou4LG" href="#i_rpYp9Ou4LG" tabindex="-1" role="presentation"></a>Groups</h3>
+
+<p id="groups"><a class="p_ident" id="p_1TnXiDoyR2" href="#p_1TnXiDoyR2" tabindex="-1" role="presentation"></a>표준 JavaScript 환경은 <code>Set</code>이라는 또 다른 데이터 구조를 제공합니다. <code>Map</code>의 인스턴스처럼 set은 값 집합을 포함합니다. <code>Map</code>과는 다르게 다른 어떤 값과의 연관을 나타내지 않습니다. 그것은 어던 값이 그룹에 속하는지 추적합니다. 유일한 값만이 집합의 일부가 됩니다.</p>
+
+<p><a class="p_ident" id="p_IBo4QI1mvy" href="#p_IBo4QI1mvy" tabindex="-1" role="presentation"></a><code>Group</code>이라는 클래스를 작성해 봅니다(<code>Set</code>을 활용). <code>Set</code>처럼 <code>add</code>, <code>delete</code> 및 <code>has</code> 메서드를 갖도록 합니다. 생성자는 빈 그룹을 생성하고, <code>add</code>는 그룹에 값을 추가하고(그룹 멤버가 이미 존재하지 않는 경우에), <code>delete</code>는 그룹에서 인수를 제거(멤버에 속한), <code>has</code>는 그룹 멤버 여부를 나타내는 Boolean 값을 반환하도록 합니다.</p>
+
+<p><a class="p_ident" id="p_cHm3PZ0L5i" href="#p_cHm3PZ0L5i" tabindex="-1" role="presentation"></a><code>===</code> 연산자 또는 <code>indexOf</code>를 통해 두 값이 같은 것인지 결정하도록 합니다.</p>
+
+<p><a class="p_ident" id="p_CbJ60eqr+J" href="#p_CbJ60eqr+J" tabindex="-1" role="presentation"></a>반복 가능한 객체를 인수로 사용하고 반복하여 생성된 모든 값을 포함하는 그룹을 만드는 클래스의 정적 메서드 <code>from</code>를 클래스에 제공합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_dNauaecKx+" href="#c_dNauaecKx+" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">Group</span> {
+  <span class="cm-comment">// 여기에 코드 작성</span>
+}
+
+<span class="cm-keyword">let</span> <span class="cm-def">group</span> <span class="cm-operator">=</span> <span class="cm-variable">Group</span>.<span class="cm-property">from</span>([<span class="cm-number">10</span>, <span class="cm-number">20</span>]);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">group</span>.<span class="cm-property">has</span>(<span class="cm-number">10</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">group</span>.<span class="cm-property">has</span>(<span class="cm-number">30</span>));
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">group</span>.<span class="cm-property">add</span>(<span class="cm-number">10</span>);
+<span class="cm-variable">group</span>.<span class="cm-property">delete</span>(<span class="cm-number">10</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">group</span>.<span class="cm-property">has</span>(<span class="cm-number">10</span>));
+<span class="cm-comment">// → false</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_fQA7KS4poU" href="#p_fQA7KS4poU" tabindex="-1" role="presentation"></a>가장 손쉬운 방식은 인스턴스 속성에 그룹 멤버를 저장하는 것입니다. <code>includes</code> 또는 <code>indexOf</code> 메서드는 주어진 값의 배열에 존재 여부를 확인하는데 사용될 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_2+V8dOgKHs" href="#p_2+V8dOgKHs" tabindex="-1" role="presentation"></a>클래스의 생성자는 멤버 모음을 빈 배열로 설정할 수 있습니다. <code>add</code>가 호출될 때, 그것은 배열에 주어진 값이 있는 것인지 확인한 후에 추가합니다(예를 들어 <code>push</code>를 사용한).</p>
+
+<p><a class="p_ident" id="p_GVg0o9XSa+" href="#p_GVg0o9XSa+" tabindex="-1" role="presentation"></a>배열에서 원소 삭제를 나타내는 <code>delete</code>는 다소 간단하지 않지만 값이 없는 새로운 배열 생성을 위해 <code>filter</code>를 사용할 수 있습니다. 배열의 새로 여과된 버전을 가지고 멤버 포함 속성을 재정의하도록 합니다.</p>
+
+<p><a class="p_ident" id="p_1KdbI2vH34" href="#p_1KdbI2vH34" tabindex="-1" role="presentation"></a><code>from</code> 메서드는 <code>for</code>/<code>of</code> 루프를 사용하여 순회 가능 객체로부터 값을 취할 수 있고, 새로 생성된 그룹에 배치하기 위해 <code>add</code>를 호출할 수 있습니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_djD3XDJ27V" href="#i_djD3XDJ27V" tabindex="-1" role="presentation"></a>순회 가능(Iterable) 그룹</h3>
+
+<p id="group_iterator"><a class="p_ident" id="p_azaOoj0ezw" href="#p_azaOoj0ezw" tabindex="-1" role="presentation"></a><code>Group</code> 클래스를 순회 가능하게 만듭니다.</p>
+
+<p><a class="p_ident" id="p_SoL9V7zUCt" href="#p_SoL9V7zUCt" tabindex="-1" role="presentation"></a>그룹 멤버를 나타내기 위해 배열을 사용한 경우 배열에서 <code>Symbol.iterator</code> 메서드를 호출하여 생성된 순회자를 반환하지 않도록 합니다.</p>
+
+<p><a class="p_ident" id="p_rLyKomI6vw" href="#p_rLyKomI6vw" tabindex="-1" role="presentation"></a>순회 중에 그룹이 수정될 때 순회자가 이상하게 동작해도 괜찮습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_n6ZNn/zRLj" href="#c_n6ZNn/zRLj" tabindex="-1" role="presentation"></a><span class="cm-comment">// 여기에 코드 작성</span>
+
+<span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">value</span> <span class="cm-keyword">of</span> <span class="cm-variable">Group</span>.<span class="cm-property">from</span>([<span class="cm-string">&quot;a&quot;</span>, <span class="cm-string">&quot;b&quot;</span>, <span class="cm-string">&quot;c&quot;</span>])) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">value</span>);
+}
+<span class="cm-comment">// → a</span>
+<span class="cm-comment">// → b</span>
+<span class="cm-comment">// → c</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_URAzFlYuQP" href="#p_URAzFlYuQP" tabindex="-1" role="presentation"></a>아마도 새로운 클래스 <code>GroupIterator</code>를 작성하는 것이 바람직합니다. 순회자 인스턴스는 그룹에서 현재 위치를 추적하는 속성을 가져야 합니다. <code>next</code>가 호출될 때마다 행해졌는지 확인해야 하고 그렇지 않다면 현재 값을 이전으로 이동하고 그것을 반환해야 합니다.</p>
+
+<p><a class="p_ident" id="p_il9bvEkyQT" href="#p_il9bvEkyQT" tabindex="-1" role="presentation"></a><code>Group</code> 클래스 자체는 <code>Symbol.iterator</code>라는 메서드를 취해 그것이 호출될 때 해당 그룹에 관한 순회자 클래스의 새로운 인스턴스를 반환하도록 합니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_wcWSnr9zHV" href="#i_wcWSnr9zHV" tabindex="-1" role="presentation"></a>메서드 빌려 오기</h3>
+
+<p><a class="p_ident" id="p_HxMI3VGcht" href="#p_HxMI3VGcht" tabindex="-1" role="presentation"></a>객체의 <code>hasOwnProperty</code>는 프로토타입의 속성을 무시하고자 할 때 <code>in</code> 연산자에 대한 보다 견고한 대안으로서 사용될 수 있습니다. 그렇지만, map에 <code>&quot;hasOwnProperty&quot;</code>를 포함시킬 필요가 있는 경우에 객체가 보유하고 있는 속성이 메서드 값을 은닉시키기 때문에 해당 메서드를 더이상 호출할 수 없습니다.</p>
+
+<p><a class="p_ident" id="p_nxOrPKy+Ky" href="#p_nxOrPKy+Ky" tabindex="-1" role="presentation"></a>이름으로 자체 속성을 나타내는 객체에 관해 <code>hasOwnProperty</code>를 호출하는 방식을 고려할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_LtMKqqkY0Q" href="#c_LtMKqqkY0Q" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">map</span> <span class="cm-operator">=</span> {<span class="cm-property">one</span>: <span class="cm-atom">true</span>, <span class="cm-property">two</span>: <span class="cm-atom">true</span>, <span class="cm-property">hasOwnProperty</span>: <span class="cm-atom">true</span>};
+
+<span class="cm-comment">// Fix this call</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">map</span>.<span class="cm-property">hasOwnProperty</span>(<span class="cm-string">&quot;one&quot;</span>));
+<span class="cm-comment">// → true</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_Pg/cWjUrKm" href="#p_Pg/cWjUrKm" tabindex="-1" role="presentation"></a><code>Object.prototype</code>으로부터 단순 객체 상에 존재하는 메서드를 확인합니다.</p>
+
+<p><a class="p_ident" id="p_wCf1aBfcJA" href="#p_wCf1aBfcJA" tabindex="-1" role="presentation"></a>또한 <code>call</code> 메서드를 사용하여 특정 <code>this</code> 바인딩으로 함수를 호출할 수 있습니다.</p>
+
+</div></div><nav><a href="05_higher_order.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="07_robot.html" title="next chapter">▶</a></nav>
+</article>

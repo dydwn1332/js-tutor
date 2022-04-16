@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+  - "0.10"
+branches:
+  only:
+    - /.*/
+before_install: npm install -g grunt-cli
+sudo: false
+cache:
+  directories:
+    - node_modules

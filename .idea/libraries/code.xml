@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="code">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/code/code/16_game.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/06_object.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/19_paint.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/05_higher_order.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/04_data.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/17_canvas.zip!/" />
+      <root url="jar://$PROJECT_DIR$/code/code/12_language.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

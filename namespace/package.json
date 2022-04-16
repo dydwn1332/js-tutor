@@ -1,0 +1,13 @@
+{
+  "name": "namespace",
+  "private": true,
+  "scripts": {
+    "test": "grunt"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.4",
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-contrib-qunit": "^0.5.1",
+    "grunt-html-validation": "^0.1.15"
+  }
+}

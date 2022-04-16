@@ -1,0 +1,740 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>캔버스에 그리기</title>
+  <link rel=stylesheet href="js/node_modules/codemirror/lib/codemirror.css">
+  <script src="js/acorn_codemirror.js"></script>
+  <link rel=stylesheet href="css/ejs.css">
+  <script src="js/sandbox.js"></script>
+  <script src="js/ejs.js"></script><script>var chapNum = 17;var sandboxLoadFiles = ["code/chapter/16_game.js","code/levels.js","code/chapter/17_canvas.js"];</script></head>
+
+<article>
+<nav><a href="16_game.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="18_http.html" title="next chapter">▶</a></nav>
+
+<h1><span class=chap_num>17장</span>캔버스에 그리기</h1>
+
+<blockquote>
+
+<p><a class="p_ident" id="p_ubdp8gf0Gn" href="#p_ubdp8gf0Gn" tabindex="-1" role="presentation"></a>그림은 속임수입니다.</p>
+
+<footer>M.C. Escher, <cite>M.C. Escher의 Magic Mirror에서 Bruno Ernst 인용</cite></footer>
+
+</blockquote><figure class="chapter framed"><img src="img/chapter_picture_17.jpg" alt="Picture of a robot arm drawing on paper"></figure>
+
+<p><a class="p_ident" id="p_gaEEPgv4jz" href="#p_gaEEPgv4jz" tabindex="-1" role="presentation"></a>브라우저는 그래픽을 표시하는 여러 가지 방법을 제공합니다. 가장 간단한 방식은 스타일을 사용하여 일반 DOM 요소를 배치하고 색상을 지정하는 것입니다. 이것은 <a href="16_game.html">앞 장</a>의 게임 편에서 보여 주듯이 꽤 다양하게 진행할 수 있습니다. 부분적으로 투명한 배경 이미지를 노드에 추가하여 원하는 대로 정확하게 보이게 할 수 있습니다. <code>transform</code> 스타일로 노드를 회전하거나 기울이는 것도 가능합니다.</p>
+
+<p><a class="p_ident" id="p_hA8BzwgjYT" href="#p_hA8BzwgjYT" tabindex="-1" role="presentation"></a>그러나 원래 설계되지 않은 것을 나타내기 위해서는 DOM 처리가 필요합니다. 임의의 점 사이에 선을 그리는 것과 같은 일부 작업은 일반 HTML 요소로 수행하기에는 매우 어색합니다.</p>
+
+<p><a class="p_ident" id="p_vZ4w2z/4jM" href="#p_vZ4w2z/4jM" tabindex="-1" role="presentation"></a>두 가지 대안이 있습니다. 첫 번째는 DOM 기반이지만 HTML이 아닌 SVG(<em>Scalable Vector Graphics</em>)를 사용합니다. SVG는 텍스트보다는 모양에 중점을 둔 문서 마크업 방언으로 간주할 수 있습니다. SVG 문서를 HTML 문서에 직접 포함하거나 <code>&lt;img&gt;</code> 태그와 함께 포함할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_wU9UQEILbC" href="#p_wU9UQEILbC" tabindex="-1" role="presentation"></a>두 번째 대안은 <em>canvas</em>입니다. 캔버스는 그림을 캡슐화하는 단일 DOM 요소입니다. 노드가 차지하는 공간에 모양을 그리기 위한 프로그래밍 인터페이스를 제공합니다. 캔버스와 SVG 그림의 주요 차이점은 SVG에서 모양에 대한 원래 설명이 보존되어 언제든지 이동하거나 크기를 조정할 수 있다는 것입니다. 반면에 캔버스는 모양을 그리는 즉시 모양을 픽셀(래스터의 색상 점)로 변환하고 이 픽셀이 무엇을 나타내는지 기억하지 못합니다. 캔버스에서 모양을 이동하는 유일한 방법은 캔버스(또는 모양 주변의 캔버스 일부)를 지우고 새 위치의 모양으로 다시 그리는 것입니다.</p>
+
+<h2><a class="h_ident" id="h_UPzm0CiZhQ" href="#h_UPzm0CiZhQ" tabindex="-1" role="presentation"></a>SVG</h2>
+
+<p><a class="p_ident" id="p_gCxXcLPC1N" href="#p_gCxXcLPC1N" tabindex="-1" role="presentation"></a>이 페이지에서 SVG에 대해 자세히 다루지는 않겠지만 어떻게 작동하는지 간략하게 설명하겠습니다. 이 페이지의 끝 부분에서 어떠한 그리기 메커니즘이 적절한 것인지를 나타내겠습니다.</p>
+
+<p><a class="p_ident" id="p_aF1bihN0fO" href="#p_aF1bihN0fO" tabindex="-1" role="presentation"></a>이것은 간단한 SVG 그림이 포함된 HTML 문서입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html"  data-sandbox="svg"><a class="c_ident" id="c_AkjyzdSyFr" href="#c_AkjyzdSyFr" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>Normal HTML here.<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">svg</span> <span class="cm-attribute">xmlns</span>=<span class="cm-string">&quot;http://www.w3.org/2000/svg&quot;</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">circle</span> <span class="cm-attribute">r</span>=<span class="cm-string">&quot;50&quot;</span> <span class="cm-attribute">cx</span>=<span class="cm-string">&quot;50&quot;</span> <span class="cm-attribute">cy</span>=<span class="cm-string">&quot;50&quot;</span> <span class="cm-attribute">fill</span>=<span class="cm-string">&quot;red&quot;</span><span class="cm-tag cm-bracket">/&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">rect</span> <span class="cm-attribute">x</span>=<span class="cm-string">&quot;120&quot;</span> <span class="cm-attribute">y</span>=<span class="cm-string">&quot;5&quot;</span> <span class="cm-attribute">width</span>=<span class="cm-string">&quot;90&quot;</span> <span class="cm-attribute">height</span>=<span class="cm-string">&quot;90&quot;</span>
+        <span class="cm-attribute">stroke</span>=<span class="cm-string">&quot;blue&quot;</span> <span class="cm-attribute">fill</span>=<span class="cm-string">&quot;none&quot;</span><span class="cm-tag cm-bracket">/&gt;</span>
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">svg</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_wavG4kxHm7" href="#p_wavG4kxHm7" tabindex="-1" role="presentation"></a><code>xmlns</code> 속성은 요소(및 자식)를 다른 <em>XML namespace</em>로 변경합니다. 이러한 네임스페이스는 URL로 식별되고 현재 나타내고자 하는 dialect을 지정합니다. <code>&lt;circle&gt;</code>과 <code>&lt;rect&gt;</code>는 HTML에 존재하지 않는 태그로 SVG가 포함하는 의미를 가집니다(속성에 의해 지정된 스타일과 위치를 사용하여 모양을 그림).</p>
+
+<p><a class="p_ident" id="p_DcMLpWRkj0" href="#p_DcMLpWRkj0" tabindex="-1" role="presentation"></a>이러한 태그는 HTML 태그와 마찬가지로 스크립트가 상호 작용할 수 있는 DOM 요소를 만듭니다. 예를 들어, 다음은 <code>&lt;circle&gt;</code> 요소를 청록색으로 변경합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="svg"><a class="c_ident" id="c_jx+UOHRvDL" href="#c_jx+UOHRvDL" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">circle</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;circle&quot;</span>);
+<span class="cm-variable">circle</span>.<span class="cm-property">setAttribute</span>(<span class="cm-string">&quot;fill&quot;</span>, <span class="cm-string">&quot;cyan&quot;</span>);</pre>
+
+<h2><a class="h_ident" id="h_QXPPgw0nn4" href="#h_QXPPgw0nn4" tabindex="-1" role="presentation"></a>canvas 요소</h2>
+
+<p><a class="p_ident" id="p_BtCv9cvTMv" href="#p_BtCv9cvTMv" tabindex="-1" role="presentation"></a>캔버스 그래픽은 <code>&lt;canvas&gt;</code> 요소에 그릴 수 있습니다. <code>width</code>와 <code>height</code> 속성을 지정하여 픽셀 단위로 크기 조정을 할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_oQeTfkBH6v" href="#p_oQeTfkBH6v" tabindex="-1" role="presentation"></a>새 캔버스는 비어 있습니다. 즉, 완전히 투명하므로 문서에서 빈 공간으로 표시됩니다.</p>
+
+<p><a class="p_ident" id="p_DmgNYj7JwC" href="#p_DmgNYj7JwC" tabindex="-1" role="presentation"></a><code>&lt;canvas&gt;</code> 태그는 도면의 다른 스타일을 허용하기 위한 것입니다. 실제 드로잉 인터페이스에 액세스하려면 먼저 <em>context</em>를 생성해야 합니다. 이 객체는 드로잉 인터페이스를 제공하는 메서드를 사용합니다. 현재 널리 지원되는 두 가지 그리기 스타일이 있습니다. <code>&quot;2d&quot;</code>는 2차원 그래픽스와 OpenGL 인터페이스를 통한 3차원 그래픽스를 위한 <code>&quot;webgl&quot;</code>입니다.</p>
+
+<p><a class="p_ident" id="p_jwj+O0MSuO" href="#p_jwj+O0MSuO" tabindex="-1" role="presentation"></a>여기에서는 WebGL에 대해 다루지 않을 것입니다. 2차원에 집중할 것입니다. 그러나 3차원 그래픽에 관심이 있다면 WebGL을 살펴보는 것이 좋습니다. 그래픽 하드웨어에 대한 직접적인 인터페이스를 제공하며 JavaScript를 사용하여 복잡한 장면도 효율적으로 렌더링할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_vlW/Yl/xfo" href="#p_vlW/Yl/xfo" tabindex="-1" role="presentation"></a><code>&lt;canvas&gt;</code> DOM 요소의 <code>getContext</code> 메서드를 사용하여 컨텍스트를 만듭니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_A0Bt33IRVE" href="#c_A0Bt33IRVE" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>Before canvas.<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span> <span class="cm-attribute">width</span>=<span class="cm-string">&quot;120&quot;</span> <span class="cm-attribute">height</span>=<span class="cm-string">&quot;60&quot;</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>After canvas.<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">canvas</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">context</span> <span class="cm-operator">=</span> <span class="cm-variable">canvas</span>.<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">context</span>.<span class="cm-property">fillStyle</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;red&quot;</span>;
+  <span class="cm-variable">context</span>.<span class="cm-property">fillRect</span>(<span class="cm-number">10</span>, <span class="cm-number">10</span>, <span class="cm-number">100</span>, <span class="cm-number">50</span>);
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_fv4PQSHT32" href="#p_fv4PQSHT32" tabindex="-1" role="presentation"></a>컨텍스트 객체를 만든 후 예에서는 왼쪽 위 모서리가 좌표 (10,10)에 있는 빨간색 사각형을 너비 100픽셀, 높이 50픽셀로 그립니다.</p>
+
+<p><a class="p_ident" id="p_e1SRsTstnD" href="#p_e1SRsTstnD" tabindex="-1" role="presentation"></a>HTML(및 SVG)에서와 마찬가지로 캔버스가 사용하는 좌표계는 왼쪽 상단 모서리에 (0,0)을 놓고 양의 y축은 거기에서 아래로 내려갑니다. 따라서 (10,10)은 왼쪽 상단 모서리의 오른쪽 아래 10픽셀입니다.</p>
+
+<h2 id="fill_stroke"><a class="h_ident" id="h_Dtw0KBlBdA" href="#h_Dtw0KBlBdA" tabindex="-1" role="presentation"></a>선과 표면</h2>
+
+<p><a class="p_ident" id="p_AjXIvEAE7u" href="#p_AjXIvEAE7u" tabindex="-1" role="presentation"></a>캔버스 인터페이스에서 모양은 채워질 수 있습니다. 즉, 해당 영역에 특정 색상이나 패턴이 부여되거나 선이 가장자리를 따라 그려지는 획일 수 있습니다. SVG에서도 동일한 용어를 사용합니다.</p>
+
+<p><a class="p_ident" id="p_ju8WCrIWOz" href="#p_ju8WCrIWOz" tabindex="-1" role="presentation"></a><code>fillRect</code> 메서드는 사각형을 채웁니다. 먼저 사각형의 왼쪽 위 모서리의 x 및 y 좌표를 취한 다음 너비와 높이를 취합니다. 유사한 메서드 <code>strokeRect</code>은 직사각형의 윤곽을 그립니다.</p>
+
+<p><a class="p_ident" id="p_a+mohoFrQD" href="#p_a+mohoFrQD" tabindex="-1" role="presentation"></a>두 방법 모두 추가 매개변수를 사용하지 않습니다. 채우기의 색, 획의 두께 등은 메서드에 대한 인수(합리적으로 예상할 수 있음)가 아니라 컨텍스트 개체의 속성에 의해 결정됩니다.</p>
+
+<p><a class="p_ident" id="p_efeWG2le//" href="#p_efeWG2le//" tabindex="-1" role="presentation"></a><code>fillStyle</code> 속성은 형태가 작성되는 방식을 제어합니다. CSS에서 사용하는 색상 표기법을 사용하여 색상을 지정하는 문자열로 설정할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_nE1twk7mw2" href="#p_nE1twk7mw2" tabindex="-1" role="presentation"></a><code>strokeStyle</code> 속성은 유사하게 작동하지만 획 라인에 사용되는 색상을 결정합니다. 해당 선의 너비는 <code>lineWidth</code> 속성에 의해 결정되는데 그것은 양수를 포함해야 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_RXlmHDTr07" href="#c_RXlmHDTr07" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">strokeStyle</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;blue&quot;</span>;
+  <span class="cm-variable">cx</span>.<span class="cm-property">strokeRect</span>(<span class="cm-number">5</span>, <span class="cm-number">5</span>, <span class="cm-number">50</span>, <span class="cm-number">50</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">lineWidth</span> <span class="cm-operator">=</span> <span class="cm-number">5</span>;
+  <span class="cm-variable">cx</span>.<span class="cm-property">strokeRect</span>(<span class="cm-number">135</span>, <span class="cm-number">5</span>, <span class="cm-number">50</span>, <span class="cm-number">50</span>);
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_T9fZ1fWNcX" href="#p_T9fZ1fWNcX" tabindex="-1" role="presentation"></a><code>width</code> 또는 <code>height</code> 속성이 지정되지 않으면 캔버스 요소의 기본 너비는 300픽셀이고 높이는 150픽셀입니다.</p>
+
+<h2><a class="h_ident" id="h_E+fhFyL32D" href="#h_E+fhFyL32D" tabindex="-1" role="presentation"></a>Paths</h2>
+
+<p><a class="p_ident" id="p_EjhhpUs4B/" href="#p_EjhhpUs4B/" tabindex="-1" role="presentation"></a>경로(path)는 일련의 라인들입니다. 2D 캔버스 인터페이스는 이러한 경로를 설명하는 독특한 접근 방식을 취합니다. 그것은 전적으로 측면 효과를 통해 이루어집니다. 경로는 저장하고 전달할 수 있는 값이 아닙니다. 대신 경로를 사용하여 작업을 수행하려는 경우 모양을 설명하기 위해 일련의 메서드 호출을 수행합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_q5tyCN7mU3" href="#c_q5tyCN7mU3" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">beginPath</span>();
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">y</span> <span class="cm-operator">=</span> <span class="cm-number">10</span>; <span class="cm-variable">y</span> <span class="cm-operator">&lt;</span> <span class="cm-number">100</span>; <span class="cm-variable">y</span> <span class="cm-operator">+=</span> <span class="cm-number">10</span>) {
+    <span class="cm-variable">cx</span>.<span class="cm-property">moveTo</span>(<span class="cm-number">10</span>, <span class="cm-variable">y</span>);
+    <span class="cm-variable">cx</span>.<span class="cm-property">lineTo</span>(<span class="cm-number">90</span>, <span class="cm-variable">y</span>);
+  }
+  <span class="cm-variable">cx</span>.<span class="cm-property">stroke</span>();
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_CDApJpctJH" href="#p_CDApJpctJH" tabindex="-1" role="presentation"></a>다음 예에서는 여러 개의 수평선 선분이 있는 패스를 만든 다음 <code>stroke</code> 메서드를 사용하여 선을 그립니다. <code>lineTo</code>로 생성된 각 선분은 경로의 현재 위치에서 시작됩니다. 그 위치는 <code>moveTo</code>가 호출되지 않는 한 일반적으로 마지막 선분의 끝입니다. 이 경우 다음 선분은 <code>moveTo</code>로 전달된 위치에서 시작됩니다.</p>
+
+<p><a class="p_ident" id="p_/C3/H/w2FX" href="#p_/C3/H/w2FX" tabindex="-1" role="presentation"></a>패스를 채울 때(<code>fill</code> 메서드 사용) 각 모양은 별도로 채워집니다. 경로에는 여러 모양이 포함될 수 있습니다. 각 <code>moveTo</code> 동작은 새로운 모양을 시작합니다. 그러나 경로를 채우려면 먼저 경로를 닫아야 합니다(시작과 끝이 같은 위치에 있음을 의미). 패스가 아직 닫혀 있지 않으면 끝에서 시작까지 선이 추가되고 완성된 패스로 둘러싸인 모양이 채워집니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_dKfK5v1gw2" href="#c_dKfK5v1gw2" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">beginPath</span>();
+  <span class="cm-variable">cx</span>.<span class="cm-property">moveTo</span>(<span class="cm-number">50</span>, <span class="cm-number">10</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">lineTo</span>(<span class="cm-number">10</span>, <span class="cm-number">70</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">lineTo</span>(<span class="cm-number">90</span>, <span class="cm-number">70</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">fill</span>();
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_9unYw61//h" href="#p_9unYw61//h" tabindex="-1" role="presentation"></a>위 예는 채워진 삼각형을 그립니다. 삼각형의 변 중 두 개만 명시적으로 그려집니다. 세 번째는 오른쪽 하단 모서리에서 다시 상단으로 암시되며 경로를 칠할 때 존재하지 않습니다.</p>
+
+<p><a class="p_ident" id="p_6TyHPpw704" href="#p_6TyHPpw704" tabindex="-1" role="presentation"></a>또한 이 <code>closePath</code> 메서드를 사용하여 경로 시작 부분에 실제 선분을 다시 추가하여 경로를 명시적으로 닫을 수 있습니다. 이 선분은 경로를 쓸 때 그려집니다.</p>
+
+<h2><a class="h_ident" id="h_B8g7k6vws+" href="#h_B8g7k6vws+" tabindex="-1" role="presentation"></a>곡선</h2>
+
+<p><a class="p_ident" id="p_4/5JyRbnoi" href="#p_4/5JyRbnoi" tabindex="-1" role="presentation"></a>경로에는 곡선이 포함될 수도 있습니다. 불행히도 이것들은 그리기에 조금 더 복잡합니다.</p>
+
+<p><a class="p_ident" id="p_aIjUSaPbwv" href="#p_aIjUSaPbwv" tabindex="-1" role="presentation"></a><code>quadraticCurveTo</code> 메서드는 주어진 점에 곡선을 그립니다. 선의 곡률을 결정하기 위해 방법에는 제어점과 대상점이 제공됩니다. 이 제어점이 선을 끌어 당겨 곡선을 제공한다고 상상해 보십시오. 선은 제어점을 통과하지 않지만 시작점과 끝점의 방향은 해당 방향의 직선이 제어점을 가리키도록 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_Jq9+Wmbm3J" href="#c_Jq9+Wmbm3J" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">beginPath</span>();
+  <span class="cm-variable">cx</span>.<span class="cm-property">moveTo</span>(<span class="cm-number">10</span>, <span class="cm-number">90</span>);
+  <span class="cm-comment">// control=(60,10) goal=(90,90)</span>
+  <span class="cm-variable">cx</span>.<span class="cm-property">quadraticCurveTo</span>(<span class="cm-number">60</span>, <span class="cm-number">10</span>, <span class="cm-number">90</span>, <span class="cm-number">90</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">lineTo</span>(<span class="cm-number">60</span>, <span class="cm-number">10</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">closePath</span>();
+  <span class="cm-variable">cx</span>.<span class="cm-property">stroke</span>();
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_4JGuRcCqes" href="#p_4JGuRcCqes" tabindex="-1" role="presentation"></a>(60,10)을 제어점으로 하여 왼쪽에서 오른쪽으로 2차 곡선을 그린 다음 해당 제어점을 지나 선의 시작 부분으로 되돌아가는 두 개의 선분을 그립니다. 결과는 <em>Star Trek</em> 휘장과 다소 비슷합니다. 제어점의 효과를 볼 수 있습니다. 아래쪽 모서리를 떠나는 선이 제어점 방향으로 시작하여 대상을 향해 곡선을 그리게 됩니다.</p>
+
+<p><a class="p_ident" id="p_W0g7mQl1YV" href="#p_W0g7mQl1YV" tabindex="-1" role="presentation"></a><code>bezierCurveTo</code> 메서드는 비슷한 종류의 곡선을 그립니다. 단일 제어점 대신에 이 제어점에는 선의 각 끝점에 대해 하나씩 두 개의 제어점이 있습니다. 다음은 이러한 곡선의 동작을 설명하는 유사한 스케치입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_88jydjz4KB" href="#c_88jydjz4KB" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">beginPath</span>();
+  <span class="cm-variable">cx</span>.<span class="cm-property">moveTo</span>(<span class="cm-number">10</span>, <span class="cm-number">90</span>);
+  <span class="cm-comment">// control1=(10,10) control2=(90,10) goal=(50,90)</span>
+  <span class="cm-variable">cx</span>.<span class="cm-property">bezierCurveTo</span>(<span class="cm-number">10</span>, <span class="cm-number">10</span>, <span class="cm-number">90</span>, <span class="cm-number">10</span>, <span class="cm-number">50</span>, <span class="cm-number">90</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">lineTo</span>(<span class="cm-number">90</span>, <span class="cm-number">10</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">lineTo</span>(<span class="cm-number">10</span>, <span class="cm-number">10</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">closePath</span>();
+  <span class="cm-variable">cx</span>.<span class="cm-property">stroke</span>();
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_UVt0ID9CaV" href="#p_UVt0ID9CaV" tabindex="-1" role="presentation"></a>두 제어점은 곡선의 양쪽 끝에서 방향을 지정합니다. 해당 지점에서 멀어질수록 곡선이 해당 방향으로 부풀어 오릅니다.</p>
+
+<p><a class="p_ident" id="p_tMRY3uv3sU" href="#p_tMRY3uv3sU" tabindex="-1" role="presentation"></a>이러한 곡선은 작업하기 어려울 수 있습니다. 원하는 모양을 제공하는 제어점을 찾는 방법이 항상 명확한 것은 아닙니다. 때로는 계산할 수 있고 때로는 시행 착오를 통해 적절한 값을 찾아야 할 수도 있습니다.</p>
+
+<p><a class="p_ident" id="p_AattY0V1YG" href="#p_AattY0V1YG" tabindex="-1" role="presentation"></a><code>arc</code> 메서드는 라인을 그릴 수 있는 방법으로 원의 가장자리를 따라 곡선을 그립니다. 호의 중심, 반경, 시작 각도 및 끝 각도에 대한 한 쌍의 좌표를 사용합니다.</p>
+
+<p><a class="p_ident" id="p_1in45pESGP" href="#p_1in45pESGP" tabindex="-1" role="presentation"></a>마지막 두 매개변수를 사용하면 원의 일부만 그릴 수 있습니다. 각도는 도가 아닌 라디안으로 측정됩니다. 이것은 완전한 원의 각이 2π 또는 <code>2 * Math.PI</code>, 약 6.28임을 의미합니다. 각도는 원의 중심 오른쪽에 있는 점에서 계산을 시작하고 거기에서 시계 방향으로 이동합니다. 0의 시작과 2π(예: 7)보다 큰 끝을 사용하여 완전한 원을 그릴 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_LopNVujEda" href="#c_LopNVujEda" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">beginPath</span>();
+  <span class="cm-comment">// center=(50,50) radius=40 angle=0 to 7</span>
+  <span class="cm-variable">cx</span>.<span class="cm-property">arc</span>(<span class="cm-number">50</span>, <span class="cm-number">50</span>, <span class="cm-number">40</span>, <span class="cm-number">0</span>, <span class="cm-number">7</span>);
+  <span class="cm-comment">// center=(150,50) radius=40 angle=0 to ½π</span>
+  <span class="cm-variable">cx</span>.<span class="cm-property">arc</span>(<span class="cm-number">150</span>, <span class="cm-number">50</span>, <span class="cm-number">40</span>, <span class="cm-number">0</span>, <span class="cm-number">0.5</span> <span class="cm-operator">*</span> <span class="cm-variable">Math</span>.<span class="cm-property">PI</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">stroke</span>();
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_NhI3gukqbY" href="#p_NhI3gukqbY" tabindex="-1" role="presentation"></a>결과 그림에는 전체 원의 오른쪽에서(<code>arc</code>에 대한 첫 번째 호출) 사분원의 오른쪽(두 번째 호출)까지의 선이 포함됩니다. 다른 경로 그리기 방법과 마찬가지로 <code>arc</code>로 그린 선은 이전 경로 선분에 연결됩니다. 이를 피하기 위해 <code>moveTo</code>를 호출하거나 새 경로를 시작할 수 있습니다.</p>
+
+<h2 id="pie_chart"><a class="h_ident" id="h_9yOdkmATfT" href="#h_9yOdkmATfT" tabindex="-1" role="presentation"></a>파이 차트 그리기</h2>
+
+<p><a class="p_ident" id="p_CLqO4FJN98" href="#p_CLqO4FJN98" tabindex="-1" role="presentation"></a>EconomiCorp사에 취직하여 첫 번째 과제가 고객 만족도 조사 결과의 파이 차트를 그리는 것이라고 합시다.</p>
+
+<p><a class="p_ident" id="p_aCOos0ELv4" href="#p_aCOos0ELv4" tabindex="-1" role="presentation"></a><code>results</code> 바인딩은 조사 응답을 나타내는 객체의 배열을 포함합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="pie"><a class="c_ident" id="c_evimv7LBgO" href="#c_evimv7LBgO" tabindex="-1" role="presentation"></a><span class="cm-keyword">const</span> <span class="cm-def">results</span> <span class="cm-operator">=</span> [
+  {<span class="cm-property">name</span>: <span class="cm-string">&quot;Satisfied&quot;</span>, <span class="cm-property">count</span>: <span class="cm-number">1043</span>, <span class="cm-property">color</span>: <span class="cm-string">&quot;lightblue&quot;</span>},
+  {<span class="cm-property">name</span>: <span class="cm-string">&quot;Neutral&quot;</span>, <span class="cm-property">count</span>: <span class="cm-number">563</span>, <span class="cm-property">color</span>: <span class="cm-string">&quot;lightgreen&quot;</span>},
+  {<span class="cm-property">name</span>: <span class="cm-string">&quot;Unsatisfied&quot;</span>, <span class="cm-property">count</span>: <span class="cm-number">510</span>, <span class="cm-property">color</span>: <span class="cm-string">&quot;pink&quot;</span>},
+  {<span class="cm-property">name</span>: <span class="cm-string">&quot;No comment&quot;</span>, <span class="cm-property">count</span>: <span class="cm-number">175</span>, <span class="cm-property">color</span>: <span class="cm-string">&quot;silver&quot;</span>}
+];</pre>
+
+<p><a class="p_ident" id="p_O7+fKanTNh" href="#p_O7+fKanTNh" tabindex="-1" role="presentation"></a>파이 차트를 그리기 위해 각각 호와 해당 호의 중심에 대한 한 쌍의 선으로 구성된 여러 개의 원형 조각을 그립니다. 전체 원(2π)을 전체 응답 수로 나눈 다음 해당 수(응답당 각도)에 주어진 선택을 선택한 사람들의 수를 곱하여 각 호가 차지하는 각도를 계산할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html"  data-sandbox="pie"><a class="c_ident" id="c_j6Un5vCZUN" href="#c_j6Un5vCZUN" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span> <span class="cm-attribute">width</span>=<span class="cm-string">&quot;200&quot;</span> <span class="cm-attribute">height</span>=<span class="cm-string">&quot;200&quot;</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">total</span> <span class="cm-operator">=</span> <span class="cm-variable">results</span>
+    .<span class="cm-property">reduce</span>((<span class="cm-def">sum</span>, {<span class="cm-def">count</span>}) <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">sum</span> <span class="cm-operator">+</span> <span class="cm-variable-2">count</span>, <span class="cm-number">0</span>);
+  <span class="cm-comment">// Start at the top</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">currentAngle</span> <span class="cm-operator">=</span> <span class="cm-operator">-</span><span class="cm-number">0.5</span> <span class="cm-operator">*</span> <span class="cm-variable">Math</span>.<span class="cm-property">PI</span>;
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">result</span> <span class="cm-keyword">of</span> <span class="cm-variable">results</span>) {
+    <span class="cm-keyword">let</span> <span class="cm-def">sliceAngle</span> <span class="cm-operator">=</span> (<span class="cm-variable">result</span>.<span class="cm-property">count</span> <span class="cm-operator">/</span> <span class="cm-variable">total</span>) <span class="cm-operator">*</span> <span class="cm-number">2</span> <span class="cm-operator">*</span> <span class="cm-variable">Math</span>.<span class="cm-property">PI</span>;
+    <span class="cm-variable">cx</span>.<span class="cm-property">beginPath</span>();
+    <span class="cm-comment">// center=100,100, radius=100</span>
+    <span class="cm-comment">// from current angle, clockwise by slice's angle</span>
+    <span class="cm-variable">cx</span>.<span class="cm-property">arc</span>(<span class="cm-number">100</span>, <span class="cm-number">100</span>, <span class="cm-number">100</span>,
+           <span class="cm-variable">currentAngle</span>, <span class="cm-variable">currentAngle</span> <span class="cm-operator">+</span> <span class="cm-variable">sliceAngle</span>);
+    <span class="cm-variable">currentAngle</span> <span class="cm-operator">+=</span> <span class="cm-variable">sliceAngle</span>;
+    <span class="cm-variable">cx</span>.<span class="cm-property">lineTo</span>(<span class="cm-number">100</span>, <span class="cm-number">100</span>);
+    <span class="cm-variable">cx</span>.<span class="cm-property">fillStyle</span> <span class="cm-operator">=</span> <span class="cm-variable">result</span>.<span class="cm-property">color</span>;
+    <span class="cm-variable">cx</span>.<span class="cm-property">fill</span>();
+  }
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_e5+MpAPZp1" href="#p_e5+MpAPZp1" tabindex="-1" role="presentation"></a>그러나 조각들이 의미하는 바를 알려주지 않는 차트는 별로 도움이 되지 않습니다. 캔버스에 텍스트를 그리는 방법이 필요합니다.</p>
+
+<h2><a class="h_ident" id="h_wzKMObDin3" href="#h_wzKMObDin3" tabindex="-1" role="presentation"></a>텍스트</h2>
+
+<p><a class="p_ident" id="p_gXYVsxy73+" href="#p_gXYVsxy73+" tabindex="-1" role="presentation"></a>2D 캔버스 그리기 컨텍스트는 <code>fillText</code>와 <code>strokeText</code> 메서드를 제공합니다. 후자는 문자들의 윤곽에 유용할 수 있지만 일반적으로 <code>fillText</code>가 필요합니다. 주어진 텍스트의 윤곽을 현재 <code>fillStyle</code>로 채울 것입니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_I5eI8lFy8O" href="#c_I5eI8lFy8O" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">font</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;28px Georgia&quot;</span>;
+  <span class="cm-variable">cx</span>.<span class="cm-property">fillStyle</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;fuchsia&quot;</span>;
+  <span class="cm-variable">cx</span>.<span class="cm-property">fillText</span>(<span class="cm-string">&quot;I can draw text, too!&quot;</span>, <span class="cm-number">10</span>, <span class="cm-number">50</span>);
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_n79D894g2i" href="#p_n79D894g2i" tabindex="-1" role="presentation"></a><code>font</code> 속성을 사용하여 텍스트의 크기, 스타일 및 글꼴을 지정할 수 있습니다. 위 예에서는 글꼴 크기와 글꼴족의 이름만 제공합니다. 스타일을 선택하기 위해 문자열의 시작 부분에 <code>italic</code> 또는 <code>bold</code>를 추가하는 것도 가능합니다.</p>
+
+<p><a class="p_ident" id="p_Zc9FEe8Zce" href="#p_Zc9FEe8Zce" tabindex="-1" role="presentation"></a><code>fillText</code>와 <code>strokeText</code>의 마지막 두 인수는 폰트가 그려지는 위치를 제공합니다. 기본적으로 문자가 서있는 라인인 텍스트의 알파벳 기준선 시작 위치를 나타내며, <em>j</em> 또는 <em>p</em>와 같이 문자의 매달린 부분은 계산하지 않습니다. <code>textAlign</code> 속성을 <code>&quot;end&quot;</code> 또는 <code>&quot;center&quot;</code>로 설정하여 수평 위치를 변경할 수 있고, <code>textBaseline</code>을 <code>&quot;top&quot;</code>, <code>&quot;middle&quot;</code> 또는 <code>&quot;bottom&quot;</code>로 설정하여 수직 위치를 변경할 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_CehxyY/vO5" href="#h_CehxyY/vO5" tabindex="-1" role="presentation"></a>이미지</h2>
+
+<p><a class="p_ident" id="p_ZAeqrSN31t" href="#p_ZAeqrSN31t" tabindex="-1" role="presentation"></a>컴퓨터 그래픽스에서는 <em>vector</em> 그래픽스와 <em>bitmap</em> 그래픽스를 구분하는 경우가 많습니다. 첫 번째는 지금까지 위에서 수행한 작업입니다. 모양에 대한 논리적 설명을 제공하여 그림을 지정합니다. 반면 비트맵 그래픽스는 실제 모양을 지정하지 않고 픽셀 데이터(색상 점의 래스터)로 작업합니다.</p>
+
+<p><a class="p_ident" id="p_a/eD/4ve/R" href="#p_a/eD/4ve/R" tabindex="-1" role="presentation"></a><code>drawImage</code> 메서드를 사용하면 픽셀 데이터를 캔버스에 그릴 수 있습니다. 이 픽셀 데이터는 <code>&lt;img&gt;</code> 요소 또는 다른 캔버스에서 가져올 수 있습니다. 다음 예는 분리된 <code>&lt;img&gt;</code> 요소를 만들고 여기에 이미지 파일을 로드합니다. 그러나 브라우저에서 아직 로드하지 않았을 수 있으므로 이 그림에서 즉시 그리기를 시작할 수 없습니다. 이를 처리하기 위해서는 <code>&quot;load&quot;</code> 이벤트 처리기를 등록하고 이미지가 로드된 후 그리기를 수행합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_Uzn6msw1dJ" href="#c_Uzn6msw1dJ" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">img</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">createElement</span>(<span class="cm-string">&quot;img&quot;</span>);
+  <span class="cm-variable">img</span>.<span class="cm-property">src</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;img/hat.png&quot;</span>;
+  <span class="cm-variable">img</span>.<span class="cm-property">addEventListener</span>(<span class="cm-string">&quot;load&quot;</span>, () <span class="cm-operator">=&gt;</span> {
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">x</span> <span class="cm-operator">=</span> <span class="cm-number">10</span>; <span class="cm-variable-2">x</span> <span class="cm-operator">&lt;</span> <span class="cm-number">200</span>; <span class="cm-variable-2">x</span> <span class="cm-operator">+=</span> <span class="cm-number">30</span>) {
+      <span class="cm-variable">cx</span>.<span class="cm-property">drawImage</span>(<span class="cm-variable">img</span>, <span class="cm-variable-2">x</span>, <span class="cm-number">10</span>);
+    }
+  });
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_wjCzpIEigd" href="#p_wjCzpIEigd" tabindex="-1" role="presentation"></a>기본적으로 <code>drawImage</code>는 이미지를 원래 크기로 그립니다. 다른 너비와 높이를 설정하기 위해 두 개의 추가 인수를 제공할 수도 있습니다.</p>
+
+<p><a class="p_ident" id="p_9rhUti7aj6" href="#p_9rhUti7aj6" tabindex="-1" role="presentation"></a><code>drawImage</code>에 9개의 인수가 주어지면 이미지의 일부만 그리는 데 사용할 수 있습니다. 두 번째에서 다섯 번째 인수는 복사해야 하는 원본 이미지의 사각형(x, y, 너비 및 높이)을 나타내고, 여섯 번째에서 아홉 번째 인수는 복사해야 하는 사각형(캔버스에서)을 지정합니다.</p>
+
+<p><a class="p_ident" id="p_qMrOddcbqu" href="#p_qMrOddcbqu" tabindex="-1" role="presentation"></a>이것은 여러 <em>sprites</em>(이미지 요소)를 단일 이미지 파일로 묶은 다음 필요한 부분만 그리는 데 사용할 수 있습니다. 예를 들어 여러 포즈의 게임 캐릭터가 포함된 다음 그림이 있습니다.</p><figure><img src="img/player_big.png" alt="Various poses of a game character"></figure>
+
+<p><a class="p_ident" id="p_u8W4Vqh39a" href="#p_u8W4Vqh39a" tabindex="-1" role="presentation"></a>그리는 포즈를 번갈아 가며 걷는 캐릭터처럼 보이는 애니메이션을 보여줄 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_hMTZfb/U5N" href="#p_hMTZfb/U5N" tabindex="-1" role="presentation"></a>캔버스에서 그림에 애니메이션을 적용하려면 <code>clearRect</code> 메서드가 유용합니다. <code>fillRect</code>와 비슷하지만 사각형을 색칠하는 대신 투명하게 만들어 이전에 그린 픽셀을 제거합니다.</p>
+
+<p><a class="p_ident" id="p_VcrdBA3T8z" href="#p_VcrdBA3T8z" tabindex="-1" role="presentation"></a>각 <em>sprite</em>는 너비 24픽셀, 높이 30픽셀입니다. 다음 코드는 이미지를 로드한 다음 간격(반복 타이머)을 설정하여 다음 프레임을 그립니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_fHdIKXnjfm" href="#c_fHdIKXnjfm" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">img</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">createElement</span>(<span class="cm-string">&quot;img&quot;</span>);
+  <span class="cm-variable">img</span>.<span class="cm-property">src</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;img/player.png&quot;</span>;
+  <span class="cm-keyword">let</span> <span class="cm-def">spriteW</span> <span class="cm-operator">=</span> <span class="cm-number">24</span>, <span class="cm-def">spriteH</span> <span class="cm-operator">=</span> <span class="cm-number">30</span>;
+  <span class="cm-variable">img</span>.<span class="cm-property">addEventListener</span>(<span class="cm-string">&quot;load&quot;</span>, () <span class="cm-operator">=&gt;</span> {
+    <span class="cm-keyword">let</span> <span class="cm-def">cycle</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>;
+    <span class="cm-variable">setInterval</span>(() <span class="cm-operator">=&gt;</span> {
+      <span class="cm-variable">cx</span>.<span class="cm-property">clearRect</span>(<span class="cm-number">0</span>, <span class="cm-number">0</span>, <span class="cm-variable">spriteW</span>, <span class="cm-variable">spriteH</span>);
+      <span class="cm-variable">cx</span>.<span class="cm-property">drawImage</span>(<span class="cm-variable">img</span>,
+                   <span class="cm-comment">// source rectangle</span>
+                   <span class="cm-variable-2">cycle</span> <span class="cm-operator">*</span> <span class="cm-variable">spriteW</span>, <span class="cm-number">0</span>, <span class="cm-variable">spriteW</span>, <span class="cm-variable">spriteH</span>,
+                   <span class="cm-comment">// destination rectangle</span>
+                   <span class="cm-number">0</span>,               <span class="cm-number">0</span>, <span class="cm-variable">spriteW</span>, <span class="cm-variable">spriteH</span>);
+      <span class="cm-variable-2">cycle</span> <span class="cm-operator">=</span> (<span class="cm-variable-2">cycle</span> <span class="cm-operator">+</span> <span class="cm-number">1</span>) <span class="cm-operator">%</span> <span class="cm-number">8</span>;
+    }, <span class="cm-number">120</span>);
+  });
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_2nOz9fW7vW" href="#p_2nOz9fW7vW" tabindex="-1" role="presentation"></a><code>cycle</code> 바인딩은 애니메이션에서 위치를 추적합니다. 각 프레임에 대해 증가된 다음 나머지 연산자를 사용하여 0에서 7 범위로 다시 잘립니다. 그런 다음 이 바인딩을 사용하여 현재 포즈의 스프라이트가 그림에 있는 x 좌표를 계산합니다.</p>
+
+<h2><a class="h_ident" id="h_3BwjEnWhbh" href="#h_3BwjEnWhbh" tabindex="-1" role="presentation"></a>변환</h2>
+
+<p><a class="p_ident" id="p_b00lbwHiev" href="#p_b00lbwHiev" tabindex="-1" role="presentation"></a>캐릭터가 오른쪽이 아닌 왼쪽으로 가도록 하려면 어떻게 해야 할까요? 물론 다른 스프라이트 세트를 그릴 수도 있습니다. 그러나 캔버스에 그림을 반대로 그리도록 지시할 수도 있습니다.</p>
+
+<p><a class="p_ident" id="p_9UTg0pE0zY" href="#p_9UTg0pE0zY" tabindex="-1" role="presentation"></a><code>scale</code> 메서드를 호출하면 그 뒤에 그려지는 모든 것이 크기 조정됩니다. 이 방법은 두 개의 매개변수를 사용합니다. 하나는 수평 스케일을 설정하고 다른 하나는 수직 스케일을 설정합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_Ih3Ewav/dQ" href="#c_Ih3Ewav/dQ" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">scale</span>(<span class="cm-number">3</span>, <span class="cm-number">.5</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">beginPath</span>();
+  <span class="cm-variable">cx</span>.<span class="cm-property">arc</span>(<span class="cm-number">50</span>, <span class="cm-number">50</span>, <span class="cm-number">40</span>, <span class="cm-number">0</span>, <span class="cm-number">7</span>);
+  <span class="cm-variable">cx</span>.<span class="cm-property">lineWidth</span> <span class="cm-operator">=</span> <span class="cm-number">3</span>;
+  <span class="cm-variable">cx</span>.<span class="cm-property">stroke</span>();
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_bJBFw4CZDS" href="#p_bJBFw4CZDS" tabindex="-1" role="presentation"></a>크기를 조정하면 선 너비를 포함하여 그려진 이미지에 대한 모든 것이 지정된 대로 늘어나거나 축소됩니다. 음수로 크기를 조정하면 그림이 뒤집힙니다. 반전은 점 (0,0) 주위에서 발생하며, 이는 좌표계의 방향도 반전됨을 의미합니다. 수평 스케일링 -1이 적용되면 x 위치 100에서 그린 모양은 위치 -100에서 끝납니다.</p>
+
+<p><a class="p_ident" id="p_56HfLRRJhP" href="#p_56HfLRRJhP" tabindex="-1" role="presentation"></a>따라서 그림을 뒤집기 위해 <code>drawImage</code>를 호출하기 전에 단순히 <code>cx.scale(-1, 1)</code>를 추가할 수는 없습니다. 그러면 drawImage그림이 표시되지 않는 캔버스 외부로 그림이 이동하기 때문입니다. 0 대신 x 위치 -50에서 이미지를 그려서 이를 보상하기 위해 <code>drawImage</code>에 주어진 좌표를 조정할 수 있습니다. 그림을 수행하는 코드에서 축척 변경에 대해 알 필요가 없는 또 다른 솔루션은 축을 조정하는 것입니다. 주변에서 스케일링이 발생합니다.</p>
+
+<p><a class="p_ident" id="p_dhSHDIZrz3" href="#p_dhSHDIZrz3" tabindex="-1" role="presentation"></a><code>scale</code>이외에 캔버스의 좌표계에 영향을 주는 몇 가지 다른 메서드들이 있습니다. 이후에 그려지는 도형을 <code>rotate</code> 메서드로 회전하고 <code>translate</code> 메서드로 이동할 수 있습니다. 흥미롭지만 혼란스러운 것은 <em>stack</em>을 변환시킨다는 것입니다(각각 이전 변환과 관련되어 발생하는).</p>
+
+<p><a class="p_ident" id="p_mkNUtuNxcG" href="#p_mkNUtuNxcG" tabindex="-1" role="presentation"></a>따라서 가로로 10픽셀씩 두 번 이동하면 모든 것이 오른쪽으로 20픽셀씩 그려집니다. 먼저 (50,50)으로 좌표계의 중심을 이동한 후 20도(대략 0.1π 라디안) 회전하면, 그 회전이 점 (50, 50)의 주위에서 발생합니다.</p><figure><img src="img/transform.svg" alt="Stacking transformations"></figure>
+
+<p><a class="p_ident" id="p_TGBwm05/cn" href="#p_TGBwm05/cn" tabindex="-1" role="presentation"></a>그렇지만 먼저 20도 회전한 후에 (50, 50)만큼 평행 이동시키면, 평행 이동은 회전된 좌표계에서 발생합니다. 이리하여 다른 형태의 회전이 됩니다.</p>
+
+<p><a class="p_ident" id="p_9a1O8aEtUA" href="#p_9a1O8aEtUA" tabindex="-1" role="presentation"></a>주어진 x 위치에서 수직선을 중심으로 그림을 뒤집기 위해 다음을 수행할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_gPWtMqSBLU" href="#c_gPWtMqSBLU" tabindex="-1" role="presentation"></a><span class="cm-keyword">function</span> <span class="cm-def">flipHorizontally</span>(<span class="cm-def">context</span>, <span class="cm-def">around</span>) {
+  <span class="cm-variable-2">context</span>.<span class="cm-property">translate</span>(<span class="cm-variable-2">around</span>, <span class="cm-number">0</span>);
+  <span class="cm-variable-2">context</span>.<span class="cm-property">scale</span>(<span class="cm-operator">-</span><span class="cm-number">1</span>, <span class="cm-number">1</span>);
+  <span class="cm-variable-2">context</span>.<span class="cm-property">translate</span>(<span class="cm-operator">-</span><span class="cm-variable-2">around</span>, <span class="cm-number">0</span>);
+}</pre>
+
+<p><a class="p_ident" id="p_qob4Y7lZ5I" href="#p_qob4Y7lZ5I" tabindex="-1" role="presentation"></a>y축을 거울이 있는 곳으로 이동하여 미러링을 적용하고, 마지막으로 y축을 미러링된 공간의 적절한 위치로 다시 이동합니다. 다음 그림은 이것이 작동하는 방식을 나타냅니다.</p><figure><img src="img/mirror.svg" alt="Mirroring around a vertical line"></figure>
+
+<p><a class="p_ident" id="p_AGahdKv9Zv" href="#p_AGahdKv9Zv" tabindex="-1" role="presentation"></a>이것은 중심선을 가로질러 미러링 전후의 좌표계를 보여줍니다. 삼각형은 각 단계를 설명하기 위해 번호가 매겨져 있습니다. 양의 x 위치에 삼각형을 그리면 기본적으로 삼각형 1이 있는 위치에 있습니다. <code>flipHorizontally</code>에 대한 호출은 오른쪽으로 이동을 수행하여 삼각형 2로 이동합니다. 그런 다음 크기가 조정되어 삼각형을 위치 3으로 뒤집습니다. 주어진 라인에서 미러링된 경우 이는 있어야 할 위치가 아닙니다. 두 번째 <code>translate</code> 호출은 이 문제를 수정합니다. 초기 이동을 취소하고 삼각형 4가 있어야 할 위치에 정확히 나타나게 합니다.</p>
+
+<p><a class="p_ident" id="p_VQO441ijr7" href="#p_VQO441ijr7" tabindex="-1" role="presentation"></a>이제 캐릭터의 수직 중심을 중심으로 공간을 뒤집어 위치 (100,0)에서 미러링된 캐릭터를 그릴 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_dmV/R5ifO7" href="#c_dmV/R5ifO7" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">img</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">createElement</span>(<span class="cm-string">&quot;img&quot;</span>);
+  <span class="cm-variable">img</span>.<span class="cm-property">src</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;img/player.png&quot;</span>;
+  <span class="cm-keyword">let</span> <span class="cm-def">spriteW</span> <span class="cm-operator">=</span> <span class="cm-number">24</span>, <span class="cm-def">spriteH</span> <span class="cm-operator">=</span> <span class="cm-number">30</span>;
+  <span class="cm-variable">img</span>.<span class="cm-property">addEventListener</span>(<span class="cm-string">&quot;load&quot;</span>, () <span class="cm-operator">=&gt;</span> {
+    <span class="cm-variable">flipHorizontally</span>(<span class="cm-variable">cx</span>, <span class="cm-number">100</span> <span class="cm-operator">+</span> <span class="cm-variable">spriteW</span> <span class="cm-operator">/</span> <span class="cm-number">2</span>);
+    <span class="cm-variable">cx</span>.<span class="cm-property">drawImage</span>(<span class="cm-variable">img</span>, <span class="cm-number">0</span>, <span class="cm-number">0</span>, <span class="cm-variable">spriteW</span>, <span class="cm-variable">spriteH</span>,
+                 <span class="cm-number">100</span>, <span class="cm-number">0</span>, <span class="cm-variable">spriteW</span>, <span class="cm-variable">spriteH</span>);
+  });
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<h2><a class="h_ident" id="h_Z+iS7LhRr9" href="#h_Z+iS7LhRr9" tabindex="-1" role="presentation"></a>변환 저장 및 지우기</h2>
+
+<p><a class="p_ident" id="p_clafKRR66N" href="#p_clafKRR66N" tabindex="-1" role="presentation"></a>변환이 계속됩니다. 미러링된 캐릭터를 그린 후에 그리는 다른 모든 것도 미러링됩니다. 불편할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_4R4LetOdqr" href="#p_4R4LetOdqr" tabindex="-1" role="presentation"></a>현재 변환을 저장하고 일부 그리기 및 변형을 수행한 다음 이전 변형을 복원할 수 있습니다. 이것은 일반적으로 좌표계를 일시적으로 변환해야 하는 함수에 대해 수행하는 적절한 작업입니다. 먼저, 함수를 호출한 코드가 사용하고 있던 변환을 저장합니다. 그런 다음 함수는 현재 변환 위에 더 많은 변환을 추가하여 작업을 수행합니다. 마지막으로, 시작한 변환으로 되돌아갑니다.</p>
+
+<p><a class="p_ident" id="p_8jvKrlVpL2" href="#p_8jvKrlVpL2" tabindex="-1" role="presentation"></a>2D 캔버스 컨텍스트의 <code>save</code>와 <code>restore</code> 메서드는 이러한 변환 관리를 수행합니다. 개념적으로 변환 상태 스택을 유지합니다. <code>save</code>를 호출하면 현재 상태가 스택에 푸시되고, <code>restore</code>를 호출하면 스택 맨 위에 있는 상태가 제거되어 컨텍스트의 현재 변환으로 사용됩니다. 변환을 완전히 재설정하기 위해 <code>resetTransform</code>을 호출할 수도 있습니다.</p>
+
+<p><a class="p_ident" id="p_igm6QMJNrx" href="#p_igm6QMJNrx" tabindex="-1" role="presentation"></a>다음 예에서 <code>branch</code> 함수는 변환을 변경하고 나서 자체 함수를 호출하는 함수로 작업하는 것을 예시합니다(계속해서 주어진 변환을 그리는)</p>
+
+<p><a class="p_ident" id="p_2U+6WbJ0Or" href="#p_2U+6WbJ0Or" tabindex="-1" role="presentation"></a>이 함수는 선을 그리고 좌표계의 중심을 선의 끝으로 이동하고 자신을 두 번 호출하여 나무 모양을 그립니다. 먼저 왼쪽으로 회전한 다음 오른쪽으로 회전합니다. 모든 호출은 그려진 분기의 길이를 줄이고 길이가 8 아래로 떨어지면 재귀가 중지됩니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_TvoVOvq541" href="#c_TvoVOvq541" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span> <span class="cm-attribute">width</span>=<span class="cm-string">&quot;600&quot;</span> <span class="cm-attribute">height</span>=<span class="cm-string">&quot;300&quot;</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-keyword">function</span> <span class="cm-def">branch</span>(<span class="cm-def">length</span>, <span class="cm-def">angle</span>, <span class="cm-def">scale</span>) {
+    <span class="cm-variable">cx</span>.<span class="cm-property">fillRect</span>(<span class="cm-number">0</span>, <span class="cm-number">0</span>, <span class="cm-number">1</span>, <span class="cm-variable-2">length</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">length</span> <span class="cm-operator">&lt;</span> <span class="cm-number">8</span>) <span class="cm-keyword">return</span>;
+    <span class="cm-variable">cx</span>.<span class="cm-property">save</span>();
+    <span class="cm-variable">cx</span>.<span class="cm-property">translate</span>(<span class="cm-number">0</span>, <span class="cm-variable-2">length</span>);
+    <span class="cm-variable">cx</span>.<span class="cm-property">rotate</span>(<span class="cm-operator">-</span><span class="cm-variable-2">angle</span>);
+    <span class="cm-variable">branch</span>(<span class="cm-variable-2">length</span> <span class="cm-operator">*</span> <span class="cm-variable-2">scale</span>, <span class="cm-variable-2">angle</span>, <span class="cm-variable-2">scale</span>);
+    <span class="cm-variable">cx</span>.<span class="cm-property">rotate</span>(<span class="cm-number">2</span> <span class="cm-operator">*</span> <span class="cm-variable-2">angle</span>);
+    <span class="cm-variable">branch</span>(<span class="cm-variable-2">length</span> <span class="cm-operator">*</span> <span class="cm-variable-2">scale</span>, <span class="cm-variable-2">angle</span>, <span class="cm-variable-2">scale</span>);
+    <span class="cm-variable">cx</span>.<span class="cm-property">restore</span>();
+  }
+  <span class="cm-variable">cx</span>.<span class="cm-property">translate</span>(<span class="cm-number">300</span>, <span class="cm-number">0</span>);
+  <span class="cm-variable">branch</span>(<span class="cm-number">60</span>, <span class="cm-number">0.5</span>, <span class="cm-number">0.8</span>);
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<p><a class="p_ident" id="p_Fr9r9ZmPHu" href="#p_Fr9r9ZmPHu" tabindex="-1" role="presentation"></a><code>save</code> 및 <code>restore</code>에 관한 호출이 없다면, <code>branch</code>에 대한 두 번째 호출은 첫 번째 호출에 의해 생성된 위치와 회전으로 끝낼 것입니다. 현재 분기에 연결되지 않고 첫 번째 호출에서 그린 가장 안쪽의 가장 오른쪽 분기에 연결됩니다. 결과 모양도 흥미로울 수 있지만 확실히 나무는 아닙니다.</p>
+
+<h2 id="canvasdisplay"><a class="h_ident" id="h_TOqgrv5vzl" href="#h_TOqgrv5vzl" tabindex="-1" role="presentation"></a>게임으로 돌아 가기</h2>
+
+<p><a class="p_ident" id="p_fFHVQgHfYf" href="#p_fFHVQgHfYf" tabindex="-1" role="presentation"></a>이전 페이지의 게임 편은 캔버스 기반 디스플레이 시스템 상에서 작업을 시작하기 위한 캔버스 그리기를 나타냈습니다. 새로운 디스플레이는 더 이상 색상 상자만 표시하지 않습니다. 대신 게임의 요소를 나타내는 그림을 그리는 데 <code>drawImage</code>를 사용할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_vvKD3AqcET" href="#p_vvKD3AqcET" tabindex="-1" role="presentation"></a>이전 페이지의 <code>DOMDisplay</code>와 같은 인터페이스를 지원하는 이른바 <code>syncState</code>와 <code>clear</code> 메서드는 <code>CanvasDisplay</code>라는 또 다른 디스플레이 객체를 정의합니다.</p>
+
+<p><a class="p_ident" id="p_ZRJ0+ZCajp" href="#p_ZRJ0+ZCajp" tabindex="-1" role="presentation"></a>이 객체는 <code>DOMDisplay</code>보다 조금 더 많은 정보를 유지합니다. DOM 요소의 스크롤 위치를 사용하는 대신 현재 보고 있는 레벨의 부분을 알려주는 자체 뷰포트를 추적합니다. 마지막으로 <code>flipPlayer</code> 속성은 플레이어가 가만히 있어도 마지막으로 이동한 방향을 향하도록 유지합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="game"><a class="c_ident" id="c_0YCIeiiRNE" href="#c_0YCIeiiRNE" tabindex="-1" role="presentation"></a><span class="cm-keyword">class</span> <span class="cm-def">CanvasDisplay</span> {
+  <span class="cm-property">constructor</span>(<span class="cm-def">parent</span>, <span class="cm-def">level</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">createElement</span>(<span class="cm-string">&quot;canvas&quot;</span>);
+    <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>.<span class="cm-property">width</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">min</span>(<span class="cm-number">600</span>, <span class="cm-variable-2">level</span>.<span class="cm-property">width</span> <span class="cm-operator">*</span> <span class="cm-variable">scale</span>);
+    <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>.<span class="cm-property">height</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">min</span>(<span class="cm-number">450</span>, <span class="cm-variable-2">level</span>.<span class="cm-property">height</span> <span class="cm-operator">*</span> <span class="cm-variable">scale</span>);
+    <span class="cm-variable-2">parent</span>.<span class="cm-property">appendChild</span>(<span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>);
+    <span class="cm-keyword">this</span>.<span class="cm-property">cx</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>.<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+
+    <span class="cm-keyword">this</span>.<span class="cm-property">flipPlayer</span> <span class="cm-operator">=</span> <span class="cm-atom">false</span>;
+
+    <span class="cm-keyword">this</span>.<span class="cm-property">viewport</span> <span class="cm-operator">=</span> {
+      <span class="cm-property">left</span>: <span class="cm-number">0</span>,
+      <span class="cm-property">top</span>: <span class="cm-number">0</span>,
+      <span class="cm-property">width</span>: <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>.<span class="cm-property">width</span> <span class="cm-operator">/</span> <span class="cm-variable">scale</span>,
+      <span class="cm-property">height</span>: <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>.<span class="cm-property">height</span> <span class="cm-operator">/</span> <span class="cm-variable">scale</span>
+    };
+  }
+
+  <span class="cm-property">clear</span>() {
+    <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>.<span class="cm-property">remove</span>();
+  }
+}</pre>
+
+<p><a class="p_ident" id="p_9ZmfX+wrVh" href="#p_9ZmfX+wrVh" tabindex="-1" role="presentation"></a><code>syncState</code> 메서드는 먼저 새 뷰포트를 계산한 다음 적절한 위치에 게임 장면을 그립니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="game"><a class="c_ident" id="c_cERhn3J5yx" href="#c_cERhn3J5yx" tabindex="-1" role="presentation"></a><span class="cm-variable">CanvasDisplay</span>.<span class="cm-property">prototype</span>.<span class="cm-property">syncState</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">state</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">updateViewport</span>(<span class="cm-variable-2">state</span>);
+  <span class="cm-keyword">this</span>.<span class="cm-property">clearDisplay</span>(<span class="cm-variable-2">state</span>.<span class="cm-property">status</span>);
+  <span class="cm-keyword">this</span>.<span class="cm-property">drawBackground</span>(<span class="cm-variable-2">state</span>.<span class="cm-property">level</span>);
+  <span class="cm-keyword">this</span>.<span class="cm-property">drawActors</span>(<span class="cm-variable-2">state</span>.<span class="cm-property">actors</span>);
+};</pre>
+
+<p><a class="p_ident" id="p_7nZQ2uq044" href="#p_7nZQ2uq044" tabindex="-1" role="presentation"></a><code>DOMDisplay</code>와는 다르게 이러한 전시 스타일은 업데이트할 때마다 배경을 다시 그려야 합니다. 캔버스의 모양은 픽셀일 뿐이므로 그린 후에는 이동(또는 제거)할 좋은 방법이 없습니다. 캔버스 디스플레이를 업데이트하는 유일한 방법은 캔버스 디스플레이를 지우고 장면을 다시 그리는 것입니다. 배경이 다른 위치에 있어야 하는 스크롤을 했을 수도 있습니다.</p>
+
+<p><a class="p_ident" id="p_jQtp2ESEAw" href="#p_jQtp2ESEAw" tabindex="-1" role="presentation"></a><code>updateViewport</code> 메서드는 <code>DOMDisplay</code>의 <code>scrollPlayerIntoView</code> 메서드와 유사합니다. 플레이어가 화면 가장자리에 너무 가까이 있는지 확인하고 이 경우 뷰포트를 이동합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="game"><a class="c_ident" id="c_OjMIL2K7Ii" href="#c_OjMIL2K7Ii" tabindex="-1" role="presentation"></a><span class="cm-variable">CanvasDisplay</span>.<span class="cm-property">prototype</span>.<span class="cm-property">updateViewport</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">state</span>) {
+  <span class="cm-keyword">let</span> <span class="cm-def">view</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">viewport</span>, <span class="cm-def">margin</span> <span class="cm-operator">=</span> <span class="cm-variable-2">view</span>.<span class="cm-property">width</span> <span class="cm-operator">/</span> <span class="cm-number">3</span>;
+  <span class="cm-keyword">let</span> <span class="cm-def">player</span> <span class="cm-operator">=</span> <span class="cm-variable-2">state</span>.<span class="cm-property">player</span>;
+  <span class="cm-keyword">let</span> <span class="cm-def">center</span> <span class="cm-operator">=</span> <span class="cm-variable-2">player</span>.<span class="cm-property">pos</span>.<span class="cm-property">plus</span>(<span class="cm-variable-2">player</span>.<span class="cm-property">size</span>.<span class="cm-property">times</span>(<span class="cm-number">0.5</span>));
+
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">center</span>.<span class="cm-property">x</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">view</span>.<span class="cm-property">left</span> <span class="cm-operator">+</span> <span class="cm-variable-2">margin</span>) {
+    <span class="cm-variable-2">view</span>.<span class="cm-property">left</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">max</span>(<span class="cm-variable-2">center</span>.<span class="cm-property">x</span> <span class="cm-operator">-</span> <span class="cm-variable-2">margin</span>, <span class="cm-number">0</span>);
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">center</span>.<span class="cm-property">x</span> <span class="cm-operator">&gt;</span> <span class="cm-variable-2">view</span>.<span class="cm-property">left</span> <span class="cm-operator">+</span> <span class="cm-variable-2">view</span>.<span class="cm-property">width</span> <span class="cm-operator">-</span> <span class="cm-variable-2">margin</span>) {
+    <span class="cm-variable-2">view</span>.<span class="cm-property">left</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">min</span>(<span class="cm-variable-2">center</span>.<span class="cm-property">x</span> <span class="cm-operator">+</span> <span class="cm-variable-2">margin</span> <span class="cm-operator">-</span> <span class="cm-variable-2">view</span>.<span class="cm-property">width</span>,
+                         <span class="cm-variable-2">state</span>.<span class="cm-property">level</span>.<span class="cm-property">width</span> <span class="cm-operator">-</span> <span class="cm-variable-2">view</span>.<span class="cm-property">width</span>);
+  }
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">center</span>.<span class="cm-property">y</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">view</span>.<span class="cm-property">top</span> <span class="cm-operator">+</span> <span class="cm-variable-2">margin</span>) {
+    <span class="cm-variable-2">view</span>.<span class="cm-property">top</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">max</span>(<span class="cm-variable-2">center</span>.<span class="cm-property">y</span> <span class="cm-operator">-</span> <span class="cm-variable-2">margin</span>, <span class="cm-number">0</span>);
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">center</span>.<span class="cm-property">y</span> <span class="cm-operator">&gt;</span> <span class="cm-variable-2">view</span>.<span class="cm-property">top</span> <span class="cm-operator">+</span> <span class="cm-variable-2">view</span>.<span class="cm-property">height</span> <span class="cm-operator">-</span> <span class="cm-variable-2">margin</span>) {
+    <span class="cm-variable-2">view</span>.<span class="cm-property">top</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">min</span>(<span class="cm-variable-2">center</span>.<span class="cm-property">y</span> <span class="cm-operator">+</span> <span class="cm-variable-2">margin</span> <span class="cm-operator">-</span> <span class="cm-variable-2">view</span>.<span class="cm-property">height</span>,
+                        <span class="cm-variable-2">state</span>.<span class="cm-property">level</span>.<span class="cm-property">height</span> <span class="cm-operator">-</span> <span class="cm-variable-2">view</span>.<span class="cm-property">height</span>);
+  }
+};</pre>
+
+<p><a class="p_ident" id="p_qSUMwlAFeW" href="#p_qSUMwlAFeW" tabindex="-1" role="presentation"></a><code>Math.max</code>와 <code>Math.min</code>에 대한 호출은 뷰포트가 외부 공간을 보이면서 끝나지 않도록 합니다. <code>Math.max(x, 0)</code>는 결과 숫자가 0보다 작지 않은지 확인합니다. 유사하게 <code>Math.min</code>은 값이 주어진 범위 아래로 유지되도록 합니다.</p>
+
+<p><a class="p_ident" id="p_uxQ4EAtiQh" href="#p_uxQ4EAtiQh" tabindex="-1" role="presentation"></a>디스플레이를 비울 때 게임이 이기는지(밝게) 졌는지(어둡게)에 따라 약간 다른 색상을 사용합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="game"><a class="c_ident" id="c_P43rIXnt0B" href="#c_P43rIXnt0B" tabindex="-1" role="presentation"></a><span class="cm-variable">CanvasDisplay</span>.<span class="cm-property">prototype</span>.<span class="cm-property">clearDisplay</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">status</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">status</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;won&quot;</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">fillStyle</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;rgb(68, 191, 255)&quot;</span>;
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">status</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;lost&quot;</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">fillStyle</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;rgb(44, 136, 214)&quot;</span>;
+  } <span class="cm-keyword">else</span> {
+    <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">fillStyle</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;rgb(52, 166, 251)&quot;</span>;
+  }
+  <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">fillRect</span>(<span class="cm-number">0</span>, <span class="cm-number">0</span>,
+                   <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>.<span class="cm-property">width</span>, <span class="cm-keyword">this</span>.<span class="cm-property">canvas</span>.<span class="cm-property">height</span>);
+};</pre>
+
+<p><a class="p_ident" id="p_TjOnlogmqf" href="#p_TjOnlogmqf" tabindex="-1" role="presentation"></a>배경을 그리기 위해 이전 페이지의 <code>touches</code> 메서드에서 사용한 것과 동일한 트릭을 사용하여 현재 뷰포트에 표시되는 타일을 실행합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="game"><a class="c_ident" id="c_UYqDAMiEp6" href="#c_UYqDAMiEp6" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">otherSprites</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">createElement</span>(<span class="cm-string">&quot;img&quot;</span>);
+<span class="cm-variable">otherSprites</span>.<span class="cm-property">src</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;img/sprites.png&quot;</span>;
+
+<span class="cm-variable">CanvasDisplay</span>.<span class="cm-property">prototype</span>.<span class="cm-property">drawBackground</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">level</span>) {
+  <span class="cm-keyword">let</span> {<span class="cm-def">left</span>, <span class="cm-def">top</span>, <span class="cm-def">width</span>, <span class="cm-def">height</span>} <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">viewport</span>;
+  <span class="cm-keyword">let</span> <span class="cm-def">xStart</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">floor</span>(<span class="cm-variable-2">left</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">xEnd</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">ceil</span>(<span class="cm-variable-2">left</span> <span class="cm-operator">+</span> <span class="cm-variable-2">width</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">yStart</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">floor</span>(<span class="cm-variable-2">top</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">yEnd</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">ceil</span>(<span class="cm-variable-2">top</span> <span class="cm-operator">+</span> <span class="cm-variable-2">height</span>);
+
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">y</span> <span class="cm-operator">=</span> <span class="cm-variable-2">yStart</span>; <span class="cm-variable-2">y</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">yEnd</span>; <span class="cm-variable-2">y</span><span class="cm-operator">++</span>) {
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">x</span> <span class="cm-operator">=</span> <span class="cm-variable-2">xStart</span>; <span class="cm-variable-2">x</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">xEnd</span>; <span class="cm-variable-2">x</span><span class="cm-operator">++</span>) {
+      <span class="cm-keyword">let</span> <span class="cm-def">tile</span> <span class="cm-operator">=</span> <span class="cm-variable-2">level</span>.<span class="cm-property">rows</span>[<span class="cm-variable-2">y</span>][<span class="cm-variable-2">x</span>];
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">tile</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;empty&quot;</span>) <span class="cm-keyword">continue</span>;
+      <span class="cm-keyword">let</span> <span class="cm-def">screenX</span> <span class="cm-operator">=</span> (<span class="cm-variable-2">x</span> <span class="cm-operator">-</span> <span class="cm-variable-2">left</span>) <span class="cm-operator">*</span> <span class="cm-variable">scale</span>;
+      <span class="cm-keyword">let</span> <span class="cm-def">screenY</span> <span class="cm-operator">=</span> (<span class="cm-variable-2">y</span> <span class="cm-operator">-</span> <span class="cm-variable-2">top</span>) <span class="cm-operator">*</span> <span class="cm-variable">scale</span>;
+      <span class="cm-keyword">let</span> <span class="cm-def">tileX</span> <span class="cm-operator">=</span> <span class="cm-variable-2">tile</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;lava&quot;</span> <span class="cm-operator">?</span> <span class="cm-variable">scale</span> : <span class="cm-number">0</span>;
+      <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">drawImage</span>(<span class="cm-variable">otherSprites</span>,
+                        <span class="cm-variable-2">tileX</span>,         <span class="cm-number">0</span>, <span class="cm-variable">scale</span>, <span class="cm-variable">scale</span>,
+                        <span class="cm-variable-2">screenX</span>, <span class="cm-variable-2">screenY</span>, <span class="cm-variable">scale</span>, <span class="cm-variable">scale</span>);
+    }
+  }
+};</pre>
+
+<p><a class="p_ident" id="p_exCLyNQQL6" href="#p_exCLyNQQL6" tabindex="-1" role="presentation"></a>비어 있지 않은 타일은 <code>drawImage</code>로 그립니다. <code>otherSprites</code> 이미지는 플레이어 이외의 요소에 사용되는 사진이 포함되어 있습니다. 왼쪽에서 오른쪽으로 벽 타일, 용암 타일 및 동전용 스프라이트가 포함되어 있습니다.</p><figure><img src="img/sprites_big.png" alt="Sprites for our game"></figure>
+
+<p><a class="p_ident" id="p_1R4HdSFR8E" href="#p_1R4HdSFR8E" tabindex="-1" role="presentation"></a>배경 타일은 <code>DOMDisplay</code>에서 사용한 것과 동일한 배율을 사용하므로 20x20픽셀입니다. 따라서 용암 타일의 오프셋은 20(<code>scale</code> 바인딩 값)이고 벽의 오프셋은 0입니다.</p>
+
+<p><a class="p_ident" id="p_LOS6wlGop3" href="#p_LOS6wlGop3" tabindex="-1" role="presentation"></a>스프라이트 이미지가 로드될 때까지 기다리지 않아도 됩니다. 아직 로드되지 않은 이미지로 <code>drawImage</code>를 호출하면 아무 일도 하지 않습니다. 따라서 이미지가 아직 로드되는 동안 처음 몇 프레임 동안 게임을 제대로 그리지 못할 수 있지만 심각한 문제는 아닙니다. 화면을 계속 업데이트하기 때문에 로드가 완료되는 즉시 올바른 장면이 나타납니다.</p>
+
+<p><a class="p_ident" id="p_/1DXjZpAsq" href="#p_/1DXjZpAsq" tabindex="-1" role="presentation"></a>앞서 보여드린 걷는 캐릭터는 플레이어를 나타내는 데 사용됩니다. 그리는 코드는 플레이어의 현재 동작에 따라 올바른 스프라이트와 방향을 선택해야 합니다. 처음 8개의 스프라이트에는 걷는 애니메이션이 포함되어 있습니다. 플레이어가 층을 따라 이동할 때 현재 시간을 기준으로 순환합니다. 60밀리초마다 프레임을 전환하기를 원하므로 먼저 시간을 60으로 나눕니다. 플레이어가 가만히 서 있을 때 아홉 번째 스프라이트를 그립니다. 수직 속도가 0이 아니라는 사실로 인식되는 점프하는 동안 가장 오른쪽에 있는 10번째 스프라이트를 사용합니다.</p>
+
+<p><a class="p_ident" id="p_NKcG+qZfSz" href="#p_NKcG+qZfSz" tabindex="-1" role="presentation"></a>스프라이트는 플레이어 객체보다 약간 넓기 때문에(발과 팔을 위한 공간을 허용하기 위해 16픽셀 대신 24픽셀) 메서드는 x 좌표와 너비를 주어진 양만큼(<code>playerXOverlap</code>) 조정해야 합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="game"><a class="c_ident" id="c_T61uCWX04T" href="#c_T61uCWX04T" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">playerSprites</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">createElement</span>(<span class="cm-string">&quot;img&quot;</span>);
+<span class="cm-variable">playerSprites</span>.<span class="cm-property">src</span> <span class="cm-operator">=</span> <span class="cm-string">&quot;img/player.png&quot;</span>;
+<span class="cm-keyword">const</span> <span class="cm-def">playerXOverlap</span> <span class="cm-operator">=</span> <span class="cm-number">4</span>;
+
+<span class="cm-variable">CanvasDisplay</span>.<span class="cm-property">prototype</span>.<span class="cm-property">drawPlayer</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">player</span>, <span class="cm-def">x</span>, <span class="cm-def">y</span>,
+                                              <span class="cm-def">width</span>, <span class="cm-def">height</span>){
+  <span class="cm-variable-2">width</span> <span class="cm-operator">+=</span> <span class="cm-variable">playerXOverlap</span> <span class="cm-operator">*</span> <span class="cm-number">2</span>;
+  <span class="cm-variable-2">x</span> <span class="cm-operator">-=</span> <span class="cm-variable">playerXOverlap</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">player</span>.<span class="cm-property">speed</span>.<span class="cm-property">x</span> <span class="cm-operator">!=</span> <span class="cm-number">0</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">flipPlayer</span> <span class="cm-operator">=</span> <span class="cm-variable-2">player</span>.<span class="cm-property">speed</span>.<span class="cm-property">x</span> <span class="cm-operator">&lt;</span> <span class="cm-number">0</span>;
+  }
+
+  <span class="cm-keyword">let</span> <span class="cm-def">tile</span> <span class="cm-operator">=</span> <span class="cm-number">8</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">player</span>.<span class="cm-property">speed</span>.<span class="cm-property">y</span> <span class="cm-operator">!=</span> <span class="cm-number">0</span>) {
+    <span class="cm-variable-2">tile</span> <span class="cm-operator">=</span> <span class="cm-number">9</span>;
+  } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">player</span>.<span class="cm-property">speed</span>.<span class="cm-property">x</span> <span class="cm-operator">!=</span> <span class="cm-number">0</span>) {
+    <span class="cm-variable-2">tile</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">floor</span>(<span class="cm-variable">Date</span>.<span class="cm-property">now</span>() <span class="cm-operator">/</span> <span class="cm-number">60</span>) <span class="cm-operator">%</span> <span class="cm-number">8</span>;
+  }
+
+  <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">save</span>();
+  <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">flipPlayer</span>) {
+    <span class="cm-variable">flipHorizontally</span>(<span class="cm-keyword">this</span>.<span class="cm-property">cx</span>, <span class="cm-variable-2">x</span> <span class="cm-operator">+</span> <span class="cm-variable-2">width</span> <span class="cm-operator">/</span> <span class="cm-number">2</span>);
+  }
+  <span class="cm-keyword">let</span> <span class="cm-def">tileX</span> <span class="cm-operator">=</span> <span class="cm-variable-2">tile</span> <span class="cm-operator">*</span> <span class="cm-variable-2">width</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">drawImage</span>(<span class="cm-variable">playerSprites</span>, <span class="cm-variable-2">tileX</span>, <span class="cm-number">0</span>, <span class="cm-variable-2">width</span>, <span class="cm-variable-2">height</span>,
+                                   <span class="cm-variable-2">x</span>,     <span class="cm-variable-2">y</span>, <span class="cm-variable-2">width</span>, <span class="cm-variable-2">height</span>);
+  <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">restore</span>();
+};</pre>
+
+<p><a class="p_ident" id="p_S52Euszs4f" href="#p_S52Euszs4f" tabindex="-1" role="presentation"></a><code>drawPlayer</code> 메서드는 <code>drawActors</code>에 의해 호출되는데, 게임의 모든 액터를 그리는 책임이 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript"  data-sandbox="game"><a class="c_ident" id="c_XwZEfLqKhO" href="#c_XwZEfLqKhO" tabindex="-1" role="presentation"></a><span class="cm-variable">CanvasDisplay</span>.<span class="cm-property">prototype</span>.<span class="cm-property">drawActors</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">actors</span>) {
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">actor</span> <span class="cm-keyword">of</span> <span class="cm-variable-2">actors</span>) {
+    <span class="cm-keyword">let</span> <span class="cm-def">width</span> <span class="cm-operator">=</span> <span class="cm-variable-2">actor</span>.<span class="cm-property">size</span>.<span class="cm-property">x</span> <span class="cm-operator">*</span> <span class="cm-variable">scale</span>;
+    <span class="cm-keyword">let</span> <span class="cm-def">height</span> <span class="cm-operator">=</span> <span class="cm-variable-2">actor</span>.<span class="cm-property">size</span>.<span class="cm-property">y</span> <span class="cm-operator">*</span> <span class="cm-variable">scale</span>;
+    <span class="cm-keyword">let</span> <span class="cm-def">x</span> <span class="cm-operator">=</span> (<span class="cm-variable-2">actor</span>.<span class="cm-property">pos</span>.<span class="cm-property">x</span> <span class="cm-operator">-</span> <span class="cm-keyword">this</span>.<span class="cm-property">viewport</span>.<span class="cm-property">left</span>) <span class="cm-operator">*</span> <span class="cm-variable">scale</span>;
+    <span class="cm-keyword">let</span> <span class="cm-def">y</span> <span class="cm-operator">=</span> (<span class="cm-variable-2">actor</span>.<span class="cm-property">pos</span>.<span class="cm-property">y</span> <span class="cm-operator">-</span> <span class="cm-keyword">this</span>.<span class="cm-property">viewport</span>.<span class="cm-property">top</span>) <span class="cm-operator">*</span> <span class="cm-variable">scale</span>;
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">actor</span>.<span class="cm-property">type</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;player&quot;</span>) {
+      <span class="cm-keyword">this</span>.<span class="cm-property">drawPlayer</span>(<span class="cm-variable-2">actor</span>, <span class="cm-variable-2">x</span>, <span class="cm-variable-2">y</span>, <span class="cm-variable-2">width</span>, <span class="cm-variable-2">height</span>);
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">let</span> <span class="cm-def">tileX</span> <span class="cm-operator">=</span> (<span class="cm-variable-2">actor</span>.<span class="cm-property">type</span> <span class="cm-operator">==</span> <span class="cm-string">&quot;coin&quot;</span> <span class="cm-operator">?</span> <span class="cm-number">2</span> : <span class="cm-number">1</span>) <span class="cm-operator">*</span> <span class="cm-variable">scale</span>;
+      <span class="cm-keyword">this</span>.<span class="cm-property">cx</span>.<span class="cm-property">drawImage</span>(<span class="cm-variable">otherSprites</span>,
+                        <span class="cm-variable-2">tileX</span>, <span class="cm-number">0</span>, <span class="cm-variable-2">width</span>, <span class="cm-variable-2">height</span>,
+                        <span class="cm-variable-2">x</span>,     <span class="cm-variable-2">y</span>, <span class="cm-variable-2">width</span>, <span class="cm-variable-2">height</span>);
+    }
+  }
+};</pre>
+
+<p><a class="p_ident" id="p_eKrbbTbFOt" href="#p_eKrbbTbFOt" tabindex="-1" role="presentation"></a>플레이어가 아닌 것을 그릴 때 올바른 스프라이트의 오프셋을 찾기 위해 타입을 확인합니다. 용암 타일은 오프셋 20에서 발견되고 코인 스프라이트는 40(두 번의 <code>scale</code>)에서 발견됩니다.</p>
+
+<p><a class="p_ident" id="p_e6Z9O4bib+" href="#p_e6Z9O4bib+" tabindex="-1" role="presentation"></a>캔버스의 (0,0)이 레벨의 왼쪽 상단이 아니라 뷰포트의 왼쪽 상단에 해당하기 때문에 액터의 위치를 계산할 때 뷰포트의 위치를 빼야 합니다. 이것을 위해 <code>translate</code>를 사용할 수도 있습니다. 어느 쪽이든 작동합니다.</p>
+
+<p><a class="p_ident" id="p_L/8CF09Vt1" href="#p_L/8CF09Vt1" tabindex="-1" role="presentation"></a>다음 문서는 새 디스플레이를 <code>runGame</code>에 연결합니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html"  data-focus="true" data-sandbox="game"><a class="c_ident" id="c_TSR2vcnWZv" href="#c_TSR2vcnWZv" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">body</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-variable">runGame</span>(<span class="cm-variable">GAME_LEVELS</span>, <span class="cm-variable">CanvasDisplay</span>);
+  <span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">body</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<h2 id="graphics_tradeoffs"><a class="h_ident" id="h_T6CfghQSfx" href="#h_T6CfghQSfx" tabindex="-1" role="presentation"></a>그래픽 인터페이스 선택</h2>
+
+<p><a class="p_ident" id="p_kvbiwTrmDd" href="#p_kvbiwTrmDd" tabindex="-1" role="presentation"></a>따라서 브라우저에서 그래픽을 생성해야 할 때 일반 HTML, SVG 및 캔버스 중에서 선택할 수 있습니다. 모든 상황에서 작동하는 최상의 단일 접근 방식은 없습니다. 각 옵션에는 강점과 약점이 있습니다.</p>
+
+<p><a class="p_ident" id="p_NcvTZB76Ji" href="#p_NcvTZB76Ji" tabindex="-1" role="presentation"></a>일반 HTML은 단순하다는 장점이 있습니다. 텍스트와도 잘 어울립니다. SVG와 캔버스 모두 텍스트를 그릴 수 있지만 텍스트가 한 줄 이상을 차지할 때 텍스트를 배치하거나 줄 바꿈하는 데 도움이 되지 않습니다. HTML 기반 그림에서는 텍스트 블록을 포함하는 것이 훨씬 쉽습니다.</p>
+
+<p><a class="p_ident" id="p_hvYGIoy7o5" href="#p_hvYGIoy7o5" tabindex="-1" role="presentation"></a>SVG는 모든 확대/축소 수준에서 보기 좋은 선명한 그래픽을 생성하는데 사용할 수 있습니다. HTML과 달리 그리기용으로 설계되었으므로 그 용도에 더 적합합니다.</p>
+
+<p><a class="p_ident" id="p_kMuMzGC6aO" href="#p_kMuMzGC6aO" tabindex="-1" role="presentation"></a>SVG와 HTML은 모두 사진을 나타내는 데이터 구조(DOM)를 구성합니다. 이렇게 하면 요소를 그린 후 수정할 수 있습니다. 사용자가 수행하는 작업에 대한 응답으로 또는 애니메이션의 일부로 큰 그림의 작은 부분을 반복적으로 변경해야 하는 경우 캔버스에서 수행하는 것은 불필요하게 비용이 많이 들 수 있습니다. DOM을 사용하면 그림의 모든 요소에 마우스 이벤트 핸들러를 등록할 수도 있습니다(SVG로 그린 모양에서도). 캔버스로 할 수 없습니다.</p>
+
+<p><a class="p_ident" id="p_7N4OSlG5eS" href="#p_7N4OSlG5eS" tabindex="-1" role="presentation"></a>그러나 캔버스의 픽셀 중심 접근 방식은 수많은 작은 요소를 그릴 때 이점이 될 수 있습니다. 데이터 구조를 구축하지 않고 동일한 픽셀 표면에 반복적으로 그리기만 한다는 사실은 캔버스에 모양당 비용을 더 낮춥니다.</p>
+
+<p><a class="p_ident" id="p_Iw4jOsF/cL" href="#p_Iw4jOsF/cL" tabindex="-1" role="presentation"></a>또한 장면을 한 번에 한 픽셀씩 렌더링(예: 레이 트레이서 사용)하거나 JavaScript로 이미지를 후처리(흐리게 하거나 왜곡)하는 것과 같은 효과도 있지만 픽셀 기반 접근 방식으로만 현실적으로 처리할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_g3j5b50ElK" href="#p_g3j5b50ElK" tabindex="-1" role="presentation"></a>경우에 따라 이러한 기술 중 몇 가지를 결합할 수 있습니다. 예를 들어 SVG 또는 캔버스로 그래프를 그릴 수 있지만 HTML 요소를 그림 위에 배치하여 텍스트 정보를 표시할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_e5OZ223Ss6" href="#p_e5OZ223Ss6" tabindex="-1" role="presentation"></a>요구 사항이 없는 응용 프로그램의 경우 어떤 인터페이스를 선택하는지는 그다지 중요하지 않습니다. 이 페이지에서 게임을 위해 구축한 디스플레이는 텍스트를 그리거나, 마우스 상호 작용을 처리하거나, 엄청나게 많은 요소로 작업할 필요가 없기 때문에 이 세 가지 그래픽 기술 중 하나를 사용하여 구현할 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_ErccPg/l98" href="#h_ErccPg/l98" tabindex="-1" role="presentation"></a>요약</h2>
+
+<p><a class="p_ident" id="p_gRVlk0yedA" href="#p_gRVlk0yedA" tabindex="-1" role="presentation"></a><code>&lt;canvas&gt;</code> 요소에 초점을 맞춰 브라우저에서 그래픽을 그리는 기술에 대해 논의했습니다.</p>
+
+<p><a class="p_ident" id="p_5VXwNvtdy0" href="#p_5VXwNvtdy0" tabindex="-1" role="presentation"></a>캔버스 노드는 프로그램이 그릴 수 있는 문서의 영역을 나타냅니다. 이 그리기는 <code>getContext</code> 메서드로 만든 그리기 컨텍스트 개체를 통해 수행됩니다.</p>
+
+<p><a class="p_ident" id="p_cXrF5QAxvf" href="#p_cXrF5QAxvf" tabindex="-1" role="presentation"></a>2D 그리기 인터페이스를 사용하면 다양한 모양을 채우고 획을 그릴 수 있습니다. 컨텍스트의 <code>fillStyle</code> 속성은 모양이 채워지는 방법을 결정합니다. <code>strokeStyle</code>와 <code>lineWidth</code> 속성은 라인이 그려하는 방법을 제어할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_p9lwBrZeDB" href="#p_p9lwBrZeDB" tabindex="-1" role="presentation"></a>단일 메서드 호출로 사각형과 텍스트 조각을 그릴 수 있습니다. <code>fillRect</code>와 <code>strokeRect</code> 메서드는 사각형을 그리고, <code>fillText</code>와 <code>strokeText</code> 메서드는 텍스트를 그립니다. 사용자 정의 모양을 만들려면 먼저 경로를 만들어야 합니다.</p>
+
+<p><a class="p_ident" id="p_fJAAnWmzV7" href="#p_fJAAnWmzV7" tabindex="-1" role="presentation"></a><code>beginPath</code> 호출은 새로운 경로를 시작합니다. 다른 많은 방법은 현재 경로에 선과 곡선을 추가합니다. 예를 들어 <code>lineTo</code>는 직선을 추가할 수 있습니다. 패스가 완료되면 <code>fill</code> 메서드로 채우거나 <code>stroke</code> 메서드로 획을 나타낼 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_OAUDZ4R8yK" href="#p_OAUDZ4R8yK" tabindex="-1" role="presentation"></a>이미지나 다른 캔버스에서 캔버스로 픽셀을 이동하는 것은 <code>drawImage</code> 메서드를 사용하여 수행됩니다. 기본적으로 이 메서드는 전체 소스 이미지를 그리지만 더 많은 매개변수를 지정하여 이미지의 특정 영역을 복사할 수 있습니다. 포즈가 많이 포함된 이미지에서 게임 캐릭터의 개별 포즈를 복사하여 게임에 사용할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_g8a+OHsvlL" href="#p_g8a+OHsvlL" tabindex="-1" role="presentation"></a>변환을 사용하면 여러 방향으로 모양을 그릴 수 있습니다. 2차원 그리기 컨텍스트는 <code>translate</code>, <code>scale</code> 및 <code>rotate</code> 메서드로 변경할 수 있는 현재 변환입니다. 이것들은 이후의 모든 그리기 작업에 영향을 줍니다. 변환 상태는 <code>save</code> 메서드로 저장하고 <code>restore</code> 메서드로 복원할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_Cp6Llruuba" href="#p_Cp6Llruuba" tabindex="-1" role="presentation"></a>캔버스에 애니메이션을 표시할 때 <code>clearRect</code> 메서드를 사용하여 다시 그리기 전에 캔버스의 일부를 지울 수 있습니다.</p>
+
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="#h_TcUD2vzyMe" tabindex="-1" role="presentation"></a>연습 문제</h2>
+
+<h3><a class="i_ident" id="i_sZheOHQF5N" href="#i_sZheOHQF5N" tabindex="-1" role="presentation"></a>도형</h3>
+
+<p><a class="p_ident" id="p_ML2Sk/PrfT" href="#p_ML2Sk/PrfT" tabindex="-1" role="presentation"></a>캔버스에 다음 도형을 그리는 프로그램을 작성하십시오.</p>
+
+<ol>
+
+<li>
+
+<p><a class="p_ident" id="p_jg9BlkxnI6" href="#p_jg9BlkxnI6" tabindex="-1" role="presentation"></a>사다리꼴(한쪽이 더 넓은 직사각형)</p></li>
+
+<li>
+
+<p><a class="p_ident" id="p_TsmIPWkWaZ" href="#p_TsmIPWkWaZ" tabindex="-1" role="presentation"></a>빨간색 다이아몬드(45도 회전된 직사각형 또는 ¼π 라디안)</p></li>
+
+<li>
+
+<p><a class="p_ident" id="p_rB8lM2f3nJ" href="#p_rB8lM2f3nJ" tabindex="-1" role="presentation"></a>지그재그 선</p></li>
+
+<li>
+
+<p><a class="p_ident" id="p_giU72/tC1m" href="#p_giU72/tC1m" tabindex="-1" role="presentation"></a>100개의 직선 세그먼트로 구성된 나선</p></li>
+
+<li>
+
+<p><a class="p_ident" id="p_BaFPNufkG9" href="#p_BaFPNufkG9" tabindex="-1" role="presentation"></a>노란 별</p></li>
+
+</ol><figure><img src="img/exercise_shapes.png" alt="The shapes to draw"></figure>
+
+<p><a class="p_ident" id="p_rGwDFrV/8d" href="#p_rGwDFrV/8d" tabindex="-1" role="presentation"></a>마지막 두 개를 그릴때 원의 좌표를 얻는 방법을 설명하는 14장의 <code>Math.cos</code> 및 <code>Math.sin</code>에 대한 설명을 참조할 수 있습니다.</p>
+
+<p><a class="p_ident" id="p_8n4Hu9tdGs" href="#p_8n4Hu9tdGs" tabindex="-1" role="presentation"></a>각 모양에 대한 함수를 만드는 것이 좋습니다. 위치 및 선택적으로 크기 또는 점 수와 같은 기타 속성을 매개변수로 전달합니다. 코드 전체에 숫자를 하드 코딩하는 대안은 코드를 읽고 수정하기가 불필요하게 어렵게 만드는 경향이 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_kWm/btAd42" href="#c_kWm/btAd42" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span> <span class="cm-attribute">width</span>=<span class="cm-string">&quot;600&quot;</span> <span class="cm-attribute">height</span>=<span class="cm-string">&quot;200&quot;</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+
+  <span class="cm-comment">// 여기에 코드 작성</span>
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_usKt8VipYH" href="#p_usKt8VipYH" tabindex="-1" role="presentation"></a>사다리꼴은 패스를 사용하여 그리는 것이 가장 쉽습니다. 적절한 중심 좌표를 선택하고 중심 주위에 4개의 모서리를 각각 추가합니다.</p>
+
+<p><a class="p_ident" id="p_BsQmhM5bK3" href="#p_BsQmhM5bK3" tabindex="-1" role="presentation"></a>마름모는 경로를 사용하여 직선으로 그릴 수도 있고 <code>rotate</code> 변환을 사용하여 흥미로운 방식으로 그릴 수도 있습니다. 회전을 사용하려면 <code>flipHorizontally</code> 함수에서 했던 것과 유사한 트릭을 적용해야 합니다. 점 (0,0)이 아니라 사각형의 중심을 중심으로 회전하기를 원하기 때문에 먼저 거기까지 <code>translate</code>한 다음 회전시키고 다시 평행이동해야 합니다.</p>
+
+<p><a class="p_ident" id="p_1qE89Gryai" href="#p_1qE89Gryai" tabindex="-1" role="presentation"></a>변환을 생성하는 모양을 그린 후에 변환을 재설정해야 합니다.</p>
+
+<p><a class="p_ident" id="p_br/BxkXFdB" href="#p_br/BxkXFdB" tabindex="-1" role="presentation"></a>지그재그의 경우 각 라인 세그먼트에 대해 <code>lineTo</code>에 관한 새 호출을 작성하는 것이 비실용적 입니다. 대신 루프를 사용해야 합니다. 각 반복에서 두 개의 선분(오른쪽으로 이동한 다음 다시 왼쪽으로)을 그리거나 하나를 그릴 수 있습니다. 이 경우 루프 인덱스의 균일성(<code>% 2</code>)을 사용하여 왼쪽으로 갈지 오른쪽으로 갈지 결정해야 합니다.</p>
+
+<p><a class="p_ident" id="p_R9r4fGqnsR" href="#p_R9r4fGqnsR" tabindex="-1" role="presentation"></a>나선에 대한 루프도 필요합니다. 나선의 중심을 중심으로 원을 따라 각 점이 더 이동하면서 일련의 점을 그리면 원이 생깁니다. 루프 중에 현재 점을 두는 원의 반지름을 변경하고 두 번 이상 돌면 결과는 나선형입니다.</p>
+
+<p><a class="p_ident" id="p_jjKOhwPqFp" href="#p_jjKOhwPqFp" tabindex="-1" role="presentation"></a>묘사된 별 모양은 <code>quadraticCurveTo</code> 선으로 만들어졌습니다 . 직선으로 그릴 수도 있습니다. 8개의 점이 있는 별을 위해 원을 8개의 조각으로 나누거나 원하는 만큼 조각을 만듭니다. 이 점들 사이에 선을 그려 별의 중심을 향하도록 곡선을 만듭니다. <code>quadraticCurveTo</code>와 관련해서 제어 지점으로 중심을 사용할 수 있습니다.</p>
+
+</div></div>
+
+<h3 id="exercise_pie_chart"><a class="i_ident" id="i_bJrtZj5liF" href="#i_bJrtZj5liF" tabindex="-1" role="presentation"></a>파이 차트</h3>
+
+<p><a class="p_ident" id="p_JDTyZfhjjQ" href="#p_JDTyZfhjjQ" tabindex="-1" role="presentation"></a>이 페이지의 앞 부분에 파이 차트를 그리는 예 프로그램을 나타냈습니다. 각 범주의 이름이 해당 범주를 나타내는 슬라이스 옆에 표시되도록 이 프로그램을 수정합니다. 다른 데이터 세트에서도 작동하는 이 텍스트를 자동으로 배치하는 보기 좋은 방법을 찾으십시오. 범주가 레이블을 위한 충분한 공간을 남길 만큼 충분히 크다고 가정할 수 있습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_DTliIvEhY1" href="#c_DTliIvEhY1" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span> <span class="cm-attribute">width</span>=<span class="cm-string">&quot;600&quot;</span> <span class="cm-attribute">height</span>=<span class="cm-string">&quot;300&quot;</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">total</span> <span class="cm-operator">=</span> <span class="cm-variable">results</span>
+    .<span class="cm-property">reduce</span>((<span class="cm-def">sum</span>, {<span class="cm-def">count</span>}) <span class="cm-operator">=&gt;</span> <span class="cm-variable-2">sum</span> <span class="cm-operator">+</span> <span class="cm-variable-2">count</span>, <span class="cm-number">0</span>);
+  <span class="cm-keyword">let</span> <span class="cm-def">currentAngle</span> <span class="cm-operator">=</span> <span class="cm-operator">-</span><span class="cm-number">0.5</span> <span class="cm-operator">*</span> <span class="cm-variable">Math</span>.<span class="cm-property">PI</span>;
+  <span class="cm-keyword">let</span> <span class="cm-def">centerX</span> <span class="cm-operator">=</span> <span class="cm-number">300</span>, <span class="cm-def">centerY</span> <span class="cm-operator">=</span> <span class="cm-number">150</span>;
+
+  <span class="cm-comment">// Add code to draw the slice labels in this loop.</span>
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">let</span> <span class="cm-def">result</span> <span class="cm-keyword">of</span> <span class="cm-variable">results</span>) {
+    <span class="cm-keyword">let</span> <span class="cm-def">sliceAngle</span> <span class="cm-operator">=</span> (<span class="cm-variable">result</span>.<span class="cm-property">count</span> <span class="cm-operator">/</span> <span class="cm-variable">total</span>) <span class="cm-operator">*</span> <span class="cm-number">2</span> <span class="cm-operator">*</span> <span class="cm-variable">Math</span>.<span class="cm-property">PI</span>;
+    <span class="cm-variable">cx</span>.<span class="cm-property">beginPath</span>();
+    <span class="cm-variable">cx</span>.<span class="cm-property">arc</span>(<span class="cm-variable">centerX</span>, <span class="cm-variable">centerY</span>, <span class="cm-number">100</span>,
+           <span class="cm-variable">currentAngle</span>, <span class="cm-variable">currentAngle</span> <span class="cm-operator">+</span> <span class="cm-variable">sliceAngle</span>);
+    <span class="cm-variable">currentAngle</span> <span class="cm-operator">+=</span> <span class="cm-variable">sliceAngle</span>;
+    <span class="cm-variable">cx</span>.<span class="cm-property">lineTo</span>(<span class="cm-variable">centerX</span>, <span class="cm-variable">centerY</span>);
+    <span class="cm-variable">cx</span>.<span class="cm-property">fillStyle</span> <span class="cm-operator">=</span> <span class="cm-variable">result</span>.<span class="cm-property">color</span>;
+    <span class="cm-variable">cx</span>.<span class="cm-property">fill</span>();
+  }
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_kA52wMKZ1N" href="#p_kA52wMKZ1N" tabindex="-1" role="presentation"></a>텍스트가 원하는 위치에 오도록 <code>fillText</code>를 호출하고 컨텍스트의 <code>textAlign</code>과 <code>textBaseline</code> 속성을 호출하고 설정해야 합니다.</p>
+
+<p><a class="p_ident" id="p_/ajw2XzQ17" href="#p_/ajw2XzQ17" tabindex="-1" role="presentation"></a>라벨을 배치하는 현명한 방법은 파이의 중앙에서 슬라이스의 중앙을 지나는 선에 텍스트를 배치하는 것입니다. 텍스트를 파이 측면에 직접 배치하지 않고 주어진 픽셀 수만큼 파이 측면으로 텍스트를 이동합니다.</p>
+
+<p><a class="p_ident" id="p_E+JItTGzSC" href="#p_E+JItTGzSC" tabindex="-1" role="presentation"></a>현재 선의 각도는 <code>currentAngle + 0.<wbr>5 * sliceAngle</code>입니다. 다음 코드는 중심에서 120픽셀 떨어진 이 줄의 위치를 찾습니다.</p>
+
+<pre class="snippet cm-s-default" data-language="javascript" ><a class="c_ident" id="c_7kVY28rLLf" href="#c_7kVY28rLLf" tabindex="-1" role="presentation"></a><span class="cm-keyword">let</span> <span class="cm-def">middleAngle</span> <span class="cm-operator">=</span> <span class="cm-variable">currentAngle</span> <span class="cm-operator">+</span> <span class="cm-number">0.5</span> <span class="cm-operator">*</span> <span class="cm-variable">sliceAngle</span>;
+<span class="cm-keyword">let</span> <span class="cm-def">textX</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">cos</span>(<span class="cm-variable">middleAngle</span>) <span class="cm-operator">*</span> <span class="cm-number">120</span> <span class="cm-operator">+</span> <span class="cm-variable">centerX</span>;
+<span class="cm-keyword">let</span> <span class="cm-def">textY</span> <span class="cm-operator">=</span> <span class="cm-variable">Math</span>.<span class="cm-property">sin</span>(<span class="cm-variable">middleAngle</span>) <span class="cm-operator">*</span> <span class="cm-number">120</span> <span class="cm-operator">+</span> <span class="cm-variable">centerY</span>;</pre>
+
+<p><a class="p_ident" id="p_yLOG7kgUDH" href="#p_yLOG7kgUDH" tabindex="-1" role="presentation"></a><code>textBaseline</code>에 관해, 값 <code>&quot;middle&quot;</code>은 적절할 수 있습니다. <code>textAlign</code>에 관해 무엇을 사용할 것인지는 속한 원의 어느 쪽에 달려 있는지에 달려 있습니다. 텍스트가 파이에서 멀리 떨어지도록 왼쪽에 <code>&quot;right&quot;</code>, 오른쪽에 <code>&quot;left&quot;</code>가 있어야 합니다.</p>
+
+<p><a class="p_ident" id="p_BmCLUHGaC3" href="#p_BmCLUHGaC3" tabindex="-1" role="presentation"></a>두어진 각이 원의 어느 쪽에 있어야 하는지 확실하지 않다면 14장의 <code>Math.cos</code>를 참조합니다. 각도의 코사인은 그것이 어느 x 좌표에 해당하는지 알려주고, 이는 다시 원의 어느 쪽에 있는지 정확히 알려줍니다.</p>
+
+</div></div>
+
+<h3><a class="i_ident" id="i_IoBBN8CiQ5" href="#i_IoBBN8CiQ5" tabindex="-1" role="presentation"></a>공 튀기기</h3>
+
+<p><a class="p_ident" id="p_0Oga5tkIVF" href="#p_0Oga5tkIVF" tabindex="-1" role="presentation"></a>14장과 16 장에서 소개된 <code>requestAnimationFrame</code> 기법을 사용하여 튀는 공이 들어 있는 상자를 그립니다. 공은 일정한 속도로 움직이며 상자에 맞으면 상자 측면에서 튕깁니다.</p>
+
+<pre class="snippet cm-s-default" data-language="text/html" ><a class="c_ident" id="c_9Io71wlUw7" href="#c_9Io71wlUw7" tabindex="-1" role="presentation"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">canvas</span> <span class="cm-attribute">width</span>=<span class="cm-string">&quot;400&quot;</span> <span class="cm-attribute">height</span>=<span class="cm-string">&quot;400&quot;</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">canvas</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-keyword">let</span> <span class="cm-def">cx</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">&quot;canvas&quot;</span>).<span class="cm-property">getContext</span>(<span class="cm-string">&quot;2d&quot;</span>);
+
+  <span class="cm-keyword">let</span> <span class="cm-def">lastTime</span> <span class="cm-operator">=</span> <span class="cm-atom">null</span>;
+  <span class="cm-keyword">function</span> <span class="cm-def">frame</span>(<span class="cm-def">time</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable">lastTime</span> <span class="cm-operator">!=</span> <span class="cm-atom">null</span>) {
+      <span class="cm-variable">updateAnimation</span>(<span class="cm-variable">Math</span>.<span class="cm-property">min</span>(<span class="cm-number">100</span>, <span class="cm-variable-2">time</span> <span class="cm-operator">-</span> <span class="cm-variable">lastTime</span>) <span class="cm-operator">/</span> <span class="cm-number">1000</span>);
+    }
+    <span class="cm-variable">lastTime</span> <span class="cm-operator">=</span> <span class="cm-variable-2">time</span>;
+    <span class="cm-variable">requestAnimationFrame</span>(<span class="cm-variable">frame</span>);
+  }
+  <span class="cm-variable">requestAnimationFrame</span>(<span class="cm-variable">frame</span>);
+
+  <span class="cm-keyword">function</span> <span class="cm-def">updateAnimation</span>(<span class="cm-def">step</span>) {
+    <span class="cm-comment">// Your code here.</span>
+  }
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_zF6HVUUkCO" href="#p_zF6HVUUkCO" tabindex="-1" role="presentation"></a>상자는 <code>strokeRect</code>로 그리기 쉽습니다. 크기를 유지하는 바인딩을 정의하거나 상자의 너비와 높이가 다른 경우 두 개의 바인딩을 정의합니다. 둥근 공을 만들려면 경로를 시작하고 <code>arc(x, y, radius, 0, 7)</code>를 호출하여 0에서 전체 원 이상으로 가는 호를 만듭니다. 그런 다음 경로를 채우십시오.</p>
+
+<p><a class="p_ident" id="p_wlBTN9ml9f" href="#p_wlBTN9ml9f" tabindex="-1" role="presentation"></a>공의 위치와 속도를 모델링하기 위해 16장의 (이 페이지의 <code>Vec</code> 사용 가능) 클래스를 사용할 수 있습니다. 시작 속도를 지정하고, 순전히 수직 또는 수평이 아닌 속도를 지정하고 모든 프레임에 대해 해당 속도에 경과된 시간을 곱합니다. 공이 수직 벽에 너무 가까워지면 속도에서 x 구성 요소를 반전시킵니다. 마찬가지로, 수평 벽에 부딪힐 때 y 구성요소를 반전시킵니다.</p>
+
+<p><a class="p_ident" id="p_1wITPL6e42" href="#p_1wITPL6e42" tabindex="-1" role="presentation"></a>공의 새 위치와 속도를 찾은 후 <code>clearRect</code>를 사용하여 장면을 삭제하고 새 위치를 사용하여 다시 그립니다.</p>
+</div></div>
+
+<h3><a class="i_ident" id="i_3ePcd0S4v0" href="#i_3ePcd0S4v0" tabindex="-1" role="presentation"></a>미리 계산된 미러링</h3>
+
+<p><a class="p_ident" id="p_onlMAFaFji" href="#p_onlMAFaFji" tabindex="-1" role="presentation"></a>변환에 대한 한 가지 불행한 점은 비트맵 그리기 속도가 느려진다는 것입니다. 각 픽셀의 위치와 크기는 변환되어야 하며, 브라우저가 미래에 변환에 대해 더 똑똑해질 수도 있지만 현재로서는 비트맵을 그리는 데 걸리는 시간을 측정할 수 있을 정도로 증가시킵니다.</p>
+
+<p><a class="p_ident" id="p_b50ouk4znE" href="#p_b50ouk4znE" tabindex="-1" role="presentation"></a>변형된 스프라이트를 하나만 그리는 게임에서는 문제가 되지 않습니다. 그러나 폭발에서 수백 개의 캐릭터 또는 수천 개의 회전하는 입자를 그려야 한다고 상상해 보십시오.</p>
+
+<p><a class="p_ident" id="p_WgNsgEoaNe" href="#p_WgNsgEoaNe" tabindex="-1" role="presentation"></a>추가 이미지 파일을 로드하지 않고 매 프레임마다 변환된 <code>drawImage</code> 호출을 수행하지 않고도 반전된 문자를 그릴 수 있는 방법을 생각해 보십시오.</p>
+
+<div class="solution"><div class="solution-text">
+
+<p><a class="p_ident" id="p_NmNTuxj7Ml" href="#p_NmNTuxj7Ml" tabindex="-1" role="presentation"></a>솔루션의 핵심은 <code>drawImage</code>을 사용할 때 캔버스 요소를 소스 이미지로 사용할 수 있다는 사실입니다. <code>&lt;canvas&gt;</code>에 요소를 추가하지 않고 추가 요소를 생성하고 역 스프라이트를 한 번 그릴 수 있습니다. 실제 프레임을 그릴 때 이미 반전된 스프라이트를 메인 캔버스에 복사하기만 하면 됩니다.</p>
+
+<p><a class="p_ident" id="p_MbtRzmupcp" href="#p_MbtRzmupcp" tabindex="-1" role="presentation"></a>이미지가 즉시 로드되지 않기 때문에 약간의 주의가 필요합니다. 반전 그리기는 한 번만 수행하며 이미지가 로드되기 전에 수행하면 아무 것도 그리지 않습니다. <code>&quot;load&quot;</code> 이미지의 처리기를 사용하여 반전된 이미지를 추가 캔버스에 그릴 수 있습니다. 이 캔버스는 즉시 그리기 소스로 사용할 수 있습니다(캐릭터를 그릴 때까지 단순히 비어 있을 것임).</p>
+
+</div></div><nav><a href="16_game.html" title="previous chapter">◀</a> <a href="index.html" title="cover">◆</a> <a href="18_http.html" title="next chapter">▶</a></nav>
+</article>

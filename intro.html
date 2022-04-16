@@ -1,0 +1,398 @@
+﻿<!DOCTYPE html>                            
+<html>                                
+<head>                                    
+	<meta charset="UTF-8">                                    
+	<title>README</title>                                    
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style>
+	*,body{margin:0;padding:0}
+	.markdown-content,*{font-family:Vazir}
+	*{box-sizing:border-box}
+	html{font-size:14px}
+	.markdown-content p,.rtl ol li,.rtl ul li{font-size:1.1rem}
+	body{direction:rtl;color:#24292e}
+	.ltr{direction:ltr!important}
+	.rtl{direction:rtl!important}
+	@media screen and (max-width:600px){body{padding:10px}}
+	@media screen and (min-width:601px){body{padding:50px}}@font-face{font-family:Vazir;src:url(fonts/Vazir.woff)}
+	@font-face{font-family:DejaVuSansMono;src:url(fonts/DejaVuSansMono.ttf)}
+	.markdown-content{width:100%;outline-offset:-22px;padding:15px;line-height:3rem}
+	code,code span,pre code span,ul li pre code{font-family:DejaVuSansMono,Menlo,'Liberation Mono',Consolas,'DejaVu Sans Mono','Ubuntu Mono','Courier New','andale mono','lucida console',monospace!important}
+	.markdown-content p{text-align:justify;padding:.5rem}
+	.markdown-content img{margin:0 auto;display:block;max-width:90%}
+	.rtl ul li{margin-right:3rem!important}
+	.rtl ol li{margin-right:3rem}
+	.ltr ol li,.ltr ul li{font-size:1.1rem;margin-left:3rem}
+	.markdown-content h1,.markdown-content h2,.markdown-content h3{padding:12px;text-shadow:none}
+	.markdown-content h1{padding-top:60px;color:rgba(22,19,19,.8);font-weight:900;font-size:2.1rem}.markdown-content h2{font-weight:500;color:rgba(22,19,19,.6);font-size:1.8rem}.markdown-content h3{font-weight:300;color:rgba(22,19,19,.4);font-size:1.5rem}
+	.markdown-content h4,.markdown-content h5{font-weight:200;color:rgba(22,19,19,.4)}.markdown-content h4{font-size:1.3rem}
+	.markdown-content h5{font-size:1.2rem}
+	@media screen and (min-width:48rem){#list{width:20%}#content{width:100%}}
+	@media screen and (min-width:80rem){#list.none{display:inline-block}#content{width:80%}}
+	@media print{#list{display:none}
+	#content{display:block;width:100%;margin:0 auto}
+	#content li,#content p{font-size:1rem}}.manual-anchor{top:45px}
+	.markdown-container{max-width:1448px;margin:0 auto}.manual-link-icon{color:#8f8f8f}.manual-link-icon:hover{color:#000}
+	code,ul li pre code{white-space:pre;word-wrap:normal;padding:3px 7px;color:#24292e;background-color:rgba(27,31,35,.05);border-radius:3px;font-size:1rem}
+	.markdown-content ul li pre,.manual ul li pre,pre{margin:0;direction:ltr!important}
+	.markdown-content ul li pre code,.manual ul li pre code,pre code{direction:ltr!important;line-height:1.45;padding:1em 0 .5em 3em;position:relative;display:block;overflow-x:auto;overflow-y:auto}
+	a{text-decoration:none}
+	.title{float:left;color:#ccc}
+	.markdown-container{padding-top:60px}
+	.elements{padding:12px;position:fixed;top:0;right:0;left:0;background-color:#444;height:50px;z-index:1}
+	.input{color:#fff}
+	#savebutton,input{font-size:15px}
+	#savebutton{padding:0 7px!important}
+	#rtl-checkbox-container{margin:3px 15px!important;color:#fff}
+	.button{background-color:#fff;color:#444;font-size:1.6rem;display:inline-block;text-align:center;line-height:2.1rem;border-radius:2px}
+	.button:hover{cursor:pointer;background-color:#eee}
+	#refresh-button{width:2.2rem;vertical-align:middle}
+	@media print{.no-print,.no-print *{display:none!important}}
+	.hljs-comment,.hljs-quote{color:#99ac5b}
+	.hljs-meta,.hljs-name,.hljs-regexp,.hljs-selector-class,.hljs-selector-id,.hljs-tag,.hljs-template-variable,.hljs-variable{color:#dc3958}
+	.hljs-built_in,.hljs-builtin-name,.hljs-deletion,.hljs-link,.hljs-literal,.hljs-number,.hljs-params,.hljs-type{color:#f79a32}.hljs-attribute,.hljs-section,.hljs-title{color:#f06431}
+	.hljs-addition,.hljs-bullet,.hljs-string,.hljs-symbol{color:#9c9}
+	.hljs-function,.hljs-keyword,.hljs-selector-tag{color:#98676a}
+	.hljs{display:block;overflow-x:auto;background:#221a0f;color:#d3af86}
+.hljs-emphasis{font-style:italic}
+.hljs-strong{font-weight:700}
+</style>                                
+</head>
+<body>
+	<div class="markdown-container ltr"><div class="markdown-content"><hr>
+<h1 id="-img-src-assets-logo-svg-alt-class-logo-class-logo-advanced-javascript-syllabus"><img src="assets/logo.svg" alt="class logo" class="logo">고급 자바스크립트 강의</h1>
+<p><strong><em>코스 설계에 관심이 있으면 메타 문서를 참조하세요(<a href="meta.html">메타</a> 문서</em></strong></p>
+<ul>
+<li><strong>과정:</strong> <a href="http://scps.nyu.edu/content/scps/academics/course_detail.html?id=INFO1-CE9766">INFO1-CE9766, NYU SCPS</a></li>
+<li><strong>담당:</strong> K. I. Moon</li>
+<li><strong>참고</strong>
+	<ul>
+		<li>문제를 잘 살펴보고 해결책을 생성함.</li>
+		<li>1:1 도움을 받거나 만날 시간을 정하려면 연구실에 전화하세요.</li>
+	</ul>
+</li>
+<h2 id="course-description">코드 설명</h2>
+<p>먼저 집중 5개 섹션 과정에서 JS의 모범 사례를 배우십시오. 주제에는 데이터 캡슐화, 클로저, 바인딩, 상속 및 이름 간격이 포함됩니다. 다른 브라우저에서 JS 문제를 디버그하고 성능을 개선하는 방법이 잘 알려져 있지 않지만 유용한 언어 기능을 알아보세요. 타사 JS 라이브러리를 사용하여 대화형 웹 페이지를 만듭니다.</p>
+<p>실습실에는 컴퓨터가 제공되지만 수업 중 연습을 위해 노트북을 가져오는 것이 좋습니다.</p>
+<h2 id="prerequisites">사전 학습</h2>
+<ul>
+<li>JS의 변수, 데이터 유형, 제어 흐름 및 기본 함수 사용법에 대한 이해</li>
+<li>HTML에 대한 강력한 중급 지식 및 최소한 CSS의 기초</li>
+<li>기본 jQuery 지식(요소/클래스 추가/제거와 같은 DOM 상호 작용)</li>
+</ul>
+<p>이러한 사전 지식이 없으면 꽤 길을 잃을 것입니다. 복습이 필요하면 <a href="#beginner-materials">초급 자료</a>를 살펴보십시오.</p>
+<h2 id="course-overview">코스 개요</h2>
+<p>JS의 뉘앙스, 프로토타입 상속이 고전 상속과 어떻게 비교되는지, 동적 및 복잡한 웹 애플리케이션을 구축하는데 이것이 어떻게 사용될 수 있는지 자세히 알아볼 것입니다. jQuery 및 BackboneJS와 같은 최신 도구에 대해 논의하지만 학생들은 이러한 프레임워크의 구성 요소를 배우고 이 과정을 마친 후에는 내부에서 일어나는 일을 이해할 수 있습니다. 대부분이 Node.js, Phonegap 등과 같은 다른 시스템에 적용되지만 초점은 브라우저 개발에 있습니다. 다루는 주제는 다음과 같습니다.</p>
+<ul>
+<li>캡슐화, 클로저 및 범위</li>
+<li>전형적인 상속과 프로토타입 상속</li>
+<li>이벤트 루프</li>
+<li>AJAX와 JSONP<ul>
+<li>로컬</li>
+<li>원격(예를 들어, Foursquare)</li>
+</ul>
+</li>
+<li>스크레치로부터 MVC-스타일 모델 생성(a'la Backbone.js)</li>
+<li>테스트 및 의사 코드 지향 개발</li>
+</ul>
+<p>주제들은 <a href="./deck/README.html">deck</a>에서 사용할 수 있는 라이브 코드 예제/슬라이드를 통해 시연됩니다. 추가 연습은 수업에서 완료됩니다.</p>
+<p>자세한 배경은 <a href="https://web.archive.org/web/20140306162909/http://blog.masterstreet.com/2013/09/05/interview-with-aidan-feldman-instructor-at-nyu-scps/">여기</a>를 참조합니다.</p>
+<h2 id="homework-projects">과제/프로젝트</h2>
+<p>모든 과제는 <a href="#course-outline">코스 아웃라인</a>에 열거됩니다.</p>
+<h3 id="workflow">워크플로</h3>
+<p>GitHub 데스크톱을 사용하는 경우에는 다음 일반 지침이 도움이 됩니다.</p>
+<ul>
+<li><a href="https://guides.github.com/activities/forking/">https://guides.github.com/activities/forking/</a></li>
+<li><a href="https://help.github.com/desktop/guides/contributing/">https://help.github.com/desktop/guides/contributing/</a></li>
+</ul>
+<p><code>Edit</code>-&gt;<code>Automatically Sync after Committing</code>가 권장됩니다. 단계는 다음과 같습니다.</p>
+<ol>
+<li>exercise/project의 저장소 분기(<a href="https://github.com/advanced-js">github.com/advanced-js</a>에 있음.).</li>
+<li>저장소의 컴퓨터 복사</li>
+<li>브라우저에서 <code>index.html</code>을 열고, 개발자 도구 열기</li>
+<li>파일 수정을 통한 솔루션 완료</li>
+<li><code>index.html</code> 페이지를 새로 고침하여 결과를 확인하고 반복함.</li>
+<li>코든 코드가 멋지게 커밋되었는지 확인</li>
+<li>GitHub에 밀어넣기/동기화</li>
+<li>원래 리포지토리에서 <a href="https://help.github.com/articles/creating-a-pull-request/">끌어오기 요청</a> 생성; 모든 과제는 달리 명시되지 않는 한 다음 수업이 시작될 때 마감됩니다.</li>
+<li>종료 날짜까지 수정 사항 및 개선 사항을 계속 밀어 넣을 수 있습니다. 끌어오기 요청에 댓글을 추가하여 업데이트 되었음을 알려주십시오.</li>
+</ol>
+<p>끌어오기 요청이 생성되면 "Travis CI 빌드가 진행 중입니다."라는 메시지가 표시되어야 합니다. 이는 솔루션이 구문 오류에 대해 자동으로 검사되고 있음을 의미합니다. 이 빌드가 실패하면(빨간색 X가 표시됨) 세부 정보 링크를 클릭하고 맨 아래로 스크롤하여 오류가 무엇인지 확인하십시오. 해당 <a href="#requirements">요구사항</a> 아래의 문제를 해결하고 변경 사항을 밀어주십시오.</p>
+<p>피드백은 끌어오기 요청에서 진행할 예정이니 여러분의 생각과 질문에 답해주세요! 막혀서 질문을 하고 싶은 경우 진행 중인 작업으로 일찍 끌어오기 요청을 여는 것을 환영합니다. 솔루션은 <code>http://USERNAME.github.io/EXERCISE</code>에서도 사용할 수 있습니다.</p>
+
+<h3 id="requirements">요구 사항</h3>
+<p>다음은 실생활에도 적용됩니다.</p>
+<ul>
+<li><a href="https://docs.travis-ci.com/">Travis CI</a> 빌드는 다음을 포함하여 통과되어야 합니다.<ul>
+<li>모든 HTML 파일은 <a href="http://validator.w3.org">W3C Markup Validation</a>을 통과해야 합니다.</li>
+<li>모든 작성된 JS는 <a href="http://jshint.com">JSHint</a>를 통과해야 합니다.</li>
+</ul>
+</li>
+<li>좋은 프로그래밍 스타일 적용
+	<ul>
+<li>함수들은 짧아야 함(참고: <a href="https://robots.thoughtbot.com/sandi-metz-rules-for-developers">Sandi Metz의 개발자들을 위한 규칙</a>).</li>
+<li>가독성을 위한 최적화<ul>
+<li><a href="https://www.goodreads.com/quotes/9168-programs-must-be-written-for-people-to-read-and-only">프로그램은 사람들이 읽을 수 있도록 작성되어야 하고, 기계가 실행하기 위해서는 부수적으로만 작성되어야 합니다." - 해롤드 아벨슨</a></li>
+</ul>
+</li>
+<li>특히 콜백이 두 줄 이상인 경우 다른 함수 내에서 익명 콜백을 사용하지 마십시오.</li>
+<li>프로젝트의 경우 객체 지향 프로그래밍을 사용합니다.</li>
+</ul>
+</li>
+<li>모든 차용된 코드에는 적절한 <a href="#instructor">주석</a>을 달아야 합니다.</li>
+</ul>
+
+<h2 id="course-outline">강의 개요</h2>
+<h3 id="class-1">강좌 1</h3>
+<p></p>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<ol>
+<li>소개<ul>
+<li>수업에서 다룰 내용에 대해 토론</li>
+<li>무엇을 하고 싶은가?</li>
+<li>코스로 이루고자 하는 것은?</li>
+<li>동료는 이해하지만 자신이 정작 이해하지 못하는 것은 무엇인가?</li>
+<li>슬라이드 작동 방식 설명</li>
+</ul>
+</ol>
+<h4 id="homework">과제</h4>
+</li>
+<li><a href="http://bonsaiden.github.io/JavaScript-Garden/">JS Garden</a> 읽기</li>
+<li><a href="./echo/README.html">echo</a> 및 <a href="./countdown/README.html">countdown</a> 연습 완료 및 제출</li>
+<li><a href="./blink/README.html">blink</a> 연습 종료</li>
+</ul>
+<h3 id="class-2">강좌 2</h3>
+<ol>
+<li><code>countdown()</code> 관련 여러 접근 방식<ul>
+<li>재귀 해 전시</li>
+</ul>
+</li>
+<li>개발자 도구 연습<ul>
+<li>Elements (HTML)</li>
+<li>Console (JS)</li>
+<li>Scripts (JS)</li>
+</ul>
+</li>
+<li><a href="./memory/README.html">Memory v1</a> 빌드를 위한 Pair 프로그램(참조: <a href="#pairing-tips">pairing 팁</a>)</li>
+<li>"oop_inheritance" 슬라이드를 통한 OOP 학습<ul>
+<li><a href="http://jsbin.com/baqopu/1/edit?css,js,output">캡슐화</a></li>
+<li><a href="http://backbonejs.org/docs/backbone.html">Backbone.js 이벤트</a></li>
+</ul>
+</li>
+</ol>
+<h4 id="homework">과제</h4>
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript">Mozilla의 객체지향 소개</a> 읽기</li>
+<li>V2를 통한 <a href="./oop/README.html">OOP 연습</a></li>
+<li><a href="https://github.com/advanced-js/memory#v2">Memory v2</a> (개개인)</li>
+</ul>
+<h3 id="class-3">강좌 3</h3>
+<ol>
+<li>코드 리뷰 메모리</li>
+<li><a href="./deck/examples/oop_inheritance/"><code>oop_inheritance</code></a> 슬라이드 학습</li>
+<li>자동화 테스트<ul>
+<li>스크레치로부터 테스트 프레임워크 구축</li>
+<li>QUnit의 예<ul>
+<li><a href="http://jsbin.com/woqusi/edit?html,js,output">Simple</a></li>
+<li><a href="http://jsbin.com/nukamun/edit?js,output">Classes</a></li>
+<li><a href="http://qunitjs.com/">QUnit 문서</a></li>
+</ul>
+</li>
+<li>기타 프레임워크</li>
+</ul>
+</li>
+<li>AJAX/CORS/JSONP (<a href="./deck/demos/ajax">파일들</a>)<ul>
+<li>개발자 도구에서 Network 탭</li>
+</ul>
+</li>
+</ol>
+<h4 id="homework">과제</h4>
+<ul>
+<li><a href="https://google.github.io/styleguide/jsguide.html">Google JavaScript Style Guide</a> 읽기</li>
+<li>V4를 통한 <a href="./oop/README.html">OOP 연습</a> 완료</li>
+<li><a href="https://github.com/advanced-js/memory#v3">Memory V3</a></li>
+</ul>
+<h3 id="class-4">강좌 4</h3>
+<ol>
+<li>슬라이드 종료</li>
+<li>복잡한 예 취하기<ul>
+<li>Backbone.js에 대한 빠른 소개<ul>
+<li><a href="http://jsbin.com/IGivato/1/edit?html,js,output">상용구(Boilerplate)</a></li>
+<li>Box <a href="http://jsbin.com/IGivato/5/edit?css,js,output">예 앱</a> 클릭</li>
+<li>TDD?</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>다중 비동기<ul>
+<li><a href="./deck/demos/ajax/promises">Promises</a>/<a href="http://api.jquery.com/jQuery.Deferred/">jQuery.Deferred</a></li>
+<li><a href="https://github.com/caolan/async#control-flow-1">async</a> 라이브러리를 가능하게 전시</li>
+</ul>
+</li>
+</ol>
+<h4 id="homework">과제</h4>
+<ul>
+<li><a href="./deck/demos/ajax#readme">AJAX 학습</a></li>
+<li><a href="./mashup/README.html">Mashup</a></li>
+<li>이전 과제 개선</li>
+</ul>
+
+<h3 id="class-5">강좌 5</h3>
+<ol>
+<li>Present and code review Mashup projects</li>
+<li>가능한 주제:<ul>
+<li>Node.js<ul>
+<li>서버 "Hello World" (<a href="http://nodejs.org/">Node.js 홈페이지</a>)<ul>
+<li><a href="http://nodejs.org/api/http.html">HTTP 모듈 문서</a></li>
+</ul>
+</li>
+<li>HTTP 요청<ul>
+<li><a href="http://pretty-rfc.herokuapp.com/RFC2616#status.codes">상태 모드</a></li>
+<li>헤더</li>
+</ul>
+</li>
+<li>CommonJS?</li>
+</ul>
+</li>
+<li><a href="./deck/demos/regex.html">정규식</a><ul>
+<li>텍스트 영역에서 실시간 입력 변환, 예:<ul>
+<li>Link Twitter 처리기</li>
+<li><a href="http://afeld.github.io/emoji-css/">emoji-css</a>를 사용하여 이모지를 선택 단어로 대체</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>객체지향 설계</li>
+<li><a href="http://coderetreat.org/facilitating/structure-of-a-coderetreat">코드 후퇴</a> – 가능한 문제:<ul>
+<li><a href="http://coderetreat.org/gol">인생 게임</a></li>
+<li>Tic Tac Toe</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="pairing-tips">Pairing 팁</h2>
+<ul>
+<li>3명도 가능하지만 2명이 가장 좋다.</li>
+<li>둘 다 편안하게 사용할 수 있는 편집기와 환경에 동의한다.</li>
+<li>경험이 적거나 편안하지 못한 사람은 더 많은 키보드 시간을 가져야 한다.</li>
+<li>정기적으로 주도자 교체</li>
+<li>코드 저장과 공유</li>
+</ul>
+<h2 id="resources">리소스</h2>
+<h3 id="required-reading">필수 읽기</h3>
+<ul>
+<li><a href="https://google.github.io/styleguide/jsguide.html">Google JavaScript Style Guide</a></li>
+<li><a href="http://bonsaiden.github.com/JavaScript-Garden/">JavaScript Garden</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript">Mozilla의 객체지향 JS</a></li>
+<li><a href="http://blog.parse.com/learn/engineering/whats-so-great-about-javascript-promises/">JS Promises의 장점은?</a></li>
+</ul>
+<h3 id="beginner-materials">초급</h3>
+<p>초급자뿐만 아니라 다소 brush-up이 필요한 경우...</p>
+<ul>
+<li>Codecademy – <a href="https://www.codecademy.com/learn/javascript">JavaScript</a> 및 <a href="https://www.codecademy.com/learn/jquery">jQuery</a></li>
+<li><a href="http://eloquentjavascript.net/index.html">Eloquent JavaScript</a> (Marijn Haverbeke, 1-5장)</li>
+<li><a href="https://medium.com/@_cmdv_/i-want-to-learn-javascript-in-2015-e96cd85ad225">Want to learn JavaScript in 2015?</a></li>
+<li><a href="https://learn.jquery.com/about-jquery/how-jquery-works/">How jQuery Works</a></li>
+<li>참조 – <a href="#other-lists">기타 리스트</a></li>
+</ul>
+<h3 id="recommended-reading">권장 자료</h3>
+<ul>
+<li><a href="http://shop.oreilly.com/product/0636920028857.do">Functional JavaScript</a> (Michael Fogus)</li>
+<li><a href="https://github.com/h5bp/Front-end-Developer-Interview-Questions">Front-end Job Interview Questions</a> (@darcyclarke)</li>
+<li><a href="http://www.thinkful.com/learn/javascript-best-practices-1/">JavaScript Best Practices</a></li>
+<li><a href="http://shichuan.github.io/javascript-patterns/">JavaScript Patterns</a> (@shichuan)</li>
+<li><a href="http://www.amazon.com/JavaScript-Patterns-Stoyan-Stefanov/dp/0596806752">JavaScript Patterns</a> (Stoyan Stephanov)</li>
+<li><a href="http://www.amazon.com/JavaScript-Web-Applications-Alex-MacCaw/dp/144930351X/">JavaScript Web Applications</a> (Alex MacCaw)</li>
+<li><a href="http://www.amazon.com/JavaScript-Good-Parts-Douglas-Crockford/dp/0596517742">JavaScript: The Good Parts</a> (Douglas Crockford)</li>
+<li><a href="http://ejohn.org/apps/learn/">Learning Advanced JavaScript slides</a> (John Resig)</li>
+<li><a href="http://www.staticapps.org/">Static Web Apps</a></li>
+<li><a href="http://www.amazon.com/Test-Driven-JavaScript-Development-Developers-Library/dp/0321683919">Test-Driven JavaScript Development</a> (Christian Johansen)</li>
+<li><a href="http://www.slideshare.net/marthakelly/js-interpreter-interpreted">The JavaScript Interpreter, Interpreted</a> (Martha Girdler) <a href="https://www.youtube.com/watch?v=iSxNCYcPAFk">(video)</a></li>
+</ul>
+<h4 id="specific-topics">특수 주제</h4>
+<ul>
+<li>Douglas Crockford의 <a href="http://www.crockford.com/javascript/inheritance.html">Classical Inheritance in JavaScript</a></li>
+<li>Ben Alman의 <a href="http://benalman.com/news/2012/09/partial-application-in-javascript/">Partial Application in JavaScript</a></li>
+<li><a href="http://www.html5rocks.com">HTML5 Rocks</a></li>
+<li>Addy Osmani의 <a href="http://addyosmani.com/resources/essentialjsdesignpatterns/book/">Learning JavaScript Design Patterns</a></li>
+</ul>
+<h4 id="other-lists">기타 리스트</h4>
+<ul>
+<li><a href="http://www.jstherightway.org/">JS: The Right Way</a> (JS 환경 개요)</li>
+<li><a href="https://www.codeschool.com/paths/javascript">Code School</a></li>
+<li>Thoughtbot's <a href="https://upcase.com/javascript">Javascript Trail Map</a></li>
+<li><a href="http://javascriptissexy.com/how-to-learn-javascript-properly/">How To Learn JavaScript Properly</a></li>
+<li><a href="http://superherojs.com">Superhero.js</a></li>
+<li><a href="http://teachyourselftocode.com/javascript">Teach Yourself to Code</a></li>
+</ul>
+<h3 id="tools">도구</h3>
+<ul>
+<li>코드 타당성 검토: <a href="http://jslint.com">JSLint</a> / <a href="http://jshint.com">JSHint</a></li>
+<li>디버깅:<ul>
+<li><a href="https://developer.chrome.com/devtools/index">크롬 개발자 도구</a><ul>
+<li><a href="https://developer.chrome.com/extensions/tut_debugging">공식 디버깅 튜토리얼</a></li>
+<li>튜토리얼: <a href="http://www.macwright.org/2015/03/10/javascript-diagnosis.html">JS 진단</a></li>
+</ul>
+</li>
+<li><a href="https://www.mozilla.org/en-US/firefox/developer/">Firefox Developer Edition</a></li>
+</ul>
+</li>
+<li>코드 공유: <a href="https://gist.github.com/">gist.github.com</a></li>
+<li>질문: <a href="http://stackoverflow.com/">Stack Overflow</a></li>
+</ul>
+<h4 id="github">GitHub</h4>
+<ul>
+<li>Git 및 GitHub<ul>
+<li><a href="https://help.github.com/">공식 GitHub Help 페이지</a></li>
+<li><a href="http://hackerhours.org/resources.html#github">권장 리소스</a></li>
+</ul>
+</li>
+<li>GitHub 페이지<ul>
+<li><a href="https://pages.github.com/">공식 사이트</a></li>
+<li><a href="http://www.thinkful.com/learn/a-guide-to-using-github-pages/">사려깊은 안내</a></li>
+</ul>
+</li>
+</ul>
+<h4 id="html-css-js-sandboxes">HTML/CSS/JS 샌드박스</h4>
+<ul>
+<li><a href="http://jsbin.com/">JS Bin</a> (권장)</li>
+<li><a href="http://bl.ocks.org/">bl.ocks.org</a></li>
+<li><a href="https://c9.io/">Cloud9</a></li>
+<li><a href="http://codepen.io/pen/">CodePen</a></li>
+<li><a href="http://jsfiddle.net/">JSFiddle</a></li>
+<li><a href="https://thimble.mozilla.org">Mozilla Thimble</a></li>
+<li><a href="http://plnkr.co/">Plunker</a></li>
+<li><a href="http://rawgit.com/">rawgithub.com</a></li>
+</ul>
+<h4 id="frameworks">프레임워크</h4>
+<ul>
+<li>Framework 비교: <a href="http://todomvc.com">TodoMVC</a></li>
+<li><a href="https://coderwall.com/p/ntbixw">Testing</a></li>
+</ul>
+<h3 id="reference">참고 문헌</h3>
+<ul>
+<li><a href="https://developer.mozilla.org/en/JavaScript">Mozilla Developer Network</a> 및 <a href="https://developer.mozilla.org/en-US/learn/javascript">Learn JavaScript</a></li>
+<li><a href="http://www.w3schools.com/jsref/default.asp">w3schools</a></li>
+<li><a href="http://shop.oreilly.com/product/9780596000486.do">JavaScript: The Definitive Guide</a> (David Flanagan)</li>
+<li><a href="http://jargon.js.org/">Simplified JavaScript Jargon</a></li>
+</ul>
+<h3 id="more-examples">추가 예</h3>
+<ul>
+<li><a href="http://jsbin.com/ojapAsUR/2/edit?js">map/reduce</a></li>
+</ul>
+<h2 id="grading">성적</h2>
+<ul>
+<li>수업 참여 – 50%</li>
+<li>과제물 – 50%</li>
+</ul>
+
+<h3 id="scps">표절 문제</h3>
+<blockquote>
+<p>표절을 매우 심각하게 여기며 사기의 한 형태로 간주합니다. 여기서 표절이란 다른 사람의 작품에서 의역된 구절 또는 다른 누군가가 구두 또는 서면으로 수집, 구성 및 보고한 사실이나 아이디어 표절은 사실 문제이지 학생의 의도가 아니므로 다음 사항이 중요합니다. 출처에 대한 확인은 정확하고 완전하며, 의식적으로 속이려는 의도가 없더라도 적절한 확인을 하지 않는 것은 표절에 해당합니다.</p>
+</blockquote>
+<h3 id="instructor">권고 사항</h3>
+<p>아이디어나 코드를 재사용하고 구축하는 것은 현대 소프트웨어 개발의 주요 부분입니다. 전문 프로그래머로서 처음부터 아무것도 작성하지 않을 것입니다. 이 강좌는 모든 솔루션이 공개되도록 구성됩니다. 동료의 작업에서 배우도록 권장됩니다. 단순히 솔루션을 복사하여 붙여넣는 사람들을 사냥하지 않을 것입니다. 왜냐하면 그들은 스스로에게 도전하지 않고 이 수업을 듣는 데 시간과 돈을 낭비하고 있기 때문입니다.</p>
+</div></div></body>
+</html>
